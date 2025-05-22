@@ -284,7 +284,16 @@ with tab2:
             if not df.empty:
                 # Bütün qeydlər
                 with st.expander("📋 Bütün Qeydlər", expanded=True):
-                    st.dataframe(df, use_container_width=True, height=400)
+                    # Silinəcək sütunların təyini
+                    columns_to_drop = [
+                        'Marşrut',        # Yön
+                        'Günlük məbləğ',  # Gündəlik məbləğ AZN
+                        'Ümumi məbləğ',   # Ümumi məbləğ AZN
+                        'Günlər',         # Gün sayı
+                        'email'           # Email (əgər varsa)
+                    ]
+                    df_display = df.drop(columns=columns_to_drop, errors='ignore')
+                    st.dataframe(df_display, use_container_width=True, height=400)
                 
                 # Statistik panellər
                 cols = st.columns(3)
@@ -305,10 +314,10 @@ with tab2:
                         st.plotly_chart(fig, use_container_width=True)
                     
                     with cols[1]:
-                        fig = px.bar(df.sort_values('Ümumi məbləğ', ascending=False).head(10), 
-                                   x='Şöbə', y='Ümumi məbləğ', 
-                                   title='Top 10 Xərc Edən Şöbə',
-                                   color='Ümumi məbləğ',
+                        fig = px.bar(df.sort_values('Şöbə', ascending=False).head(10), 
+                                   x='Şöbə', y='Şöbə', 
+                                   title='Top 10 Aktiv Şöbələr',
+                                   color='Şöbə',
                                    color_continuous_scale='Bluered')
                         st.plotly_chart(fig, use_container_width=True)
                 
@@ -316,7 +325,7 @@ with tab2:
                 with st.expander("📤 İxrac Funksiyaları"):
                     output = BytesIO()
                     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                        df.to_excel(writer, index=False, sheet_name='Ezamiyyətlər')
+                        df_display.to_excel(writer, index=False, sheet_name='Ezamiyyətlər')
                         st.download_button(
                             label="📥 Excel faylını yüklə",
                             data=output.getvalue(),
@@ -329,7 +338,7 @@ with tab2:
                     selected = st.multiselect(
                         "Silinəcək qeydləri seçin:",
                         options=df.index,
-                        format_func=lambda x: f"{df.iloc[x]['Ad']} {df.iloc[x]['Soyad']} | {df.iloc[x]['Marşrut']}"
+                        format_func=lambda x: f"{df.iloc[x]['Ad']} {df.iloc[x]['Soyad']} | {df.iloc[x]['Tarix']}"
                     )
                     if st.button("🔴 Seçilmişləri sil", type="primary"):
                         df = df.drop(selected)
