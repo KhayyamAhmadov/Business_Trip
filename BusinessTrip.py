@@ -132,8 +132,18 @@ def save_trip_data(data):
 def load_trip_data():
     try:
         df = pd.read_csv("ezamiyyet_melumatlari.csv")
-        if 'Ümumi məbləğ' not in df.columns:
-            df['Ümumi məbləğ'] = 0
+        # Köhnə versiyalar üçün zəruri sütunları yoxla
+        required_columns = {
+            'Tarix': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            'Günlər': 0,
+            'Ümumi məbləğ': 0,
+            'Ödəniş növü': 'Tam ödəniş edilməklə'
+        }
+        
+        for col, default_val in required_columns.items():
+            if col not in df.columns:
+                df[col] = default_val
+                
         return df
     except FileNotFoundError:
         return pd.DataFrame()
@@ -233,9 +243,11 @@ with tab2:
             with col1:
                 st.metric("Ümumi Ezamiyyət", len(df))
             with col2:
-                st.metric("Ümumi Xərc", f"{df['Ümumi məbləğ'].sum():.2f} AZN")
+                st.metric("Ümumi Xərc", f"{df.get('Ümumi məbləğ', pd.Series([0]*len(df))).sum():.2f} AZN")
             with col3:
-                st.metric("Orta Müddət", f"{df['Günlər'].mean():.1f} gün")
+                days_data = df.get('Günlər', pd.Series([0]*len(df)))
+                avg_days = days_data.mean() if not days_data.empty else 0
+                st.metric("Orta Müddət", f"{avg_days:.1f} gün")
             
             col_chart1, col_chart2 = st.columns(2)
             with col_chart1:
@@ -254,7 +266,7 @@ with tab2:
                 
                 summary = pd.DataFrame({
                     'Göstərici': ['Ümumi Ezamiyyət', 'Ümumi Xərc', 'Orta Müddət'],
-                    'Dəyər': [len(df), df['Ümumi məbləğ'].sum(), df['Günlər'].mean()]
+                    'Dəyər': [len(df), df.get('Ümumi məbləğ', 0).sum(), df.get('Günlər', 0).mean()]
                 })
                 summary.to_excel(writer, index=False, sheet_name='Statistika')
             
@@ -274,3 +286,12 @@ with tab2:
                 st.experimental_rerun()
         else:
             st.warning("Hələ heç bir məlumat yoxdur")
+
+# Footer
+st.markdown("---")
+st.markdown(
+    "<div style='text-align: center; color: #666; margin-top: 2rem;'>"
+    "© 2024 Dövlət Statistika Komitəsi | Versiya 2.2"
+    "</div>", 
+    unsafe_allow_html=True
+)
