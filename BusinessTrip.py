@@ -9,7 +9,7 @@ st.set_page_config(page_title="Ezamiyyət hesablayıcı", page_icon="✈️")
 st.title("✈️ Ezamiyyət hesablayıcı - Giriş")
 password = st.text_input("Sayta giriş üçün şifrəni daxil edin:", type="password")
 
-correct_password = "secret123"
+correct_password = "admin"
 
 if password != correct_password:
     st.warning("Zəhmət olmasa düzgün şifrəni daxil edin.")
