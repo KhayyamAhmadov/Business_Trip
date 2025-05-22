@@ -199,24 +199,22 @@ if admin_username == "admin" and admin_password == "admin":
     try:
         df_admin = pd.read_csv("ezamiyyet_melumatlari.csv")
         st.dataframe(df_admin)
-
-        # Excel faylı yaratmaq üçün BytesIO istifadə et
+    
         from io import BytesIO
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df_admin.to_excel(writer, index=False, sheet_name='Ezamiyyet')
-            writer.save()
-            processed_data = output.getvalue()
-
+        processed_data = output.getvalue()
+    
         st.download_button(
             label="Excel faylını yüklə",
             data=processed_data,
             file_name="ezamiyyet_melumatlari.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-
     except FileNotFoundError:
         st.warning("Hələ heç bir məlumat daxil edilməyib.")
+
 else:
     if admin_username or admin_password:
         st.error("İstifadəçi adı və ya şifrə yalnışdır!")
