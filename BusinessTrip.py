@@ -118,7 +118,7 @@ st.subheader("📅 Ezamiyyət dövrü")
 baslama_tarixi = st.date_input("Başlanğıc tarixi")
 bitme_tarixi = st.date_input("Bitmə tarixi")
 
-if st.button("💰 Ödəniləcək məbləği göstər və yadda saxla"):
+if st.button("💰 Ödəniləcək məbləği göstər"):
     if not (ad and soyad and ata_adi):
         st.error("Zəhmət olmasa, ad, soyad və ata adını daxil edin!")
     elif bitme_tarixi < baslama_tarixi:
