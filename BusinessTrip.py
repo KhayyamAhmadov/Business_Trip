@@ -1,16 +1,14 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+from io import BytesIO
 import requests
-import os
 
-# Streamlit səhifə konfiqurasiyası
 st.set_page_config(page_title="Ezamiyyət hesablayıcı", page_icon="✈️")
 
-# Başlıq
 st.title("✈️ Ezamiyyət Məlumat Forması")
 
-# Şöbə siyahısı
+# Şöbələr tam siyahısı
 sobeler = [
     "Statistika işlərinin əlaqələndirilməsi və strateji planlaşdırma şöbəsi",
     "Keyfiyyətin idarə edilməsi və metaməlumatlar şöbəsi",
@@ -37,7 +35,6 @@ sobeler = [
     "Yerli statistika orqanları"
 ]
 
-# Vəzifə siyahısı
 vezifeler = [
     "Kiçik mütəxəssis",
     "Baş mütəxəssis",
@@ -47,35 +44,41 @@ vezifeler = [
     "Mütəxəssis",
 ]
 
-# Telegram Bot Token və Chat ID (öz məlumatlarını əlavə et!)
-TELEGRAM_BOT_TOKEN = "BOT_TOKENUNUZU_BURAYA_YAZIN"
-TELEGRAM_CHAT_ID = "CHAT_ID_NIZI_BURAYA_YAZIN"
-
-# 🧾 Form məlumatları
-st.subheader("👤 Şəxsi Məlumatlar")
+# İstifadəçi məlumatları
+st.subheader("👤 Şəxsi məlumatlar")
 ad = st.text_input("Ad")
 soyad = st.text_input("Soyad")
 ata_adi = st.text_input("Ata adı")
-email = st.text_input("Email ünvanı")
+email = st.text_input("Email ünvanı (bildiriş üçün)")
 
-st.subheader("🏢 İş məlumatları")
-sobe = st.selectbox("Şöbə seçin", sobeler)
-vezife = st.selectbox("Vəzifə seçin", vezifeler)
+# Şöbə seçimi
+st.subheader("🏢 Şöbə seçimi")
+sobe = st.selectbox("Hansə şöbədə işləyirsiniz?", sobeler)
 
-st.subheader("🌍 Ezamiyyət məlumatları")
-ezam_tip = st.radio("Ezamiyyət növü:", ["Ölkə daxili", "Ölkə xarici"])
+# Vəzifə seçimi
+vezife = st.selectbox("Vəzifəniz nədir?", vezifeler)
 
+# Ezamiyyət tipi
+st.subheader("🧳 Ezamiyyət növü")
+ezam_tip = st.radio("Ezamiyyət ölkə daxili, yoxsa ölkə xaricidir?", ["Ölkə daxili", "Ölkə xarici"])
+
+# Hara gedir?
+destination = ""
 if ezam_tip == "Ölkə daxili":
-    destination = st.selectbox("Şəhər seçin", ["Bakı - Gəncə", "Bakı - Şəki", "Bakı - Lənkəran", "Bakı - Sumqayıt"])
-    mebleg_map = {
+    destination = st.selectbox("Hara ezam olunursunuz?", [
+        "Bakı - Gəncə", "Bakı - Şəki", "Bakı - Lənkəran", "Bakı - Sumqayıt"
+    ])
+    amount_map = {
         "Bakı - Gəncə": 100,
         "Bakı - Şəki": 90,
         "Bakı - Lənkəran": 80,
         "Bakı - Sumqayıt": 50,
     }
 else:
-    destination = st.selectbox("Ölkə seçin", ["Türkiyə", "Gürcüstan", "Almaniya", "BƏƏ", "Rusiya"])
-    mebleg_map = {
+    destination = st.selectbox("Hansı ölkəyə ezam olunursunuz?", [
+        "Türkiyə", "Gürcüstan", "Almaniya", "BƏƏ", "Rusiya"
+    ])
+    amount_map = {
         "Türkiyə": 300,
         "Gürcüstan": 250,
         "Almaniya": 600,
@@ -83,84 +86,106 @@ else:
         "Rusiya": 400,
     }
 
-mebleg = mebleg_map.get(destination, 0)
-
-st.subheader("📅 Tarix Seçimi")
-baslama_tarixi = st.date_input("Başlama tarixi")
+# Ezamiyyətin başlanğıc və son tarixləri
+st.subheader("📅 Ezamiyyət dövrü")
+baslama_tarixi = st.date_input("Başlanğıc tarixi")
 bitme_tarixi = st.date_input("Bitmə tarixi")
 
-# Əsas düymə
-if st.button("💾 Yadda saxla və Telegram-a göndər"):
-    if not all([ad, soyad, ata_adi, email]):
-        st.error("Zəhmət olmasa, bütün şəxsi məlumatları daxil edin!")
+mebleg = amount_map.get(destination, 0)
+
+# Telegram Bot Parametrləri
+TELEGRAM_BOT_TOKEN = "BOT_TOKENUNUZU_BURAYA_YAZIN"
+TELEGRAM_CHAT_ID = "CHAT_ID_NIZI_BURAYA_YAZIN"
+
+def telegram_bildiris_gonder(metin):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    data = {"chat_id": TELEGRAM_CHAT_ID, "text": metin}
+    try:
+        requests.post(url, data=data)
+    except Exception as e:
+        st.error(f"Telegram bildirişi göndərilərkən xəta baş verdi: {e}")
+
+if st.button("💰 Ödəniləcək məbləği göstər və yadda saxla"):
+    if not (ad and soyad and ata_adi and email):
+        st.error("Zəhmət olmasa, ad, soyad, ata adı və email daxil edin!")
     elif bitme_tarixi < baslama_tarixi:
-        st.error("Bitmə tarixi başlanğıc tarixindən erkən ola bilməz!")
+        st.error("Bitmə tarixi başlanğıc tarixindən kiçik ola bilməz!")
     else:
-        # Məlumatların hazırlanması
-        tarix = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        yeni_melumat = {
-            "Tarix": tarix,
-            "Ad": ad,
-            "Soyad": soyad,
-            "Ata adı": ata_adi,
-            "Email": email,
-            "Şöbə": sobe,
-            "Vəzifə": vezife,
-            "Ezamiyyət növü": ezam_tip,
-            "Yön": destination,
-            "Başlanğıc tarixi": baslama_tarixi.strftime("%Y-%m-%d"),
-            "Bitmə tarixi": bitme_tarixi.strftime("%Y-%m-%d"),
-            "Məbləğ (AZN)": mebleg
+        indiki_vaxt = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        st.success(f"👤 {ad} {soyad} {ata_adi} üçün ezamiyyət məbləği: **{mebleg} AZN**")
+        st.info(f"🕒 Məlumat daxil edilmə vaxtı: {indiki_vaxt}")
+
+        # Məlumatı CSV-ə əlavə et
+        new_data = {
+            "Tarix": [indiki_vaxt],
+            "Ad": [ad],
+            "Soyad": [soyad],
+            "Ata adı": [ata_adi],
+            "Email": [email],
+            "Şöbə": [sobe],
+            "Vəzifə": [vezife],
+            "Ezamiyyət növü": [ezam_tip],
+            "Yön": [destination],
+            "Başlanğıc tarixi": [baslama_tarixi.strftime("%Y-%m-%d")],
+            "Bitmə tarixi": [bitme_tarixi.strftime("%Y-%m-%d")],
+            "Məbləğ": [mebleg]
         }
+        df_new = pd.DataFrame(new_data)
 
-        # CSV faylına yazmaq
-        fayl_adi = "ezamiyyet_melumatlari.csv"
-        fayl_movcuddur = os.path.exists(fayl_adi)
+        try:
+            df_existing = pd.read_csv("ezamiyyet_melumatlari.csv")
+            df_combined = pd.concat([df_existing, df_new], ignore_index=True)
+        except FileNotFoundError:
+            df_combined = df_new
 
-        df_yeni = pd.DataFrame([yeni_melumat])
+        df_combined.to_csv("ezamiyyet_melumatlari.csv", index=False)
+        st.info("📁 Məlumat uğurla yadda saxlanıldı!")
 
-        if fayl_movcuddur:
-            df_kohne = pd.read_csv(fayl_adi)
-            df_birlesmis = pd.concat([df_kohne, df_yeni], ignore_index=True)
-        else:
-            df_birlesmis = df_yeni
+        # Telegrama bildiriş göndər
+        bildiris_metin = (f"✈️ Yeni ezamiyyət məlumatı daxil edildi:\n"
+                          f"👤 {ad} {soyad} {ata_adi}\n"
+                          f"📧 Email: {email}\n"
+                          f"🏢 Şöbə: {sobe}\n"
+                          f"💼 Vəzifə: {vezife}\n"
+                          f"🧳 Ezamiyyət növü: {ezam_tip}\n"
+                          f"📍 Yön: {destination}\n"
+                          f"📅 Dövr: {baslama_tarixi} - {bitme_tarixi}\n"
+                          f"💰 Məbləğ: {mebleg} AZN")
+        telegram_bildiris_gonder(bildiris_metin)
 
-        df_birlesmis.to_csv(fayl_adi, index=False)
+# Excel faylının yüklənməsi üçün ayrıca bölmə
+st.subheader("📥 Excel faylını yüklə")
 
-        # Telegram bildirişi
-        mesaj = (
-            f"📤 Yeni ezamiyyət məlumatı daxil edildi:\n\n"
-            f"👤 {ad} {soyad} {ata_adi}\n"
-            f"🏢 Şöbə: {sobe}\n"
-            f"📌 Ezamiyyet: {destination} ({ezam_tip})\n"
-            f"📅 {baslama_tarixi.strftime('%d.%m.%Y')} - {bitme_tarixi.strftime('%d.%m.%Y')}\n"
-            f"💰 Məbləğ: {mebleg} AZN\n"
-            f"📥 Email: {email}\n"
-            f"🕒 Yaradılma: {tarix}"
-        )
+if st.button("Excel faylını hazırla və yüklə"):
+    if not (ad and soyad and ata_adi):
+        st.error("Excel faylı yaratmaq üçün əvvəlcə ad, soyad və ata adını daxil edin!")
+    else:
+        data = {
+            "Ad": [ad],
+            "Soyad": [soyad],
+            "Ata adı": [ata_adi],
+            "Email": [email],
+            "Şöbə": [sobe],
+            "Vəzifə": [vezife],
+            "Ezamiyyət növü": [ezam_tip],
+            "Yön": [destination],
+            "Başlanğıc tarixi": [baslama_tarixi.strftime("%Y-%m-%d")],
+            "Bitmə tarixi": [bitme_tarixi.strftime("%Y-%m-%d")],
+            "Məbləğ (AZN)": [mebleg]
+        }
+        df = pd.DataFrame(data)
 
-        def telegram_bildiris_gonder(metin):
-            url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-            data = {
-                "chat_id": TELEGRAM_CHAT_ID,
-                "text": metin
-            }
-            response = requests.post(url, data=data)
-            return response
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df.to_excel(writer, index=False, sheet_name='Ezamiyyət')
+            writer.save()
+            processed_data = output.getvalue()
 
-        cavab = telegram_bildiris_gonder(mesaj)
-
-        if cavab.status_code == 200:
-            st.success("Məlumat uğurla yadda saxlanıldı və Telegram-a göndərildi ✅")
-        else:
-            st.warning("Məlumat yadda saxlanıldı, lakin Telegram bildirişi göndərilə bilmədi ❗")
-
-        # CSV faylını yükləmək üçün düymə
         st.download_button(
-            label="📂 CSV faylını yüklə",
-            data=df_birlesmis.to_csv(index=False).encode("utf-8"),
-            file_name="ezamiyyet_melumatlari.csv",
-            mime="text/csv"
+            label="Excel faylını yüklə",
+            data=processed_data,
+            file_name=f"ezamiyyet_{ad}_{soyad}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
 
