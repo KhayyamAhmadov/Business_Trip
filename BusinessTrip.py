@@ -4,6 +4,44 @@ from datetime import datetime
 import plotly.express as px
 from io import BytesIO
 
+# ============================== GİRİŞ QUTUSU ==============================
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+
+st.markdown("""
+<style>
+    .login-box {
+        background: white;
+        padding: 2.5rem;
+        border-radius: 15px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        max-width: 500px;
+        margin: 5rem auto;
+    }
+    .login-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+if not st.session_state.logged_in:
+    with st.container():
+        st.markdown('<div class="login-box"><div class="login-header"><h2>🔐 Sistemə Giriş</h2></div>', unsafe_allow_html=True)
+        
+        access_code = st.text_input("Giriş kodu", type="password", label_visibility="collapsed", placeholder="Giriş kodunu daxil edin...")
+        
+        cols = st.columns([1,2,1])
+        with cols[1]:
+            if st.button("Daxil ol", use_container_width=True):
+                if access_code == "admin":
+                    st.session_state.logged_in = True
+                    st.rerun()
+                else:
+                    st.error("Yanlış giriş kodu!")
+        st.markdown('</div>', unsafe_allow_html=True)
+    st.stop()
+
 # ============================== SƏHİFƏ KONFİQURASİYASI ==============================
 st.set_page_config(
     page_title="Ezamiyyət İdarəetmə Sistemi",
