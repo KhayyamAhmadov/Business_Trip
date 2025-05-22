@@ -141,16 +141,19 @@ if st.button("💾 Yadda saxla və Telegram-a göndər"):
 
         def telegram_bildiris_gonder(metin):
             url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-            data = {"chat_id": TELEGRAM_CHAT_ID, "text": metin}
+            data = {
+                "chat_id": TELEGRAM_CHAT_ID,
+                "text": metin
+            }
             response = requests.post(url, data=data)
-            return response.status_code == 200
+            return response
 
-        ugurlu = telegram_bildiris_gonder(mesaj)
+        cavab = telegram_bildiris_gonder(mesaj)
 
-        if ugurlu:
-            st.success("Məlumat uğurla yadda saxlandı və Telegram-a göndərildi ✅")
+        if cavab.status_code == 200:
+            st.success("Məlumat uğurla yadda saxlanıldı və Telegram-a göndərildi ✅")
         else:
-            st.warning("Məlumat yadda saxlandı, amma Telegram bildirişi göndərilə bilmədi ⚠️")
+            st.warning("Məlumat yadda saxlanıldı, lakin Telegram bildirişi göndərilə bilmədi ❗")
 
         # CSV faylını yükləmək üçün düymə
         st.download_button(
