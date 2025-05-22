@@ -4,7 +4,7 @@ from datetime import datetime
 
 st.set_page_config(page_title="Ezamiyyət hesablayıcı", page_icon="✈️")
 
-st.title("✈️ Ezamiyyət Məlumat Forması")
+st.title("✈ Ezamiyyət Məlumat Forması")
 
 sobeler = [
     "Statistika işlərinin əlaqələndirilməsi və strateji planlaşdırma şöbəsi",
@@ -46,15 +46,15 @@ seherler = [
     "Zəngilan", "Zərdab"
 ]
 
-st.subheader("👤 Şəxsi məlumatlar")
+st.subheader(" Şəxsi məlumatlar")
 ad = st.text_input("Ad")
 soyad = st.text_input("Soyad")
 ata_adi = st.text_input("Ata adı")
 
-st.subheader("🏢 Şöbə seçimi")
+st.subheader(" Şöbə seçimi")
 sobe = st.selectbox("Hansə şöbədə işləyirsiniz?", sobeler)
 
-st.subheader("🧳 Ezamiyyət növü")
+st.subheader(" Ezamiyyət növü")
 ezam_tip = st.radio("Ezamiyyət ölkə daxili, yoxsa ölkə xaricidir?", ["Ölkə daxili", "Ölkə xarici"])
 
 destination = ""
@@ -96,7 +96,7 @@ st.subheader("📅 Ezamiyyət dövrü")
 baslama_tarixi = st.date_input("Başlanğıc tarixi")
 bitme_tarixi = st.date_input("Bitmə tarixi")
 
-if st.button("💰 Ödəniləcək məbləği göstər və yadda saxla"):
+if st.button(" Ödəniləcək məbləği göstər və yadda saxla"):
     if not (ad and soyad and ata_adi):
         st.error("Zəhmət olmasa, ad, soyad və ata adını daxil edin!")
     elif bitme_tarixi < baslama_tarixi:
@@ -127,11 +127,11 @@ if st.button("💰 Ödəniləcək məbləği göstər və yadda saxla"):
             df_combined = df_new
 
         df_combined.to_csv("ezamiyyet_melumatlari.csv", index=False)
-        st.info("📁 Məlumat uğurla yadda saxlanıldı.")
+        st.info(" Məlumat uğurla yadda saxlanıldı.")
 
 
 # admin girisi hissesi 
-st.subheader("🔒 Admin bölməsi: Daxil edilmiş məlumatların siyahısı")
+st.subheader("Admin bölməsi")
 
 admin_username = st.text_input("Admin istifadəçi adı daxil edin")
 admin_password = st.text_input("Admin şifrəni daxil edin", type="password")
