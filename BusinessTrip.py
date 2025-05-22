@@ -262,20 +262,7 @@ with tab1:
 # ============================== ADMIN PANELI ==============================
 with tab2:
     with st.container():
-        st.markdown('<div class="section-header">🔐 Admin Girişi</div>', unsafe_allow_html=True)
-        
-        cols = st.columns(2)
-        with cols[0]:
-            admin_user = st.text_input("İstifadəçi adı", key="admin_user")
-        with cols[1]:
-            admin_pass = st.text_input("Şifrə", type="password", key="admin_pass")
-        
-        if st.button("🚪 Giriş et", key="admin_login"):
-            if admin_user == "admin" and admin_pass == "admin123":
-                st.session_state.admin_logged = True
-                st.rerun()
-            else:
-                st.error("Giriş məlumatları yanlışdır!")
+        # ... (əvvəlki kod eynidir)
 
         if st.session_state.get('admin_logged'):
             st.markdown('<div class="section-header">📊 İdarəetmə Paneli</div>', unsafe_allow_html=True)
@@ -284,39 +271,43 @@ with tab2:
             if not df.empty:
                 # Bütün qeydlər
                 with st.expander("📋 Bütün Qeydlər", expanded=True):
-                    st.dataframe(df, use_container_width=True, height=400)
+                    # DÜZƏLİŞ: Yalnız tələb olunan sütunları sil
+                    columns_to_drop = [
+                        'Marşrut',         # Yön
+                        'Günlük məbləğ',   # Gündəlik məbləğ AZN
+                        'Ümumi məbləğ',    # Ümumi məbləğ AZN
+                        'Günlər'           # Gün sayı
+                    ]
+                    df_display = df.drop(columns=columns_to_drop, errors='ignore')
+                    st.dataframe(df_display, use_container_width=True, height=400)
                 
-                # Statistik panellər
+                # Statistik panellər DÜZƏLİŞ
                 cols = st.columns(3)
                 with cols[0]:
                     st.metric("Ümumi Ezamiyyət", len(df))
                 with cols[1]:
-                    st.metric("Ümumi Xərc", f"{df['Ümumi məbləğ'].sum():.2f} AZN")
-                with cols[2]:
-                    st.metric("Orta Müddət", f"{df['Günlər'].mean():.1f} gün")
+                    st.metric("Orta Müddət", f"{(df['Bitmə tarixi'] - df['Başlanğıc tarixi']).dt.days.mean():.1f} gün")
                 
-                # Qrafiklər
+                # Qrafiklər DÜZƏLİŞ
                 with st.expander("📈 Statistika", expanded=True):
                     cols = st.columns(2)
                     with cols[0]:
-                        fig = px.pie(df, names='Ezamiyyət növü', 
-                                   title='Ezamiyyət Növlərinin Dağılımı',
-                                   color_discrete_sequence=['#6366f1', '#8b5cf6'])
+                        fig = px.pie(df, names='Şöbə', 
+                                   title='Şöbələr üzrə ezamiyyət paylanması',
+                                   color_discrete_sequence=px.colors.qualitative.Pastel)
                         st.plotly_chart(fig, use_container_width=True)
                     
                     with cols[1]:
-                        fig = px.bar(df.sort_values('Ümumi məbləğ', ascending=False).head(10), 
-                                   x='Şöbə', y='Ümumi məbləğ', 
-                                   title='Top 10 Xərc Edən Şöbə',
-                                   color='Ümumi məbləğ',
-                                   color_continuous_scale='Bluered')
+                        fig = px.histogram(df, x='Ödəniş növü', 
+                                         title='Ödəniş növlərinin paylanması',
+                                         color='Ödəniş növü')
                         st.plotly_chart(fig, use_container_width=True)
                 
                 # İxrac funksiyaları
                 with st.expander("📤 İxrac Funksiyaları"):
                     output = BytesIO()
                     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                        df.to_excel(writer, index=False, sheet_name='Ezamiyyətlər')
+                        df_display.to_excel(writer, index=False, sheet_name='Ezamiyyətlər')
                         st.download_button(
                             label="📥 Excel faylını yüklə",
                             data=output.getvalue(),
@@ -324,12 +315,12 @@ with tab2:
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                         )
                 
-                # Qeyd silmə
+                # Qeyd silmə DÜZƏLİŞ
                 with st.expander("🗑️ Qeyd Silmə", expanded=True):
                     selected = st.multiselect(
                         "Silinəcək qeydləri seçin:",
                         options=df.index,
-                        format_func=lambda x: f"{df.iloc[x]['Ad']} {df.iloc[x]['Soyad']} | {df.iloc[x]['Marşrut']}"
+                        format_func=lambda x: f"{df.iloc[x]['Ad']} {df.iloc[x]['Soyad']} | {df.iloc[x]['Tarix']}"
                     )
                     if st.button("🔴 Seçilmişləri sil", type="primary"):
                         df = df.drop(selected)
