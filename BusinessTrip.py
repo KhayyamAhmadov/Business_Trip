@@ -199,19 +199,44 @@ if admin_username == "admin" and admin_password == "admin":
     try:
         df_admin = pd.read_csv("ezamiyyet_melumatlari.csv")
         st.dataframe(df_admin)
-    
+
+        # Statistik məlumatlar
+        st.markdown("### 📊 Statistik Məlumatlar")
+
+        # Ümumi ezamiyyət sayı
+        total_trips = len(df_admin)
+        st.write(f"**Ümumi daxil edilmiş ezamiyyət sayı:** {total_trips}")
+
+        # Ümumi məbləğ
+        total_amount = df_admin["Məbləğ"].sum()
+        st.write(f"**Ümumi ödəniləcək məbləğ:** {total_amount} AZN")
+
+        # Ən çox ezamiyyət göndərilən şöbə
+        top_department = df_admin["Şöbə"].mode()
+        if not top_department.empty:
+            st.write(f"**Ən çox ezamiyyət göndərilən şöbə:** {top_department[0]}")
+        else:
+            st.write("**Şöbə məlumatı yoxdur.**")
+
+        # Ölkə daxili və xarici ezamiyyət sayı
+        trip_type_counts = df_admin["Ezamiyyət növü"].value_counts()
+        st.write("**Ezamiyyət növü üzrə saylar:**")
+        st.write(trip_type_counts.to_frame())
+
+        # Excel faylını yüklə hissəsi...
         from io import BytesIO
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             df_admin.to_excel(writer, index=False, sheet_name='Ezamiyyet')
         processed_data = output.getvalue()
-    
+
         st.download_button(
             label="Excel faylını yüklə",
             data=processed_data,
             file_name="ezamiyyet_melumatlari.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+
     except FileNotFoundError:
         st.warning("Hələ heç bir məlumat daxil edilməyib.")
 
