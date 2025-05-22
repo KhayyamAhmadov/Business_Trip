@@ -18,7 +18,7 @@ st.markdown("""
     :root {
         --primary-color: #6366f1;
         --secondary-color: #8b5cf6;
-        --background-color: #f8fafc;
+        --background-color: #ffffff;
     }
     
     .main-header {
@@ -55,12 +55,6 @@ st.markdown("""
     .dataframe {
         border-radius: 12px!important;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05)!important;
-    }
-    
-    footer {
-        color: #64748b!important;
-        text-align: center!important;
-        padding: 1.5rem!important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -175,7 +169,7 @@ def load_trip_data():
         return pd.DataFrame()
 
 # ============================== ƏSAS İNTERFEYS ==============================
-st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1><p>Azərbaycan Respublikası Dövlət Statistika Komitəsi</p></div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
 
 tab1, tab2 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli"])
 
@@ -340,17 +334,3 @@ with tab2:
                         st.rerun()
             else:
                 st.warning("Hələ heç bir qeyd mövcud deyil")
-
-# ============================== FOOTER ==============================
-st.markdown("---")
-st.markdown(
-    """
-    <div style='text-align: center; padding: 1.5rem; color: #64748b;'>
-        <div>© 2024 Azərbaycan Respublikası Dövlət Statistika Komitəsi</div>
-        <div style='margin-top: 0.5rem; font-size: 0.9rem;'>
-            Versiya 3.0 | <em>Developed with ❤️ by Dövlət Statistika Komitəsi</em>
-        </div>
-    </div>
-    """, 
-    unsafe_allow_html=True
-)
