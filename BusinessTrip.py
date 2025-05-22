@@ -158,10 +158,13 @@ def save_trip_data(data):
 def load_trip_data():
     try:
         df = pd.read_csv("ezamiyyet_melumatlari.csv")
+        # Silinəcək sütunlar
+        columns_to_drop = ["ilk yazilan yon", "mebleg", "email", "gundelik mebleg azn", "umumi mebleg azn"]
+        df = df.drop(columns=columns_to_drop, errors='ignore')
+        # Tələb olunan sütunların yoxlanılması
         required_columns = {
             'Tarix': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            'Günlər': 0,
-            'Ümumi məbləğ': 0,
+            'gun': 0,
             'Ödəniş növü': 'Tam ödəniş edilməklə',
             'Marşrut': 'Təyin edilməyib'
         }
@@ -250,9 +253,7 @@ with tab1:
                         "Marşrut": f"{from_city} → {to_city}" if trip_type == "Ölkə daxili" else country,
                         "Başlanğıc tarixi": start_date.strftime("%Y-%m-%d"),
                         "Bitmə tarixi": end_date.strftime("%Y-%m-%d"),
-                        "Günlər": trip_days,
-                        "Günlük məbləğ": daily_allowance,
-                        "Ümumi məbləğ": total_amount,
+                        "gun": trip_days,
                         "Məqsəd": purpose
                     }
                     save_trip_data(trip_data)
@@ -291,9 +292,9 @@ with tab2:
                 with cols[0]:
                     st.metric("Ümumi Ezamiyyət", len(df))
                 with cols[1]:
-                    st.metric("Ümumi Xərc", f"{df['Ümumi məbləğ'].sum():.2f} AZN")
+                    st.metric("Ümumi Xərc", f"{df.get('Ümumi məbləğ', pd.Series([0])).sum():.2f} AZN")
                 with cols[2]:
-                    st.metric("Orta Müddət", f"{df['Günlər'].mean():.1f} gün")
+                    st.metric("Orta Müddət", f"{df['gun'].mean():.1f} gün")
                 
                 # Qrafiklər
                 with st.expander("📈 Statistika", expanded=True):
@@ -305,10 +306,10 @@ with tab2:
                         st.plotly_chart(fig, use_container_width=True)
                     
                     with cols[1]:
-                        fig = px.bar(df.sort_values('Ümumi məbləğ', ascending=False).head(10), 
-                                   x='Şöbə', y='Ümumi məbləğ', 
+                        fig = px.bar(df.sort_values('Marşrut', ascending=False).head(10), 
+                                   x='Şöbə', y='Marşrut', 
                                    title='Top 10 Xərc Edən Şöbə',
-                                   color='Ümumi məbləğ',
+                                   color='Marşrut',
                                    color_continuous_scale='Bluered')
                         st.plotly_chart(fig, use_container_width=True)
                 
