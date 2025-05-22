@@ -220,7 +220,7 @@ with tab1:
                 with cols[1]:
                     end_date = st.date_input("Bitmə tarixi")
                 
-                purpose = st.text_area("Ezamiyyət məqsədi", height=100)
+                purpose = st.text_area("Ezamiyyət haqqında əlavə məlumat almaq üçün suallarınızı qeyd edin.", height=100)
 
         # Sağ sütun (Hesablama)
         with col2:
