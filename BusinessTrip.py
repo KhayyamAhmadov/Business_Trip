@@ -32,6 +32,20 @@ sobeler = [
     "Yerli statistika orqanları"
 ]
 
+seherler = [
+    "Abşeron", "Ağcabədi", "Ağdam", "Ağdaş", "Ağdərə", "Ağstafa", "Ağsu", "Astara", "Bakı",
+    "Babək (Naxçıvan MR)", "Balakən", "Bərdə", "Beyləqan", "Biləsuvar", "Cəbrayıl", "Cəlilabad",
+    "Culfa (Naxçıvan MR)", "Daşkəsən", "Füzuli", "Gədəbəy", "Gəncə", "Goranboy", "Göyçay",
+    "Göygöl", "Hacıqabul", "Xaçmaz", "Xankəndi", "Xızı", "Xocalı", "Xocavənd", "İmişli",
+    "İsmayıllı", "Kəlbəcər", "Kəngərli (Naxçıvan MR)", "Kürdəmir", "Laçın", "Lənkəran",
+    "Lerik", "Masallı", "Mingəçevir", "Naftalan", "Neftçala", "Naxçıvan", "Oğuz",
+    "Ordubad (Naxçıvan MR)", "Qəbələ", "Qax", "Qazax", "Qobustan", "Quba", "Qubadlı",
+    "Qusar", "Saatlı", "Sabirabad", "Sədərək (Naxçıvan MR)", "Salyan", "Samux", "Şabran",
+    "Şahbuz (Naxçıvan MR)", "Şamaxı", "Şəki", "Şəmkir", "Şərur (Naxçıvan MR)", "Şirvan",
+    "Şuşa", "Sumqayıt", "Tərtər", "Tovuz", "Ucar", "Yardımlı", "Yevlax", "Zaqatala",
+    "Zəngilan", "Zərdab"
+]
+
 st.subheader("👤 Şəxsi məlumatlar")
 ad = st.text_input("Ad")
 soyad = st.text_input("Soyad")
@@ -44,16 +58,25 @@ st.subheader("🧳 Ezamiyyət növü")
 ezam_tip = st.radio("Ezamiyyət ölkə daxili, yoxsa ölkə xaricidir?", ["Ölkə daxili", "Ölkə xarici"])
 
 destination = ""
+mebleg = 0
+
 if ezam_tip == "Ölkə daxili":
-    destination = st.selectbox("Hara ezam olunursunuz?", [
-        "Bakı - Gəncə", "Bakı - Şəki", "Bakı - Lənkəran", "Bakı - Sumqayıt"
-    ])
+    st.subheader("🏙️ Marşrut seçimi")
+    hardan = st.selectbox("Haradan ezam olunursunuz?", seherler, index=seherler.index("Bakı"))
+    haraya_secim = [s for s in seherler if s != hardan]
+    haraya = st.selectbox("Haraya ezam olunursunuz?", haraya_secim)
+
+    # Məbləğləri marşrutlara görə müəyyən edək (burada nümunə üçün bəzi əsas marşrutlar)
     amount_map = {
-        "Bakı - Gəncə": 100,
-        "Bakı - Şəki": 90,
-        "Bakı - Lənkəran": 80,
-        "Bakı - Sumqayıt": 50,
+        ("Bakı", "Gəncə"): 100,
+        ("Bakı", "Şəki"): 90,
+        ("Bakı", "Lənkəran"): 80,
+        ("Bakı", "Sumqayıt"): 50,
+        # digər marşrutlar üçün 0 qoyulur
     }
+    mebleg = amount_map.get((hardan, haraya), 0)
+    destination = f"{hardan} - {haraya}"
+
 else:
     destination = st.selectbox("Hansı ölkəyə ezam olunursunuz?", [
         "Türkiyə", "Gürcüstan", "Almaniya", "BƏƏ", "Rusiya"
@@ -65,12 +88,11 @@ else:
         "BƏƏ": 500,
         "Rusiya": 400,
     }
+    mebleg = amount_map.get(destination, 0)
 
 st.subheader("📅 Ezamiyyət dövrü")
 baslama_tarixi = st.date_input("Başlanğıc tarixi")
 bitme_tarixi = st.date_input("Bitmə tarixi")
-
-mebleg = amount_map.get(destination, 0)
 
 if st.button("💰 Ödəniləcək məbləği göstər və yadda saxla"):
     if not (ad and soyad and ata_adi):
