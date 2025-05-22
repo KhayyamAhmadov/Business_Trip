@@ -4,6 +4,19 @@ from datetime import datetime
 
 st.set_page_config(page_title="Ezamiyyət hesablayıcı", page_icon="✈️")
 
+# Sadə sayt şifrəsi
+st.title("✈️ Ezamiyyət hesablayıcı - Giriş")
+password = st.text_input("Sayta giriş üçün şifrəni daxil edin:", type="password")
+
+# Daxil ediləcək şifrə
+correct_password = "secret123"
+
+if password != correct_password:
+    st.warning("Zəhmət olmasa düzgün şifrəni daxil edin.")
+    st.stop()  # Saytın digər hissələri açılmasın
+
+# --- Əsas app hissəsi ---
+
 st.title("✈️ Ezamiyyət Məlumat Forması")
 
 sobeler = [
@@ -33,17 +46,18 @@ sobeler = [
 ]
 
 seherler = [
-    "Abşeron", "Ağcabədi", "Ağdam", "Ağdaş", "Ağdərə", "Ağstafa", "Ağsu", "Astara", "Bakı",
-    "Babək (Naxçıvan MR)", "Balakən", "Bərdə", "Beyləqan", "Biləsuvar", "Cəbrayıl", "Cəlilabad",
-    "Culfa (Naxçıvan MR)", "Daşkəsən", "Füzuli", "Gədəbəy", "Gəncə", "Goranboy", "Göyçay",
-    "Göygöl", "Hacıqabul", "Xaçmaz", "Xankəndi", "Xızı", "Xocalı", "Xocavənd", "İmişli",
-    "İsmayıllı", "Kəlbəcər", "Kəngərli (Naxçıvan MR)", "Kürdəmir", "Laçın", "Lənkəran",
-    "Lerik", "Masallı", "Mingəçevir", "Naftalan", "Neftçala", "Naxçıvan", "Oğuz",
-    "Ordubad (Naxçıvan MR)", "Qəbələ", "Qax", "Qazax", "Qobustan", "Quba", "Qubadlı",
-    "Qusar", "Saatlı", "Sabirabad", "Sədərək (Naxçıvan MR)", "Salyan", "Samux", "Şabran",
-    "Şahbuz (Naxçıvan MR)", "Şamaxı", "Şəki", "Şəmkir", "Şərur (Naxçıvan MR)", "Şirvan",
-    "Şuşa", "Sumqayıt", "Tərtər", "Tovuz", "Ucar", "Yardımlı", "Yevlax", "Zaqatala",
-    "Zəngilan", "Zərdab"
+    "Abşeron", "Ağcabədi", "Ağdam", "Ağdaş", "Ağdərə", "Ağstafa", "Ağsu",
+    "Astara", "Bakı", "Babək (Naxçıvan MR)", "Balakən", "Bərdə", "Beyləqan",
+    "Biləsuvar", "Cəbrayıl", "Cəlilabad", "Culfa (Naxçıvan MR)", "Daşkəsən",
+    "Füzuli", "Gədəbəy", "Gəncə", "Goranboy", "Göyçay", "Göygöl", "Hacıqabul",
+    "Xaçmaz", "Xankəndi", "Xızı", "Xocalı", "Xocavənd", "İmişli", "İsmayıllı",
+    "Kəlbəcər", "Kəngərli (Naxçıvan MR)", "Kürdəmir", "Laçın", "Lənkəran",
+    "Lerik", "Masallı", "Mingəçevir", "Naftalan", "Neftçala", "Naxçıvan",
+    "Oğuz", "Ordubad (Naxçıvan MR)", "Qəbələ", "Qax", "Qazax", "Qobustan",
+    "Quba", "Qubadlı", "Qusar", "Saatlı", "Sabirabad", "Sədərək (Naxçıvan MR)",
+    "Salyan", "Samux", "Şabran", "Şahbuz (Naxçıvan MR)", "Şamaxı", "Şəki",
+    "Şəmkir", "Şərur (Naxçıvan MR)", "Şirvan", "Şuşa", "Sumqayıt", "Tərtər",
+    "Tovuz", "Ucar", "Yardımlı", "Yevlax", "Zaqatala", "Zəngilan", "Zərdab"
 ]
 
 st.subheader("👤 Şəxsi məlumatlar")
@@ -54,52 +68,51 @@ ata_adi = st.text_input("Ata adı")
 st.subheader("🏢 Şöbə seçimi")
 sobe = st.selectbox("Hansə şöbədə işləyirsiniz?", sobeler)
 
+st.subheader("🚩 Haradan/Hara ezam olunursunuz?")
+
+hardan = st.selectbox("Haradan", seherler)
+haraya = st.selectbox("Haraya", seherler)
+
+# Ödəniş növü radio düymələri ilə
+st.subheader("💳 Ödəniş növü seçimi")
+odenis_novu = st.radio("Ödəniş seçin:", ["Ödənişsiz", "10% ödəniş edilərək", "Tam ödəniş"])
+
 st.subheader("🧳 Ezamiyyət növü")
 ezam_tip = st.radio("Ezamiyyət ölkə daxili, yoxsa ölkə xaricidir?", ["Ölkə daxili", "Ölkə xarici"])
 
-destination = ""
-mebleg = 0
+amount_map_daxili = {
+    # Sənin əvvəldə verdiyin nümunəyə görə, hardan-haraya fərqli qiymət lazım ola bilər, amma
+    # sadə nümunə üçün elə "Haradan - Haraya" kimi birləşdirib qiymət verək:
+    f"{hardan} - {haraya}": 100  # sadəcə nümunə, lazım gələrsə xəritə genişləndirmək olar
+}
+
+amount_map_xarici = {
+    "Türkiyə": 300,
+    "Gürcüstan": 250,
+    "Almaniya": 600,
+    "BƏƏ": 500,
+    "Rusiya": 400,
+}
 
 if ezam_tip == "Ölkə daxili":
-    st.subheader("🏙️ Marşrut seçimi")
-    hardan = st.selectbox("Haradan ezam olunursunuz?", seherler, index=seherler.index("Bakı"))
-    haraya_secim = [s for s in seherler if s != hardan]
-    haraya = st.selectbox("Haraya ezam olunursunuz?", haraya_secim)
-
-    amount_map = {
-        ("Bakı", "Gəncə"): 100,
-        ("Bakı", "Şəki"): 90,
-        ("Bakı", "Lənkəran"): 80,
-        ("Bakı", "Sumqayıt"): 50,
-    }
-
-    mebleg = amount_map.get((hardan, haraya)) or amount_map.get((haraya, hardan)) or 0
-
-    destination = f"{hardan} - {haraya}"
-
+    # Daxili üçün seçilmiş hardan-haraya uyğun məbləğ
+    # Əgər xəritə genişdirsə, xüsusi qiymətlər ola bilər
+    # Burada sadə şəkildə hardan-haraya uyğun qiymət yoxlamaq üçün nümunə
+    # Əslində bu hissəni genişləndirə bilərsən
+    if hardan == haraya:
+        mebleg = 0
+    else:
+        mebleg = 100  # hardan-haraya fərqli qiymət təyin etmək üçün burada dəyişmək olar
 else:
-    destination = st.selectbox("Hansı ölkəyə ezam olunursunuz?", [
-        "Türkiyə", "Gürcüstan", "Almaniya", "BƏƏ", "Rusiya"
-    ])
-    amount_map = {
-        "Türkiyə": 300,
-        "Gürcüstan": 250,
-        "Almaniya": 600,
-        "BƏƏ": 500,
-        "Rusiya": 400,
-    }
-    mebleg = amount_map.get(destination, 0)
+    mebleg = amount_map_xarici.get(st.selectbox("Hansı ölkəyə ezam olunursunuz?", list(amount_map_xarici.keys())), 0)
 
-st.subheader("💳 Ödəniş növü seçimi")
-odenis_novu = st.selectbox("Ödəniş seçin:", ["Ödənişsiz", "10% ödəniş edilərək", "Tam ödəniş"])
-
-# Ödənişə görə məbləği hesablamaq
+# Ödəniş növünə görə məbləğ tənzimlənməsi
 if odenis_novu == "Ödənişsiz":
-    umumi_mebleg = 0
+    mebleg_final = 0
 elif odenis_novu == "10% ödəniş edilərək":
-    umumi_mebleg = mebleg * 0.10
+    mebleg_final = mebleg * 0.1
 else:  # Tam ödəniş
-    umumi_mebleg = mebleg
+    mebleg_final = mebleg
 
 st.subheader("📅 Ezamiyyət dövrü")
 baslama_tarixi = st.date_input("Başlanğıc tarixi")
@@ -110,9 +123,11 @@ if st.button("💰 Ödəniləcək məbləği göstər və yadda saxla"):
         st.error("Zəhmət olmasa, ad, soyad və ata adını daxil edin!")
     elif bitme_tarixi < baslama_tarixi:
         st.error("Bitmə tarixi başlanğıc tarixindən kiçik ola bilməz!")
+    elif hardan == haraya:
+        st.error("Haradan və haraya eyni şəhəri seçmək olmaz!")
     else:
         indiki_vaxt = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        st.success(f"👤 {ad} {soyad} {ata_adi} üçün ezamiyyət məbləği: **{umumi_mebleg:.2f} AZN** (Seçilmiş ödəniş növü: {odenis_novu})")
+        st.success(f"👤 {ad} {soyad} {ata_adi} üçün ezamiyyət məbləği: **{mebleg_final:.2f} AZN**")
         st.info(f"🕒 Məlumat daxil edilmə vaxtı: {indiki_vaxt}")
 
         new_data = {
@@ -121,13 +136,13 @@ if st.button("💰 Ödəniləcək məbləği göstər və yadda saxla"):
             "Soyad": [soyad],
             "Ata adı": [ata_adi],
             "Şöbə": [sobe],
+            "Haradan": [hardan],
+            "Haraya": [haraya],
+            "Ödəniş növü": [odenis_novu],
             "Ezamiyyət növü": [ezam_tip],
-            "Yön": [destination],
             "Başlanğıc tarixi": [baslama_tarixi.strftime("%Y-%m-%d")],
             "Bitmə tarixi": [bitme_tarixi.strftime("%Y-%m-%d")],
-            "Əsas məbləğ": [mebleg],
-            "Ödəniş növü": [odenis_novu],
-            "Ümumi məbləğ": [umumi_mebleg]
+            "Məbləğ": [mebleg_final]
         }
         df_new = pd.DataFrame(new_data)
 
@@ -169,4 +184,4 @@ if admin_username == "admin" and admin_password == "admin":
 
 else:
     if admin_username or admin_password:
-        st.error("İstifadəçi adı və ya şifrə yalnışdır!")
+        st.error("İstifadəçi adı və ya şifrə yalnışdır.")
