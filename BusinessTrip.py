@@ -61,7 +61,7 @@ destination = ""
 mebleg = 0
 
 if ezam_tip == "Ölkə daxili":
-    st.subheader("🏙️ Marşrut seçimi")
+    st.subheader(" Marşrut seçimi")
     hardan = st.selectbox("Haradan ezam olunursunuz?", seherler, index=seherler.index("Bakı"))
     haraya_secim = [s for s in seherler if s != hardan]
     haraya = st.selectbox("Haraya ezam olunursunuz?", haraya_secim)
@@ -92,7 +92,7 @@ else:
     }
     mebleg = amount_map.get(destination, 0)
 
-st.subheader("📅 Ezamiyyət dövrü")
+st.subheader(" Ezamiyyət dövrü")
 baslama_tarixi = st.date_input("Başlanğıc tarixi")
 bitme_tarixi = st.date_input("Bitmə tarixi")
 
@@ -103,8 +103,8 @@ if st.button(" Ödəniləcək məbləği göstər və yadda saxla"):
         st.error("Bitmə tarixi başlanğıc tarixindən kiçik ola bilməz!")
     else:
         indiki_vaxt = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        st.success(f"👤 {ad} {soyad} {ata_adi} üçün ezamiyyət məbləği: **{mebleg} AZN**")
-        st.info(f"🕒 Məlumat daxil edilmə vaxtı: {indiki_vaxt}")
+        st.success(f" {ad} {soyad} {ata_adi} üçün ezamiyyət məbləği: **{mebleg} AZN**")
+        st.info(f" Məlumat daxil edilmə vaxtı: {indiki_vaxt}")
 
         new_data = {
             "Tarix": [indiki_vaxt],
