@@ -2,75 +2,14 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from io import BytesIO
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.application import MIMEApplication
 import requests
-
-# Telegram parametrləri
-TELEGRAM_BOT_TOKEN = "SENIN_BOT_TOKENIN"
-TELEGRAM_CHAT_ID = "SENIN_CHAT_ID"
-
-def send_telegram_message(text):
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": text,
-        "parse_mode": "HTML"
-    }
-    try:
-        response = requests.post(url, data=payload)
-        if response.status_code == 200:
-            return True
-        else:
-            st.warning(f"Telegram mesajı göndərilə bilmədi. Status kodu: {response.status_code}")
-            return False
-    except Exception as e:
-        st.warning(f"Telegram mesajı göndərərkən xəta: {e}")
-        return False
-
-# Email göndərmə funksiyası (SMTP parametrləri dəyişdirilməlidir)
-def send_email(receiver_email, subject, body, attachment=None, attachment_name=None):
-    sender_email = "sənin_emailin@example.com"
-    sender_password = "sənin_email_password"
-
-    msg = MIMEMultipart()
-    msg['From'] = sender_email
-    msg['To'] = receiver_email
-    msg['Subject'] = subject
-
-    msg.attach(MIMEText(body, "plain"))
-
-    if attachment and attachment_name:
-        part = MIMEApplication(attachment.getvalue(), Name=attachment_name)
-        part['Content-Disposition'] = f'attachment; filename="{attachment_name}"'
-        msg.attach(part)
-
-    try:
-        with smtplib.SMTP_SSL('smtp.example.com', 465) as server:
-            server.login(sender_email, sender_password)
-            server.send_message(msg)
-        return True
-    except Exception as e:
-        st.error(f"Email göndərilərkən xəta baş verdi: {e}")
-        return False
-
 
 st.set_page_config(page_title="Ezamiyyət hesablayıcı", page_icon="✈️")
 
 st.title("✈️ Ezamiyyət Məlumat Forması")
 
-# Şəxsi məlumatlar
-st.subheader("👤 Şəxsi məlumatlar")
-ad = st.text_input("Ad")
-soyad = st.text_input("Soyad")
-ata_adi = st.text_input("Ata adı")
-email = st.text_input("Email ünvanı (nəticə bu ünvana göndəriləcək)")
-
-# Şöbə seçimi
-st.subheader("🏢 Şöbə seçimi")
-sobe = st.selectbox("Hansə şöbədə işləyirsiniz?", [
+# Şöbələr tam siyahısı
+sobeler = [
     "Statistika işlərinin əlaqələndirilməsi və strateji planlaşdırma şöbəsi",
     "Keyfiyyətin idarə edilməsi və metaməlumatlar şöbəsi",
     "Milli hesablar və makroiqtisadi göstəricilər statistikası şöbəsi",
@@ -94,18 +33,30 @@ sobe = st.selectbox("Hansə şöbədə işləyirsiniz?", [
     "Rejim və məxfi kargüzarlıq şöbəsi",
     "Elmi - Tədqiqat və Statistik İnnovasiyalar Mərkəzi",
     "Yerli statistika orqanları"
-])
+]
 
-# Vəzifə seçimi
-st.subheader("💼 Vəzifə seçimi")
-vezife = st.selectbox("Vəzifəniz", [
+vezifeler = [
     "Kiçik mütəxəssis",
-    "Mütəxəssis",
     "Baş mütəxəssis",
     "Şöbə müdiri",
-    "Baş mütəxəssis köməkçisi",
-    "Müdir müavini"
-])
+    "Mühasib",
+    "Analitik",
+    "Mütəxəssis",
+]
+
+# İstifadəçi məlumatları
+st.subheader("👤 Şəxsi məlumatlar")
+ad = st.text_input("Ad")
+soyad = st.text_input("Soyad")
+ata_adi = st.text_input("Ata adı")
+email = st.text_input("Email ünvanı (bildiriş üçün)")
+
+# Şöbə seçimi
+st.subheader("🏢 Şöbə seçimi")
+sobe = st.selectbox("Hansə şöbədə işləyirsiniz?", sobeler)
+
+# Vəzifə seçimi
+vezife = st.selectbox("Vəzifəniz nədir?", vezifeler)
 
 # Ezamiyyət tipi
 st.subheader("🧳 Ezamiyyət növü")
@@ -142,6 +93,18 @@ bitme_tarixi = st.date_input("Bitmə tarixi")
 
 mebleg = amount_map.get(destination, 0)
 
+# Telegram Bot Parametrləri
+TELEGRAM_BOT_TOKEN = "BOT_TOKENUNUZU_BURAYA_YAZIN"
+TELEGRAM_CHAT_ID = "CHAT_ID_NIZI_BURAYA_YAZIN"
+
+def telegram_bildiris_gonder(metin):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    data = {"chat_id": TELEGRAM_CHAT_ID, "text": metin}
+    try:
+        requests.post(url, data=data)
+    except Exception as e:
+        st.error(f"Telegram bildirişi göndərilərkən xəta baş verdi: {e}")
+
 if st.button("💰 Ödəniləcək məbləği göstər və yadda saxla"):
     if not (ad and soyad and ata_adi and email):
         st.error("Zəhmət olmasa, ad, soyad, ata adı və email daxil edin!")
@@ -152,6 +115,7 @@ if st.button("💰 Ödəniləcək məbləği göstər və yadda saxla"):
         st.success(f"👤 {ad} {soyad} {ata_adi} üçün ezamiyyət məbləği: **{mebleg} AZN**")
         st.info(f"🕒 Məlumat daxil edilmə vaxtı: {indiki_vaxt}")
 
+        # Məlumatı CSV-ə əlavə et
         new_data = {
             "Tarix": [indiki_vaxt],
             "Ad": [ad],
@@ -177,55 +141,49 @@ if st.button("💰 Ödəniləcək məbləği göstər və yadda saxla"):
         df_combined.to_csv("ezamiyyet_melumatlari.csv", index=False)
         st.info("📁 Məlumat uğurla yadda saxlanıldı!")
 
-        # Excel faylı hazırla
+        # Telegrama bildiriş göndər
+        bildiris_metin = (f"✈️ Yeni ezamiyyət məlumatı daxil edildi:\n"
+                          f"👤 {ad} {soyad} {ata_adi}\n"
+                          f"📧 Email: {email}\n"
+                          f"🏢 Şöbə: {sobe}\n"
+                          f"💼 Vəzifə: {vezife}\n"
+                          f"🧳 Ezamiyyət növü: {ezam_tip}\n"
+                          f"📍 Yön: {destination}\n"
+                          f"📅 Dövr: {baslama_tarixi} - {bitme_tarixi}\n"
+                          f"💰 Məbləğ: {mebleg} AZN")
+        telegram_bildiris_gonder(bildiris_metin)
+
+# Excel faylının yüklənməsi üçün ayrıca bölmə
+st.subheader("📥 Excel faylını yüklə")
+
+if st.button("Excel faylını hazırla və yüklə"):
+    if not (ad and soyad and ata_adi):
+        st.error("Excel faylı yaratmaq üçün əvvəlcə ad, soyad və ata adını daxil edin!")
+    else:
+        data = {
+            "Ad": [ad],
+            "Soyad": [soyad],
+            "Ata adı": [ata_adi],
+            "Email": [email],
+            "Şöbə": [sobe],
+            "Vəzifə": [vezife],
+            "Ezamiyyət növü": [ezam_tip],
+            "Yön": [destination],
+            "Başlanğıc tarixi": [baslama_tarixi.strftime("%Y-%m-%d")],
+            "Bitmə tarixi": [bitme_tarixi.strftime("%Y-%m-%d")],
+            "Məbləğ (AZN)": [mebleg]
+        }
+        df = pd.DataFrame(data)
+
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            df_new.to_excel(writer, index=False, sheet_name='Ezamiyyət')
+            df.to_excel(writer, index=False, sheet_name='Ezamiyyət')
             writer.save()
-        output.seek(0)
+            processed_data = output.getvalue()
 
-        fayl_adi = f"{ad}_{soyad}_ezamiyyet.xlsx"
-
-        email_subject = "Ezamiyyət Məlumatlarınız"
-        email_body = f"""
-Salam {ad} {soyad},
-
-Sizin üçün aşağıdakı ezamiyyət məbləği hesablanmışdır:
-
-Məbləğ: {mebleg} AZN
-Ezamiyyət növü: {ezam_tip}
-Yön: {destination}
-Dövr: {baslama_tarixi.strftime('%Y-%m-%d')} - {bitme_tarixi.strftime('%Y-%m-%d')}
-
-Hörmətlə,
-Ezamiyyət Hesablayıcı
-"""
-
-        email_gonderildi = send_email(email, email_subject, email_body, attachment=output, attachment_name=fayl_adi)
-
-        if email_gonderildi:
-            st.success(f"{email} ünvanına email göndərildi!")
-        else:
-            st.error("Email göndərilə bilmədi!")
-
-        # Telegrama bildiriş
-        telegram_message = (
-            f"<b>Yeni ezamiyyət məlumatı daxil edildi</b>\n"
-            f"👤 İstifadəçi: {ad} {soyad}\n"
-            f"📧 Email: {email}\n"
-            f"🏢 Şöbə: {sobe}\n"
-            f"💼 Vəzifə: {vezife}\n"
-            f"🧳 Ezamiyyət növü: {ezam_tip}\n"
-            f"➡️ Yön: {destination}\n"
-            f"📅 Dövr: {baslama_tarixi.strftime('%Y-%m-%d')} - {bitme_tarixi.strftime('%Y-%m-%d')}\n"
-            f"💰 Məbləğ: {mebleg} AZN"
+        st.download_button(
+            label="Excel faylını yüklə",
+            data=processed_data,
+            file_name=f"ezamiyyet_{ad}_{soyad}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-        send_telegram_message(telegram_message)
-
-# Admin üçün məlumatların göstərilməsi
-with st.expander("📊 Girişləri göstər (admin görünüşü)"):
-    try:
-        df = pd.read_csv("ezamiyyet_melumatlari.csv")
-        st.dataframe(df)
-    except FileNotFoundError:
-        st.info("Hələ məlumat bazası boşdur.")
