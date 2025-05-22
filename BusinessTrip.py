@@ -22,6 +22,18 @@ sobe = st.selectbox("Hansə şöbədə işləyirsiniz?", [
     "Maliyyə", "İT", "HR", "Satış", "Marketinq"
 ])
 
+# **Sektor seçimi əlavə edildi**
+st.subheader("🏢 Sektor seçimi")
+sektor = st.selectbox("Sektor seçin", [
+    "Maliyyə", "İT", "HR", "Satış", "Marketinq"
+])
+
+# **Vəzifə seçimi əlavə edildi**
+st.subheader("👔 Vəzifə seçimi")
+vezife = st.selectbox("Vəzifəniz nədir?", [
+    "Kiçik mütəxəssis", "Baş mütəxəssis", "Menecer", "Direktor"
+])
+
 # Ezamiyyət tipi
 st.subheader("🧳 Ezamiyyət növü")
 ezam_tip = st.radio("Ezamiyyət ölkə daxili, yoxsa ölkə xaricidir?", ["Ölkə daxili", "Ölkə xarici"])
@@ -88,7 +100,7 @@ if st.button("💰 Ödəniləcək məbləği göstər, yadda saxla və göndər"
         st.success(f"👤 {ad} {soyad} {ata_adi} üçün ezamiyyət məbləği: **{mebleg} AZN**")
         st.info(f"🕒 Məlumat daxil edilmə vaxtı: {indiki_vaxt}")
 
-        # Məlumat çərçivəsi
+        # Məlumat çərçivəsi (Sektor və Vəzifə əlavə edildi)
         data = {
             "Tarix": [indiki_vaxt],
             "Ad": [ad],
@@ -96,6 +108,8 @@ if st.button("💰 Ödəniləcək məbləği göstər, yadda saxla və göndər"
             "Ata adı": [ata_adi],
             "Email": [email],
             "Şöbə": [sobe],
+            "Sektor": [sektor],
+            "Vəzifə": [vezife],
             "Ezamiyyət növü": [ezam_tip],
             "Yön": [destination],
             "Başlanğıc tarixi": [baslama_tarixi.strftime("%Y-%m-%d")],
