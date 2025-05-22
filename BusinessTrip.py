@@ -188,17 +188,21 @@ if st.button("Excel faylını hazırla və yüklə"):
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
-# --- Admin bölməsi: daxil edilmiş məlumatların siyahısı ---
+
+
+# admin girisi hissesi 
 st.subheader("🔒 Admin bölməsi: Daxil edilmiş məlumatların siyahısı")
 
+admin_username = st.text_input("Admin istifadəçi adı daxil edin")
 admin_password = st.text_input("Admin şifrəni daxil edin", type="password")
 
-if admin_password == "sizinSifreniz123":  # İstədiyin şifrəni buraya yaz
+# Sadə olaraq birləşdirilmiş yoxlama:
+if admin_username == "admin" and admin_password == "sizinSifreniz123":
     try:
         df_admin = pd.read_csv("ezamiyyet_melumatlari.csv")
         st.dataframe(df_admin)
     except FileNotFoundError:
         st.warning("Hələ heç bir məlumat daxil edilməyib.")
 else:
-    if admin_password:
-        st.error("Yanlış şifrə!")
+    if admin_username or admin_password:  # Hər hansı biri daxil edilibsə
+        st.error("İstifadəçi adı və ya şifrə yalnışdır!")
