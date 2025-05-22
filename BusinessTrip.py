@@ -4,10 +4,19 @@ from datetime import datetime
 import plotly.express as px
 from io import BytesIO
 
-# ============================== GİRİŞ QUTUSU ==============================
+# 1. ƏN YUXARIDA PAGE CONFIG
+st.set_page_config(
+    page_title="Ezamiyyət İdarəetmə Sistemi",
+    page_icon="✈️",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# 2. GİRİŞ QUTUSU
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
+# Giriş üçün CSS
 st.markdown("""
 <style>
     .login-box {
@@ -29,7 +38,9 @@ if not st.session_state.logged_in:
     with st.container():
         st.markdown('<div class="login-box"><div class="login-header"><h2>🔐 Sistemə Giriş</h2></div>', unsafe_allow_html=True)
         
-        access_code = st.text_input("Giriş kodu", type="password", label_visibility="collapsed", placeholder="Giriş kodunu daxil edin...")
+        access_code = st.text_input("Giriş kodu", type="password", 
+                                  label_visibility="collapsed", 
+                                  placeholder="Giriş kodunu daxil edin...")
         
         cols = st.columns([1,2,1])
         with cols[1]:
@@ -41,6 +52,57 @@ if not st.session_state.logged_in:
                     st.error("Yanlış giriş kodu!")
         st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
+
+# 3. ƏSAS TƏRTİBAT VƏ QALAN KODLAR
+st.markdown("""
+<style>
+    :root {
+        --primary-color: #6366f1;
+        --secondary-color: #8b5cf6;
+        --background-color: #ffffff;
+    }
+    
+    .main-header {
+        text-align: center;
+        padding: 2rem 1rem;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        margin: -1rem -1rem 2rem -1rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-radius: 0 0 20px 20px;
+    }
+    
+    .section-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white!important;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin: 1.5rem 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-left: none;
+    }
+    
+    .stButton>button {
+        border-radius: 8px!important;
+        padding: 0.5rem 1.5rem!important;
+        transition: all 0.3s ease!important;
+        border: 1px solid var(--primary-color)!important;
+        background: var(--secondary-color)!important;
+        color: white!important;
+    }
+    
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(99,102,241,0.3)!important;
+        background: var(--primary-color)!important;
+    }
+    
+    .dataframe {
+        border-radius: 12px!important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05)!important;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # ============================== SƏHİFƏ KONFİQURASİYASI ==============================
 st.set_page_config(
