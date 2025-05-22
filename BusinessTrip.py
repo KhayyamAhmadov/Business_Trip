@@ -4,7 +4,7 @@ from datetime import datetime
 
 st.set_page_config(page_title="Ezamiyyət hesablayıcı", page_icon="✈️")
 
-st.title(" Ezamiyyət Məlumat Forması")
+st.title("✈️ Ezamiyyət Məlumat Forması")
 
 sobeler = [
     "Statistika işlərinin əlaqələndirilməsi və strateji planlaşdırma şöbəsi",
@@ -46,27 +46,26 @@ seherler = [
     "Zəngilan", "Zərdab"
 ]
 
-st.subheader(" Şəxsi məlumatlar")
+st.subheader("👤 Şəxsi məlumatlar")
 ad = st.text_input("Ad")
 soyad = st.text_input("Soyad")
 ata_adi = st.text_input("Ata adı")
 
-st.subheader(" Şöbə seçimi")
+st.subheader("🏢 Şöbə seçimi")
 sobe = st.selectbox("Hansə şöbədə işləyirsiniz?", sobeler)
 
-st.subheader(" Ezamiyyət növü")
+st.subheader("🧳 Ezamiyyət növü")
 ezam_tip = st.radio("Ezamiyyət ölkə daxili, yoxsa ölkə xaricidir?", ["Ölkə daxili", "Ölkə xarici"])
 
 destination = ""
 mebleg = 0
 
 if ezam_tip == "Ölkə daxili":
-    st.subheader(" Marşrut seçimi")
+    st.subheader("🏙️ Marşrut seçimi")
     hardan = st.selectbox("Haradan ezam olunursunuz?", seherler, index=seherler.index("Bakı"))
     haraya_secim = [s for s in seherler if s != hardan]
     haraya = st.selectbox("Haraya ezam olunursunuz?", haraya_secim)
 
-    # Məbləğləri marşrutlara görə müəyyən edək (nümunə üçün bəzi əsas marşrutlar)
     amount_map = {
         ("Bakı", "Gəncə"): 100,
         ("Bakı", "Şəki"): 90,
@@ -74,7 +73,6 @@ if ezam_tip == "Ölkə daxili":
         ("Bakı", "Sumqayıt"): 50,
     }
 
-    # Güzəştlər əks istiqamət üçün də işləsin deyə
     mebleg = amount_map.get((hardan, haraya)) or amount_map.get((haraya, hardan)) or 0
 
     destination = f"{hardan} - {haraya}"
@@ -92,19 +90,30 @@ else:
     }
     mebleg = amount_map.get(destination, 0)
 
-st.subheader(" Ezamiyyət dövrü")
+st.subheader("💳 Ödəniş növü seçimi")
+odenis_novu = st.selectbox("Ödəniş seçin:", ["Ödənişsiz", "10% ödəniş edilərək", "Tam ödəniş"])
+
+# Ödənişə görə məbləği hesablamaq
+if odenis_novu == "Ödənişsiz":
+    umumi_mebleg = 0
+elif odenis_novu == "10% ödəniş edilərək":
+    umumi_mebleg = mebleg * 0.10
+else:  # Tam ödəniş
+    umumi_mebleg = mebleg
+
+st.subheader("📅 Ezamiyyət dövrü")
 baslama_tarixi = st.date_input("Başlanğıc tarixi")
 bitme_tarixi = st.date_input("Bitmə tarixi")
 
-if st.button(" Ödəniləcək məbləği göstər və yadda saxla"):
+if st.button("💰 Ödəniləcək məbləği göstər və yadda saxla"):
     if not (ad and soyad and ata_adi):
         st.error("Zəhmət olmasa, ad, soyad və ata adını daxil edin!")
     elif bitme_tarixi < baslama_tarixi:
         st.error("Bitmə tarixi başlanğıc tarixindən kiçik ola bilməz!")
     else:
         indiki_vaxt = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        st.success(f" {ad} {soyad} {ata_adi} üçün ezamiyyət məbləği: **{mebleg} AZN**")
-        st.info(f" Məlumat daxil edilmə vaxtı: {indiki_vaxt}")
+        st.success(f"👤 {ad} {soyad} {ata_adi} üçün ezamiyyət məbləği: **{umumi_mebleg:.2f} AZN** (Seçilmiş ödəniş növü: {odenis_novu})")
+        st.info(f"🕒 Məlumat daxil edilmə vaxtı: {indiki_vaxt}")
 
         new_data = {
             "Tarix": [indiki_vaxt],
@@ -116,7 +125,9 @@ if st.button(" Ödəniləcək məbləği göstər və yadda saxla"):
             "Yön": [destination],
             "Başlanğıc tarixi": [baslama_tarixi.strftime("%Y-%m-%d")],
             "Bitmə tarixi": [bitme_tarixi.strftime("%Y-%m-%d")],
-            "Məbləğ": [mebleg]
+            "Əsas məbləğ": [mebleg],
+            "Ödəniş növü": [odenis_novu],
+            "Ümumi məbləğ": [umumi_mebleg]
         }
         df_new = pd.DataFrame(new_data)
 
@@ -127,11 +138,11 @@ if st.button(" Ödəniləcək məbləği göstər və yadda saxla"):
             df_combined = df_new
 
         df_combined.to_csv("ezamiyyet_melumatlari.csv", index=False)
-        st.info(" Məlumat uğurla yadda saxlanıldı.")
+        st.info("📁 Məlumat uğurla yadda saxlanıldı.")
 
 
 # admin girisi hissesi 
-st.subheader("Admin bölməsi")
+st.subheader("🔒 Admin bölməsi: Daxil edilmiş məlumatların siyahısı")
 
 admin_username = st.text_input("Admin istifadəçi adı daxil edin")
 admin_password = st.text_input("Admin şifrəni daxil edin", type="password")
