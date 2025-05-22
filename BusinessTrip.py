@@ -157,7 +157,7 @@ if st.button("💰 Ödəniləcək məbləği göstər"):
 
 
 # admin girisi hissesi 
-st.subheader("🔒 Admin bölməsi: Daxil edilmiş məlumatların siyahısı")
+st.subheader("🔒 Admin bölməsi")
 
 admin_username = st.text_input("Admin istifadəçi adı daxil edin")
 admin_password = st.text_input("Admin şifrəni daxil edin", type="password")
