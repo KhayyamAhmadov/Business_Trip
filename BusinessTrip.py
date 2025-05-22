@@ -4,7 +4,7 @@ from datetime import datetime
 
 st.set_page_config(page_title="Ezamiyyət hesablayıcı", page_icon="✈️")
 
-st.title("✈ Ezamiyyət Məlumat Forması")
+st.title(" Ezamiyyət Məlumat Forması")
 
 sobeler = [
     "Statistika işlərinin əlaqələndirilməsi və strateji planlaşdırma şöbəsi",
