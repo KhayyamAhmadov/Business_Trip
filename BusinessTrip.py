@@ -195,7 +195,7 @@ st.subheader("🔒 Admin bölməsi: Daxil edilmiş məlumatların siyahısı")
 admin_username = st.text_input("Admin istifadəçi adı daxil edin")
 admin_password = st.text_input("Admin şifrəni daxil edin", type="password")
 
-if admin_username == "admin" and admin_password == "sizinSifreniz123":
+if admin_username == "admin" and admin_password == "admin":
     try:
         df_admin = pd.read_csv("ezamiyyet_melumatlari.csv")
         st.dataframe(df_admin)
