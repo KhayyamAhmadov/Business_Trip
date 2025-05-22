@@ -5,14 +5,14 @@ import plotly.express as px
 import plotly.graph_objects as go
 from io import BytesIO
 
-# Page configuration
+# Sayfa konfigürasyonu
 st.set_page_config(
     page_title="Ezamiyyət Hesablayıcı", 
     page_icon="✈️",
     layout="wide"
 )
 
-# CSS for better styling
+# CSS stil düzenlemeleri
 st.markdown("""
 <style>
     .main-header {
@@ -39,7 +39,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Constants
+# Sabitler
 DEPARTMENTS = [
     "Statistika işlərinin əlaqələndirilməsi və strateji planlaşdırma şöbəsi",
     "Keyfiyyətin idarə edilməsi və metaməlumatlar şöbəsi",
@@ -106,15 +106,15 @@ DOMESTIC_ROUTES = {
 }
 
 def calculate_domestic_amount(from_city, to_city):
-    """Calculate domestic trip allowance"""
+    """Yerli ezamiyyət məbləğini hesablayır"""
     return DOMESTIC_ROUTES.get((from_city, to_city)) or DOMESTIC_ROUTES.get((to_city, from_city)) or 70
 
 def calculate_days(start_date, end_date):
-    """Calculate number of days between two dates"""
+    """Tarixlər arası gün sayını hesablayır"""
     return (end_date - start_date).days + 1
 
 def save_trip_data(data):
-    """Save trip data to CSV file"""
+    """Məlumatları CSV faylına yadda saxlayır"""
     df_new = pd.DataFrame([data])
     
     try:
@@ -127,16 +127,20 @@ def save_trip_data(data):
     return df_combined
 
 def load_trip_data():
-    """Load trip data from CSV file"""
+    """CSV faylından məlumatları yükləyir"""
     try:
-        return pd.read_csv("ezamiyyet_melumatlari.csv")
+        df = pd.read_csv("ezamiyyet_melumatlari.csv")
+        # Köhnə versiyalar üçün uyğunlaşdırma
+        if 'Ümumi məbləğ' not in df.columns:
+            df['Ümumi məbləğ'] = 0
+        return df
     except FileNotFoundError:
         return pd.DataFrame()
 
-# Main header
+# Başlıq
 st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət Hesablayıcı</h1><p>Azərbaycan Respublikası Dövlət Statistika Komitəsi</p></div>', unsafe_allow_html=True)
 
-# Create tabs for better organization
+# Tablar
 tab1, tab2, tab3 = st.tabs(["📝 Yeni Ezamiyyət", "📊 Statistika", "🔒 Admin Panel"])
 
 with tab1:
@@ -197,7 +201,7 @@ with tab1:
             st.metric("Ümumi məbləğ", f"{total_amount} AZN")
             
             if trip_type == "Ölkə xarici":
-                usd_amount = total_amount / 1.7  # Approximate exchange rate
+                usd_amount = total_amount / 1.7
                 st.metric("USD ilə", f"${usd_amount:.2f}")
         
         if st.button("💾 Yadda Saxla", type="primary", use_container_width=True):
@@ -244,31 +248,34 @@ with tab2:
             international_trips = len(df[df['Ezamiyyət növü'] == 'Ölkə xarici'])
             st.metric("Xarici ezamiyyət", international_trips)
         with col_stats4:
-            total_amount = df['Ümumi məbləğ'].sum()
+            total_amount = df.get('Ümumi məbləğ', pd.Series([0]*len(df))).sum()
             st.metric("Ümumi xərc", f"{total_amount:,.0f} AZN")
         
         col_chart1, col_chart2 = st.columns(2)
         
         with col_chart1:
-            # Trip type distribution
             trip_counts = df['Ezamiyyət növü'].value_counts()
             fig_pie = px.pie(values=trip_counts.values, names=trip_counts.index, 
                            title="Ezamiyyət Növləri")
             st.plotly_chart(fig_pie, use_container_width=True)
             
         with col_chart2:
-            # Monthly trend
             df['Ay'] = pd.to_datetime(df['Tarix']).dt.to_period('M')
             monthly_trips = df.groupby('Ay').size()
             fig_line = px.line(x=monthly_trips.index.astype(str), y=monthly_trips.values, 
                              title="Aylıq Ezamiyyət Sayı")
             st.plotly_chart(fig_line, use_container_width=True)
         
-        # Department statistics
-        dept_stats = df.groupby('Şöbə').agg({
-            'Ümumi məbləğ': 'sum',
-            'Ad': 'count'
-        }).rename(columns={'Ad': 'Ezamiyyət sayı'}).sort_values('Ümumi məbləğ', ascending=False)
+        if 'Ümumi məbləğ' in df.columns:
+            dept_stats = df.groupby('Şöbə').agg({
+                'Ümumi məbləğ': 'sum',
+                'Ad': 'count'
+            }).rename(columns={'Ad': 'Ezamiyyət sayı'}).sort_values('Ümumi məbləğ', ascending=False)
+        else:
+            dept_stats = df.groupby('Şöbə').agg({
+                'Ad': 'count'
+            }).rename(columns={'Ad': 'Ezamiyyət sayı'})
+            dept_stats['Ümumi məbləğ'] = 0
         
         st.subheader("Şöbələr üzrə statistika")
         st.dataframe(dept_stats, use_container_width=True)
@@ -296,23 +303,20 @@ with tab3:
                 st.subheader("📋 Bütün Ezamiyyət Məlumatları")
                 st.dataframe(df_admin, use_container_width=True)
                 
-                # Export options
                 col_export1, col_export2 = st.columns(2)
                 
                 with col_export1:
-                    # Excel export
                     output = BytesIO()
                     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                         df_admin.to_excel(writer, index=False, sheet_name='Ezamiyyət Məlumatları')
                         
-                        # Add a summary sheet
                         summary_data = {
                             'Statistika': ['Ümumi ezamiyyət sayı', 'Daxili ezamiyyət', 'Xarici ezamiyyət', 'Ümumi xərc (AZN)'],
                             'Dəyər': [
                                 len(df_admin),
                                 len(df_admin[df_admin['Ezamiyyət növü'] == 'Ölkə daxili']),
                                 len(df_admin[df_admin['Ezamiyyət növü'] == 'Ölkə xarici']),
-                                df_admin['Ümumi məbləğ'].sum()
+                                df_admin.get('Ümumi məbləğ', pd.Series([0]*len(df_admin))).sum()
                             ]
                         }
                         pd.DataFrame(summary_data).to_excel(writer, index=False, sheet_name='Statistika')
@@ -327,7 +331,6 @@ with tab3:
                     )
                 
                 with col_export2:
-                    # CSV export
                     csv_data = df_admin.to_csv(index=False).encode('utf-8')
                     st.download_button(
                         label="📄 CSV Yüklə",
@@ -336,16 +339,14 @@ with tab3:
                         mime="text/csv"
                     )
                 
-                # Delete specific records
-                st.subheader("🗑️ Qeyd Silmə")
-                if st.checkbox("Qeyd silmə rejimini aktiv et"):
+                if st.checkbox("🗑️ Qeyd silmə rejimini aktiv et"):
                     selected_indices = st.multiselect(
                         "Silinəcək qeydləri seçin:",
                         options=df_admin.index,
                         format_func=lambda x: f"{df_admin.loc[x, 'Ad']} {df_admin.loc[x, 'Soyad']} - {df_admin.loc[x, 'Marşrut']}"
                     )
                     
-                    if selected_indices and st.button("🗑️ Seçilmiş qeydləri sil", type="secondary"):
+                    if selected_indices and st.button("Seçilmiş qeydləri sil", type="secondary"):
                         df_admin_filtered = df_admin.drop(selected_indices)
                         df_admin_filtered.to_csv("ezamiyyet_melumatlari.csv", index=False)
                         st.success(f"✅ {len(selected_indices)} qeyd silindi!")
