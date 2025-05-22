@@ -32,12 +32,13 @@ st.markdown("""
     }
     
     .section-header {
-        background: var(--background-color);
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white!important;
         padding: 1.5rem;
         border-radius: 12px;
         margin: 1.5rem 0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        border-left: 4px solid var(--primary-color);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-left: none;
     }
     
     .stButton>button {
@@ -45,11 +46,14 @@ st.markdown("""
         padding: 0.5rem 1.5rem!important;
         transition: all 0.3s ease!important;
         border: 1px solid var(--primary-color)!important;
+        background: var(--secondary-color)!important;
+        color: white!important;
     }
     
     .stButton>button:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 6px rgba(99,102,241,0.3)!important;
+        background: var(--primary-color)!important;
     }
     
     .dataframe {
