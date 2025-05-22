@@ -66,15 +66,17 @@ if ezam_tip == "Ölkə daxili":
     haraya_secim = [s for s in seherler if s != hardan]
     haraya = st.selectbox("Haraya ezam olunursunuz?", haraya_secim)
 
-    # Məbləğləri marşrutlara görə müəyyən edək (burada nümunə üçün bəzi əsas marşrutlar)
+    # Məbləğləri marşrutlara görə müəyyən edək (nümunə üçün bəzi əsas marşrutlar)
     amount_map = {
         ("Bakı", "Gəncə"): 100,
         ("Bakı", "Şəki"): 90,
         ("Bakı", "Lənkəran"): 80,
         ("Bakı", "Sumqayıt"): 50,
-        # digər marşrutlar üçün 0 qoyulur
     }
-    mebleg = amount_map.get((hardan, haraya), 0)
+
+    # Güzəştlər əks istiqamət üçün də işləsin deyə
+    mebleg = amount_map.get((hardan, haraya)) or amount_map.get((haraya, hardan)) or 0
+
     destination = f"{hardan} - {haraya}"
 
 else:
