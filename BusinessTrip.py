@@ -3,35 +3,108 @@ import pandas as pd
 from datetime import datetime
 from io import BytesIO
 import smtplib
-from email.message import EmailMessage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
+import requests
+
+# Telegram parametrləri
+TELEGRAM_BOT_TOKEN = "SENIN_BOT_TOKENIN"
+TELEGRAM_CHAT_ID = "SENIN_CHAT_ID"
+
+def send_telegram_message(text):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": text,
+        "parse_mode": "HTML"
+    }
+    try:
+        response = requests.post(url, data=payload)
+        if response.status_code == 200:
+            return True
+        else:
+            st.warning(f"Telegram mesajı göndərilə bilmədi. Status kodu: {response.status_code}")
+            return False
+    except Exception as e:
+        st.warning(f"Telegram mesajı göndərərkən xəta: {e}")
+        return False
+
+# Email göndərmə funksiyası (SMTP parametrləri dəyişdirilməlidir)
+def send_email(receiver_email, subject, body, attachment=None, attachment_name=None):
+    sender_email = "sənin_emailin@example.com"
+    sender_password = "sənin_email_password"
+
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = receiver_email
+    msg['Subject'] = subject
+
+    msg.attach(MIMEText(body, "plain"))
+
+    if attachment and attachment_name:
+        part = MIMEApplication(attachment.getvalue(), Name=attachment_name)
+        part['Content-Disposition'] = f'attachment; filename="{attachment_name}"'
+        msg.attach(part)
+
+    try:
+        with smtplib.SMTP_SSL('smtp.example.com', 465) as server:
+            server.login(sender_email, sender_password)
+            server.send_message(msg)
+        return True
+    except Exception as e:
+        st.error(f"Email göndərilərkən xəta baş verdi: {e}")
+        return False
+
 
 st.set_page_config(page_title="Ezamiyyət hesablayıcı", page_icon="✈️")
 
 st.title("✈️ Ezamiyyət Məlumat Forması")
 
-# İstifadəçi məlumatları
+# Şəxsi məlumatlar
 st.subheader("👤 Şəxsi məlumatlar")
 ad = st.text_input("Ad")
 soyad = st.text_input("Soyad")
 ata_adi = st.text_input("Ata adı")
-email = st.text_input("Email ünvanı")
+email = st.text_input("Email ünvanı (nəticə bu ünvana göndəriləcək)")
 
 # Şöbə seçimi
 st.subheader("🏢 Şöbə seçimi")
 sobe = st.selectbox("Hansə şöbədə işləyirsiniz?", [
-    "Maliyyə", "İT", "HR", "Satış", "Marketinq"
+    "Statistika işlərinin əlaqələndirilməsi və strateji planlaşdırma şöbəsi",
+    "Keyfiyyətin idarə edilməsi və metaməlumatlar şöbəsi",
+    "Milli hesablar və makroiqtisadi göstəricilər statistikası şöbəsi",
+    "Kənd təsərrüfatı statistikası şöbəsi",
+    "Sənaye və tikinti statistikası şöbəsi",
+    "Energetika və ətraf mühit statistikası şöbəsi",
+    "Ticarət statistikası şöbəsi",
+    "Sosial statistika şöbəsi",
+    "Xidmət statistikası şöbəsi",
+    "Əmək statistikası şöbəsi",
+    "Qiymət statistikası şöbəsi",
+    "Əhali statistikası şöbəsi",
+    "Həyat keyfiyyətinin statistikası şöbəsi",
+    "Dayanıqlı inkişaf statistikası şöbəsi",
+    "İnformasiya texnologiyaları şöbəsi",
+    "İnformasiya və ictimaiyyətlə əlaqələr şöbəsi",
+    "Beynəlxalq əlaqələr şöbəsi",
+    "İnsan resursları və hüquq şöbəsi",
+    "Maliyyə və təsərrüfat şöbəsi",
+    "Ümumi şöbə",
+    "Rejim və məxfi kargüzarlıq şöbəsi",
+    "Elmi - Tədqiqat və Statistik İnnovasiyalar Mərkəzi",
+    "Yerli statistika orqanları"
 ])
 
-# **Sektor seçimi əlavə edildi**
-st.subheader("🏢 Sektor seçimi")
-sektor = st.selectbox("Sektor seçin", [
-    "Maliyyə", "İT", "HR", "Satış", "Marketinq"
-])
-
-# **Vəzifə seçimi əlavə edildi**
-st.subheader("👔 Vəzifə seçimi")
-vezife = st.selectbox("Vəzifəniz nədir?", [
-    "Kiçik mütəxəssis", "Baş mütəxəssis", "Menecer", "Direktor"
+# Vəzifə seçimi
+st.subheader("💼 Vəzifə seçimi")
+vezife = st.selectbox("Vəzifəniz", [
+    "Kiçik mütəxəssis",
+    "Mütəxəssis",
+    "Baş mütəxəssis",
+    "Şöbə müdiri",
+    "Baş mütəxəssis köməkçisi",
+    "Müdir müavini"
 ])
 
 # Ezamiyyət tipi
@@ -69,30 +142,9 @@ bitme_tarixi = st.date_input("Bitmə tarixi")
 
 mebleg = amount_map.get(destination, 0)
 
-def send_email_with_attachment(to_email, subject, body, attachment_data, filename):
-    try:
-        msg = EmailMessage()
-        msg["Subject"] = subject
-        msg["From"] = "sənin_email@gmail.com"
-        msg["To"] = to_email
-        msg.set_content(body)
-
-        msg.add_attachment(attachment_data.read(), maintype='application',
-                           subtype='vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                           filename=filename)
-
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-            smtp.login("sənin_email@gmail.com", "TƏTBİQ_ŞİFRƏSİ")  # App password
-            smtp.send_message(msg)
-
-        return True
-    except Exception as e:
-        st.error(f"E-poçt göndərilərkən xəta baş verdi: {e}")
-        return False
-
-if st.button("💰 Ödəniləcək məbləği göstər, yadda saxla və göndər"):
+if st.button("💰 Ödəniləcək məbləği göstər və yadda saxla"):
     if not (ad and soyad and ata_adi and email):
-        st.error("Zəhmət olmasa, bütün məlumatları doldurun, o cümlədən email!")
+        st.error("Zəhmət olmasa, ad, soyad, ata adı və email daxil edin!")
     elif bitme_tarixi < baslama_tarixi:
         st.error("Bitmə tarixi başlanğıc tarixindən kiçik ola bilməz!")
     else:
@@ -100,15 +152,13 @@ if st.button("💰 Ödəniləcək məbləği göstər, yadda saxla və göndər"
         st.success(f"👤 {ad} {soyad} {ata_adi} üçün ezamiyyət məbləği: **{mebleg} AZN**")
         st.info(f"🕒 Məlumat daxil edilmə vaxtı: {indiki_vaxt}")
 
-        # Məlumat çərçivəsi (Sektor və Vəzifə əlavə edildi)
-        data = {
+        new_data = {
             "Tarix": [indiki_vaxt],
             "Ad": [ad],
             "Soyad": [soyad],
             "Ata adı": [ata_adi],
             "Email": [email],
             "Şöbə": [sobe],
-            "Sektor": [sektor],
             "Vəzifə": [vezife],
             "Ezamiyyət növü": [ezam_tip],
             "Yön": [destination],
@@ -116,37 +166,66 @@ if st.button("💰 Ödəniləcək məbləği göstər, yadda saxla və göndər"
             "Bitmə tarixi": [bitme_tarixi.strftime("%Y-%m-%d")],
             "Məbləğ": [mebleg]
         }
+        df_new = pd.DataFrame(new_data)
 
-        df = pd.DataFrame(data)
-
-        # Excel faylını yadda saxla
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-            df.to_excel(writer, index=False, sheet_name="Ezamiyyət")
-        output.seek(0)
-
-        # Məlumatı CSV faylına əlavə et
         try:
             df_existing = pd.read_csv("ezamiyyet_melumatlari.csv")
-            df_combined = pd.concat([df_existing, df], ignore_index=True)
+            df_combined = pd.concat([df_existing, df_new], ignore_index=True)
         except FileNotFoundError:
-            df_combined = df
+            df_combined = df_new
 
         df_combined.to_csv("ezamiyyet_melumatlari.csv", index=False)
-        st.success("📁 Məlumat yadda saxlanıldı.")
+        st.info("📁 Məlumat uğurla yadda saxlanıldı!")
 
-        # Email göndər
-        subject = "Ezamiyyət məlumat faylınız"
-        body = f"Hörmətli {ad} {soyad},\nEzamiyyət məlumatlarınızı əlavə olunmuş Excel faylında tapa bilərsiniz."
-        success = send_email_with_attachment(email, subject, body, output, f"{ad}_{soyad}.xlsx")
+        # Excel faylı hazırla
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df_new.to_excel(writer, index=False, sheet_name='Ezamiyyət')
+            writer.save()
+        output.seek(0)
 
-        if success:
-            st.success("📧 Email uğurla göndərildi!")
+        fayl_adi = f"{ad}_{soyad}_ezamiyyet.xlsx"
 
-# Admin görünüşü
+        email_subject = "Ezamiyyət Məlumatlarınız"
+        email_body = f"""
+Salam {ad} {soyad},
+
+Sizin üçün aşağıdakı ezamiyyət məbləği hesablanmışdır:
+
+Məbləğ: {mebleg} AZN
+Ezamiyyət növü: {ezam_tip}
+Yön: {destination}
+Dövr: {baslama_tarixi.strftime('%Y-%m-%d')} - {bitme_tarixi.strftime('%Y-%m-%d')}
+
+Hörmətlə,
+Ezamiyyət Hesablayıcı
+"""
+
+        email_gonderildi = send_email(email, email_subject, email_body, attachment=output, attachment_name=fayl_adi)
+
+        if email_gonderildi:
+            st.success(f"{email} ünvanına email göndərildi!")
+        else:
+            st.error("Email göndərilə bilmədi!")
+
+        # Telegrama bildiriş
+        telegram_message = (
+            f"<b>Yeni ezamiyyət məlumatı daxil edildi</b>\n"
+            f"👤 İstifadəçi: {ad} {soyad}\n"
+            f"📧 Email: {email}\n"
+            f"🏢 Şöbə: {sobe}\n"
+            f"💼 Vəzifə: {vezife}\n"
+            f"🧳 Ezamiyyət növü: {ezam_tip}\n"
+            f"➡️ Yön: {destination}\n"
+            f"📅 Dövr: {baslama_tarixi.strftime('%Y-%m-%d')} - {bitme_tarixi.strftime('%Y-%m-%d')}\n"
+            f"💰 Məbləğ: {mebleg} AZN"
+        )
+        send_telegram_message(telegram_message)
+
+# Admin üçün məlumatların göstərilməsi
 with st.expander("📊 Girişləri göstər (admin görünüşü)"):
     try:
         df = pd.read_csv("ezamiyyet_melumatlari.csv")
         st.dataframe(df)
     except FileNotFoundError:
-        st.warning("Heç bir qeyd yoxdur.")
+        st.info("Hələ məlumat bazası boşdur.")
