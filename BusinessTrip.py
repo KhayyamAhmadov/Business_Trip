@@ -776,7 +776,8 @@ with admin_tabs[2]:
     except Exception as e:
         st.error(f"❌ Analitika xətası: {str(e)}")
 
-# 2. MƏLUMAT İDARƏETMƏSİ TAB düzəlişləri
+# 2. MƏLUMAT İDARƏETMƏSİ TAB hissəsindəki kodu aşağıdakı kimi düzəldin:
+
 with admin_tabs[1]:
     st.markdown("### 🗂️ Məlumatların İdarə Edilməsi")
     
@@ -784,74 +785,80 @@ with admin_tabs[1]:
         df = load_trip_data()
         
         if not df.empty:
-            # Tarix sütunlarını avtomatik çevir
-            date_columns = ['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']
-            for col in date_columns:
-                if col in df.columns:
-                    df[col] = pd.to_datetime(df[col], errors='coerce')
+            # Filtr və axtarış seçimləri
+            st.markdown("#### 🔍 Filtr və Axtarış")
             
-            # ...ƏVVƏLKİ KODLAR...
+            col1, col2, col3 = st.columns(3)
             
-            if selected_columns:
-                display_df = filtered_df[selected_columns].copy()
-                
-                # Sütun konfiqurasiyası
-                column_config = {}
-                for col in selected_columns:
-                    if col in date_columns:
-                        column_config[col] = st.column_config.DatetimeColumn(
-                            col,
-                            format="DD.MM.YYYY HH:mm" if col == 'Tarix' else "DD.MM.YYYY",
-                            required=True
-                        )
-                    elif col in ['Ümumi məbləğ', 'Günlük müavinət', 'Bilet qiyməti']:
-                        column_config[col] = st.column_config.NumberColumn(
-                            col,
-                            format="%.2f AZN"
-                        )
-                    else:
-                        column_config[col] = None
-                
-                # Redaktə edilə bilən cədvəl
-                edited_df = st.data_editor(
-                    display_df,
-                    column_config=column_config,
-                    use_container_width=True,
-                    height=600,
-                    key="admin_data_editor"
+            with col1:
+                # Tarix filtri
+                date_filter = st.selectbox(
+                    "📅 Tarix filtri",
+                    ["Hamısı", "Son 7 gün", "Son 30 gün", "Son 3 ay", "Bu il", "Seçilmiş aralıq"]
                 )
                 
-                # Dəyişiklikləri saxlama
-                if st.button("💾 Dəyişiklikləri Saxla", type="primary"):
-                    try:
-                        # Tarix sütunlarını formatla
-                        for col in date_columns:
-                            if col in edited_df.columns:
-                                edited_df[col] = pd.to_datetime(edited_df[col], errors='coerce')
-                        
-                        # Redaktə olunmuş məlumatları əsas DataFrame-ə tətbiq et
-                        df.update(edited_df)
-                        
-                        # Faylı yenilə
-                        df.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
-                        st.success("✅ Dəyişikliklər saxlanıldı!")
-                        
-                    except Exception as e:
-                        st.error(f"❌ Saxlama xətası: {str(e)}")
+                if date_filter == "Seçilmiş aralıq":
+                    start_date = st.date_input("Başlanğıc tarixi")
+                    end_date = st.date_input("Bitmə tarixi")
             
-                        
-                        else:
-                            st.warning("Zəhmət olmasa göstəriləcək sütunları seçin")
+            with col2:
+                # Şöbə filtri
+                if 'Şöbə' in df.columns:
+                    departments = ["Hamısı"] + sorted(df['Şöbə'].unique().tolist())
+                    selected_dept = st.selectbox("🏢 Şöbə filtri", departments)
+            
+            with col3:
+                # Ezamiyyət növü filtri
+                if 'Ezamiyyət növü' in df.columns:
+                    trip_types = ["Hamısı"] + df['Ezamiyyət növü'].unique().tolist()
+                    selected_type = st.selectbox("✈️ Ezamiyyət növü", trip_types)
+            
+            # Axtarış qutusu
+            search_term = st.text_input("🔎 Ad və ya soyad üzrə axtarış")
+            
+            # Filtirləmə tətbiqi
+            filtered_df = df.copy()
+            
+            # ... (əvvəlki filtr məntiqi)
+
+            # Nəticələr
+            st.markdown(f"#### 📊 Nəticələr ({len(filtered_df)} qeyd)")
+            
+            if len(filtered_df) > 0:
+                # Sütun seçimi
+                available_columns = filtered_df.columns.tolist()
+                default_columns = [col for col in ['Ad', 'Soyad', 'Şöbə', 'Marşrut', 'Ümumi məbləğ', 'Başlanğıc tarixi'] 
+                                 if col in available_columns]
+                
+                selected_columns = st.multiselect(
+                    "Göstəriləcək sütunları seçin",
+                    available_columns,
+                    default=default_columns
+                )
+                
+                if selected_columns:
+                    # ... (sütun konfiqurasiyası)
                     
-                    else:
-                        st.info("🔍 Filtrə uyğun qeyd tapılmadı")
+                    # Dəyişiklikləri saxla düyməsi
+                    if st.button("💾 Dəyişiklikləri Saxla", type="primary"):  # <-- DÜZÜLTMƏ BU SƏTRDƏDİR
+                        try:
+                            # ... (saxlama məntiqi)
+                        except Exception as e:
+                            st.error(f"❌ Saxlama xətası: {str(e)}")
                 
                 else:
-                    st.warning("📭 Hələ heç bir məlumat yoxdur")
-                    
-            except Exception as e:
-                st.error(f"❌ Məlumat idarəetməsi xətası: {str(e)}")
-
+                    st.warning("Zəhmət olmasa göstəriləcək sütunları seçin")
+            
+            else:
+                st.info("🔍 Filtrə uyğun qeyd tapılmadı")
+        
+        else:
+            st.warning("📭 Hələ heç bir məlumat yoxdur")
+            
+    except Exception as e:
+        st.error(f"❌ Məlumat idarəetməsi xətası: {str(e)}")
+       
+        
         # 3. ANALİTİKA TAB
         with admin_tabs[2]:
             st.markdown("### 📈 Detallı Analitika və Hesabatlar")
