@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 import plotly.express as px
 from io import BytesIO
 import requests
@@ -58,8 +58,8 @@ if not st.session_state.logged_in:
         st.markdown('<div class="login-box"><div class="login-header"><h2>🔐 Sistemə Giriş</h2></div>', unsafe_allow_html=True)
         
         access_code = st.text_input("Giriş kodu", type="password", 
-                                  label_visibility="collapsed", 
-                                  placeholder="Giriş kodunu daxil edin...")
+                                    label_visibility="collapsed", 
+                                    placeholder="Giriş kodunu daxil edin...")
         
         cols = st.columns([1,2,1])
         with cols[1]:
@@ -271,10 +271,38 @@ def load_trip_data():
     except (FileNotFoundError, pd.errors.EmptyDataError):
         return pd.DataFrame()
 
+@st.cache_data(ttl=3600) # 1 saatlıq keş
+def get_currency_rates(date):
+    """
+    Cbar.az-dan valyuta məzənnələrini çəkərək DataFrame qaytarır
+    """
+    try:
+        formatted_date = date.strftime("%Y%m%d")
+        url = f"https://www.cbar.az/currencies/{formatted_date}.xml"
+        response = requests.get(url)
+        root = ET.fromstring(response.content)
+        
+        currencies = []
+        for valute in root.findall('Valute'):
+            currency_data = {
+                'Kod': valute.get('Code'),
+                'Valyuta': valute.find('Name').text,
+                'Miqdar': float(valute.find('Nominal').text),
+                'Kurs (AZN)': float(valute.find('Value').text.replace(',', '.'))
+            }
+            currency_data['1 vahid üçün'] = currency_data['Kurs (AZN)'] / currency_data['Miqdar']
+            currencies.append(currency_data)
+            
+        return pd.DataFrame(currencies)
+    except Exception as e:
+        st.error(f"Məzənnələr alınarkən xəta: {str(e)}")
+        return pd.DataFrame()
+
+
 # ============================== ƏSAS İNTERFEYS ==============================
 st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
 
-tab1, tab2 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli"])
+tab1, tab2, tab3 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli", "💵 Valyuta Məzənnələri"])
 
 # ============================== YENİ EZAMİYYƏT HISSESI ==============================
 with tab1:
@@ -340,15 +368,15 @@ with tab1:
                     
                     # Hər iki növ üçün günlük müavinət
                     st.metric("📅 Günlük müavinət", f"{daily_allowance} AZN", 
-                             help="Müəyyən edilmiş günlük müavinət məbləği")
+                              help="Müəyyən edilmiş günlük müavinət məbləği")
                     
                     if trip_type == "Ölkə daxili":
                         st.metric("🚌 Bilet qiyməti", f"{ticket_price} AZN", 
-                                 help="Seçilmiş marşrut üzrə nəqliyyat xərci")
+                                  help="Seçilmiş marşrut üzrə nəqliyyat xərci")
                     
                     st.metric("⏳ Ezamiyyət müddəti", f"{trip_days} gün")
                     st.metric("💳 Ümumi ödəniləcək məbləğ", f"{total_amount:.2f} AZN", 
-                             delta="10% endirim" if payment_type == "10% ödəniş edilməklə" else None)
+                              delta="10% endirim" if payment_type == "10% ödəniş edilməklə" else None)
 
             if st.button("✅ Yadda Saxla", type="primary", use_container_width=True):
                 if first_name and last_name and start_date and end_date:
@@ -456,16 +484,16 @@ with tab2:
                 cols = st.columns(2)
                 with cols[0]:
                     fig = px.pie(df, names='Ezamiyyət növü', title='Ezamiyyət Növlərinin Payı',
-                                color_discrete_sequence=px.colors.sequential.RdBu)
+                                 color_discrete_sequence=px.colors.sequential.RdBu)
                     st.plotly_chart(fig, use_container_width=True)
                 
                 with cols[1]:
                     department_stats = df.groupby('Şöbə')['Ümumi məbləğ'].sum().nlargest(10)
                     fig = px.bar(department_stats, 
-                                title='Top 10 Xərc Edən Şöbə',
-                                labels={'value': 'Məbləğ (AZN)', 'index': 'Şöbə'},
-                                color=department_stats.values,
-                                color_continuous_scale='Bluered')
+                                 title='Top 10 Xərc Edən Şöbə',
+                                 labels={'value': 'Məbləğ (AZN)', 'index': 'Şöbə'},
+                                 color=department_stats.values,
+                                 color_continuous_scale='Bluered')
                     st.plotly_chart(fig, use_container_width=True)
 
                 # Məlumat cədvəli
@@ -492,7 +520,7 @@ with tab2:
 
                     # Silinmə əməliyyatı
                     display_options = [f"{row['Ad']} {row['Soyad']} - {row['Marşrut']} ({row['Tarix'].date() if pd.notnull(row['Tarix']) else 'N/A'})" 
-                                      for _, row in df.iterrows()]
+                                       for _, row in df.iterrows()]
                     
                     selected_indices = st.multiselect(
                         "Silinəcək qeydləri seçin",
@@ -545,7 +573,7 @@ with tab2:
             - .xlsx, .xls, .csv
             **Tələblər:**
             1. Fayl aşağıdakı sütunları ehtiva etməlidir:
-               - Ad, Soyad, Başlanğıc tarixi, Bitmə tarixi
+                - Ad, Soyad, Başlanğıc tarixi, Bitmə tarixi
             2. Tarixlər YYYY-MM-DD formatında olmalıdır
             3. Rəqəmsal dəyərlər AZN ilə olmalıdır
             """)
@@ -714,3 +742,105 @@ with tab2:
                 
                 except FileNotFoundError:
                     st.info("Hələ heç bir məlumat faylı yaradılmayıb")
+
+# ============================== VALYUTA MƏZƏNNƏLƏRİ HISSƏSİ ==============================
+with tab3:
+    st.markdown('<div class="main-header"><h2>💵 Valyuta Məzənnələri</h2></div>', unsafe_allow_html=True)
+    
+    cols = st.columns([2, 1, 1])
+    with cols[0]:
+        selected_date = st.date_input(
+            "Tarix seçin",
+            datetime.today(),
+            max_value=datetime.today(),
+            format="DD.MM.YYYY"
+        )
+    
+    # Məzənnələrin yüklənməsi
+    if cols[1].button("📅 Məzənnələri gətir", use_container_width=True):
+        with st.spinner("Məzənnə məlumatları yüklənir..."):
+            st.session_state.currency_data = get_currency_rates(selected_date)
+            st.session_state.currency_date = selected_date
+    
+    # Təmizləmə düyməsi
+    if cols[2].button("🔄 Sıfırla", use_container_width=True):
+        st.session_state.pop('currency_data', None)
+        st.session_state.pop('currency_date', None)
+    
+    # Məlumatların göstərilməsi
+    if 'currency_data' in st.session_state and not st.session_state.currency_data.empty:
+        st.markdown(f"""
+            <div class="section-header">
+                📆 {st.session_state.currency_date.strftime('%d.%m.%Y')} tarixi üçün məzənnələr
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Əsas cədvəl
+        st.dataframe(
+            st.session_state.currency_data,
+            column_config={
+                "Kurs (AZN)": st.column_config.NumberColumn(format="%.4f AZN"),
+                "1 vahid üçün": st.column_config.NumberColumn(format="%.4f AZN")
+            },
+            use_container_width=True,
+            hide_index=True
+        )
+        
+        # İxrac düymələri
+        csv = st.session_state.currency_data.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            "📥 CSV ixrac et",
+            data=csv,
+            file_name=f"valyuta_mezenneleri_{st.session_state.currency_date.strftime('%Y%m%d')}.csv",
+            mime="text/csv"
+        )
+        
+        # Qrafik analitika
+        st.markdown("---")
+        selected_currency = st.selectbox(
+            "Valyuta seçin",
+            options=st.session_state.currency_data['Valyuta'].unique(),
+            index=0
+        )
+        
+        if selected_currency:
+            df_selected = st.session_state.currency_data[
+                st.session_state.currency_data['Valyuta'] == selected_currency
+            ]
+            
+            cols = st.columns(2)
+            with cols[0]:
+                st.metric("Valyuta Kodu", df_selected['Kod'].values[0])
+                st.metric("Standart Miqdar", f"{df_selected['Miqdar'].values[0]:.0f} ədəd")
+            
+            with cols[1]:
+                st.metric("Cari Kurs", f"{df_selected['Kurs (AZN)'].values[0]:.4f} AZN")
+                st.metric("1 vahid üçün", f"{df_selected['1 vahid üçün'].values[0]:.4f} AZN")
+            
+            # Tarixi dəyişiklik qrafiki (son 7 gün)
+            st.markdown("### Son 7 gün üzrə dəyişikliklər")
+            dates = [selected_date - timedelta(days=i) for i in range(7, 0, -1)]
+            historical_data = []
+            
+            for date in dates:
+                df = get_currency_rates(date)
+                if not df.empty and selected_currency in df['Valyuta'].values:
+                    rate = df[df['Valyuta'] == selected_currency]['1 vahid üçün'].values[0]
+                    historical_data.append({"Tarix": date, "Kurs": rate})
+            
+            if historical_data:
+                df_history = pd.DataFrame(historical_data)
+                fig = px.line(
+                    df_history, 
+                    x='Tarix', 
+                    y='Kurs',
+                    title=f"{selected_currency} üçün tarixi məzənnələr",
+                    markers=True
+                )
+                fig.update_layout(yaxis_title="AZN ilə məzənnə")
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.warning("Tarixi məlumat tapılmadı!")
+    
+    elif 'currency_data' in st.session_state:
+        st.warning("Seçilmiş tarix üçün məzənnə məlumatı tapılmadı!")
