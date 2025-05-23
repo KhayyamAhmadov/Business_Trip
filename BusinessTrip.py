@@ -238,12 +238,16 @@ def calculate_total_amount(daily_allowance, days, payment_type, ticket_price=0):
 def save_trip_data(data):
     try:
         df_new = pd.DataFrame([data])
-        df_existing = pd.read_excel("ezamiyyet_melumatlari.xlsx")
-        df_combined = pd.concat([df_existing, df_new], ignore_index=True)
-    except FileNotFoundError:
-        df_combined = df_new
-    df_combined.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
-    return df_combined
+        try:
+            df_existing = pd.read_excel("ezamiyyet_melumatlari.xlsx")
+            df_combined = pd.concat([df_existing, df_new], ignore_index=True)
+        except FileNotFoundError:
+            df_combined = df_new
+        df_combined.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+        return df_combined
+    except Exception as e:
+        st.error(f"Məlumat saxlanarkən xəta: {str(e)}")
+        return None
 
 def load_trip_data():
     try:
@@ -315,37 +319,36 @@ with tab1:
 
         # Sağ sütun (Hesablama)
         with col2:
-            # Yenilənmiş hesablama hissəsi
-            with col2:
-                with st.container():
-                    st.markdown('<div class="section-header">💰 Hesablama</div>', unsafe_allow_html=True)
+            with st.container():
+                st.markdown('<div class="section-header">💰 Hesablama</div>', unsafe_allow_html=True)
+                
+                if start_date and end_date and end_date >= start_date:
+                    trip_days = calculate_days(start_date, end_date)
                     
-                    if start_date and end_date and end_date >= start_date:
-                        trip_days = calculate_days(start_date, end_date)
-                        
-                        # Günlük müavinət və bilet qiyməti
-                        if trip_type == "Ölkə daxili":
-                            ticket_price = calculate_domestic_amount(from_city, to_city)
-                            daily_allowance = 70  # Sabit günlük müavinət
-                        else:
-                            ticket_price = 0
-                            daily_allowance = COUNTRIES[country]
-                        
-                        total_amount = calculate_total_amount(daily_allowance, trip_days, payment_type, ticket_price)
-                        
-                        # Hər iki növ üçün günlük müavinət
-                        st.metric("📅 Günlük müavinət", f"{daily_allowance} AZN", 
-                                 help="Müəyyən edilmiş günlük müavinət məbləği")
-                        
-                        if trip_type == "Ölkə daxili":
-                            st.metric("🚌 Bilet qiyməti", f"{ticket_price} AZN", 
-                                     help="Seçilmiş marşrut üzrə nəqliyyat xərci")
-                        
-                        st.metric("⏳ Ezamiyyət müddəti", f"{trip_days} gün")
-                        st.metric("💳 Ümumi ödəniləcək məbləğ", f"{total_amount:.2f} AZN", 
-                                 delta="10% endirim" if payment_type == "10% ödəniş edilməklə" else None)
+                    # Günlük müavinət və bilet qiyməti
+                    if trip_type == "Ölkə daxili":
+                        ticket_price = calculate_domestic_amount(from_city, to_city)
+                        daily_allowance = 70  # Sabit günlük müavinət
+                    else:
+                        ticket_price = 0
+                        daily_allowance = COUNTRIES[country]
+                    
+                    total_amount = calculate_total_amount(daily_allowance, trip_days, payment_type, ticket_price)
+                    
+                    # Hər iki növ üçün günlük müavinət
+                    st.metric("📅 Günlük müavinət", f"{daily_allowance} AZN", 
+                             help="Müəyyən edilmiş günlük müavinət məbləği")
+                    
+                    if trip_type == "Ölkə daxili":
+                        st.metric("🚌 Bilet qiyməti", f"{ticket_price} AZN", 
+                                 help="Seçilmiş marşrut üzrə nəqliyyat xərci")
+                    
+                    st.metric("⏳ Ezamiyyət müddəti", f"{trip_days} gün")
+                    st.metric("💳 Ümumi ödəniləcək məbləğ", f"{total_amount:.2f} AZN", 
+                             delta="10% endirim" if payment_type == "10% ödəniş edilməklə" else None)
 
-                if st.button("✅ Yadda Saxla", type="primary", use_container_width=True):
+            if st.button("✅ Yadda Saxla", type="primary", use_container_width=True):
+                if first_name and last_name and start_date and end_date:
                     trip_data = {
                         "Tarix": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         "Ad": first_name,
@@ -364,8 +367,11 @@ with tab1:
                         "Ümumi məbləğ": total_amount,
                         "Məqsəd": purpose
                     }
-                    save_trip_data(trip_data)
-                    st.success("Məlumatlar uğurla yadda saxlanıldı!")
+                    if save_trip_data(trip_data):
+                        st.success("Məlumatlar uğurla yadda saxlanıldı!")
+                        st.balloons()
+                else:
+                    st.error("Zəhmət olmasa bütün mütləq sahələri doldurun!")
 
 # ============================== ADMIN PANELİ ==============================
 with tab2:
@@ -397,6 +403,11 @@ with tab2:
     # Admin paneline giriş edildikdə
     if st.session_state.admin_logged:
         st.markdown('<div class="main-header"><h1>⚙️ Admin İdarəetmə Paneli</h1></div>', unsafe_allow_html=True)
+        
+        # Çıxış düyməsi
+        if st.button("🚪 Çıxış", key="logout_btn"):
+            st.session_state.admin_logged = False
+            st.rerun()
         
         # Alt sekmələr
         tab_manage, tab_import, tab_settings = st.tabs(["📊 Məlumatlar", "📥 İdxal", "⚙️ Parametrlər"])
@@ -458,10 +469,11 @@ with tab2:
                                              format_func=lambda x: f"{df.iloc[x]['Ad']} {df.iloc[x]['Soyad']} - {df.iloc[x]['Marşrut']}")
                     
                     if st.button("Seçilmiş qeydləri sil 🔴", type="primary"):
-                        df = df.drop(to_delete)
-                        df.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
-                        st.success(f"{len(to_delete)} qeyd silindi!")
-                        st.rerun()
+                        if to_delete:
+                            df = df.drop(to_delete)
+                            df.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+                            st.success(f"{len(to_delete)} qeyd silindi!")
+                            st.rerun()
 
                 # İxrac düyməsi
                 csv = df.to_csv(index=False).encode('utf-8')
@@ -503,8 +515,8 @@ with tab2:
                     for sütun in tələb_olunan_sütunlar:
                         seçim = st.selectbox(
                             f"{sütun} sütununu seçin",
-                            seçimlər=["--Seçin--"] + list(df_import.columns),
-                            açar=f"map_{sütun}"
+                            options=["--Seçin--"] + list(df_import.columns),
+                            key=f"map_{sütun}"
                         )
                         column_mapping[sütun] = seçim if seçim != "--Seçin--" else None
                     
@@ -512,43 +524,4 @@ with tab2:
                     if st.button("✅ Təsdiqlə və Yüklə"):
                         çatışmayanlar = [k for k,v in column_mapping.items() if not v]
                         if çatışmayanlar:
-                            st.error(f"Zəruri sütunlar seçilməyib: {', '.join(çatışmayanlar)}")
-                        else:
-                            # Sütunların yenidən adlandırılması
-                            df_import = df_import.rename(columns={v:k for k,v in column_mapping.items()})
-                            
-                            # Tarix formatlarının çevrilməsi
-                            df_import['Başlanğıc tarixi'] = pd.to_datetime(df_import['Başlanğıc tarixi'])
-                            df_import['Bitmə tarixi'] = pd.to_datetime(df_import['Bitmə tarixi'])
-                            
-                            # Mövcud məlumatlarla birləşmə
-                            try:
-                                df_existing = pd.read_excel("ezamiyyet_melumatlari.xlsx")
-                                df_combined = pd.concat([df_existing, df_import], ignore_index=True)
-                            except:
-                                df_combined = df_import
-                            
-                            # Yadda saxlanması
-                            df_combined.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
-                            st.success(f"{len(df_import)} yeni qeyd əlavə edildi!")
-                            st.balloons()
-                            
-                except Exception as e:
-                    st.error(f"Xəta: {str(e)}")
-
-        # Parametrlər sekmesi
-        with tab_settings:
-            st.markdown("### Sistem Parametrləri")
-            
-            with st.form("Parametr Formu"):
-                yeni_şifrə = st.text_input("Yeni Şifrə", type="password")
-                məlumatları_sıfırla = st.checkbox("Bütün məlumatları sıfırla")
-                
-                if st.form_submit_button("Yadda Saxla"):
-                    if məlumatları_sıfırla:
-                        pd.DataFrame().to_excel("ezamiyyet_melumatlari.xlsx", index=False)
-                        st.success("Bütün məlumatlar sıfırlandı!")
-                    if yeni_şifrə:
-                        # Şifrə dəyişikliyi məntiqi bura əlavə ediləcək
-                        st.success("Şifrə uğurla yeniləndi!")                    except Exception as e:
-                        st.error(f"❌ Xəta baş verdi: {str(e)}")
+                            st.error(f"Zəruri sütunlar seçilməyib: {', '.join(çatışmayanlar)
