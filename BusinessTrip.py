@@ -311,8 +311,6 @@ with tab1:
                     }
                     save_trip_data(trip_data)
                     st.success("Məlumatlar uğurla yadda saxlanıldı!")
-                    st.balloons()
-
 # ============================== ADMIN PANELI ==============================
 with tab2:
     with st.container():
