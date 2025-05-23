@@ -153,12 +153,12 @@ CITIES = [
     "Culfa (Naxçıvan MR)", "Daşkəsən", "Füzuli", "Gədəbəy", "Gəncə", "Goranboy", "Göyçay",
     "Göygöl", "Hacıqabul", "Xaçmaz", "Xankəndi", "Xızı", "Xocalı", "Xocavənd", "İmişli",
     "İsmayıllı", "Kəlbəcər", "Kəngərli (Naxçıvan MR)", "Kürdəmir", "Laçın", "Lənkəran",
-    "Lerik", "Masallı", "Mingəçevir", "Naftalan", "Neftçala", "Naxçıvan", "Oğuz",
+    "Lerik", "Masallı", "Mingəçevir", "Naftalan", "Neftçala", "Naxçıvan", "Oğuz", "Siyəzən",
     "Ordubad (Naxçıvan MR)", "Qəbələ", "Qax", "Qazax", "Qobustan", "Quba", "Qubadlı",
     "Qusar", "Saatlı", "Sabirabad", "Sədərək (Naxçıvan MR)", "Salyan", "Samux", "Şabran",
     "Şahbuz (Naxçıvan MR)", "Şamaxı", "Şəki", "Şəmkir", "Şərur (Naxçıvan MR)", "Şirvan",
     "Şuşa", "Sumqayıt", "Tərtər", "Tovuz", "Ucar", "Yardımlı", "Yevlax", "Zaqatala",
-    "Zəngilan", "Zərdab"
+    "Zəngilan", "Zərdab", "Nabran", "Xudat"
 ]
 
 COUNTRIES = {
@@ -232,8 +232,8 @@ def calculate_domestic_amount(from_city, to_city):
 def calculate_days(start_date, end_date):
     return (end_date - start_date).days + 1
 
-def calculate_total_amount(daily_allowance, days, payment_type):
-    return daily_allowance * days * PAYMENT_TYPES[payment_type]
+def calculate_total_amount(daily_allowance, days, payment_type, ticket_price=0):
+    return (daily_allowance * days + ticket_price) * PAYMENT_TYPES[payment_type]
 
 def save_trip_data(data):
     try:
@@ -253,7 +253,9 @@ def load_trip_data():
             'Günlər': 0,
             'Ümumi məbləğ': 0,
             'Ödəniş növü': 'Tam ödəniş edilməklə',
-            'Marşrut': 'Təyin edilməyib'
+            'Marşrut': 'Təyin edilməyib',
+            'Bilet qiyməti': 0,
+            'Günlük müavinət': 70
         }
         for col, default in required_columns.items():
             if col not in df.columns:
@@ -296,8 +298,8 @@ with tab1:
                         from_city = st.selectbox("Haradan", CITIES, index=CITIES.index("Bakı"))
                     with cols[1]:
                         to_city = st.selectbox("Haraya", [c for c in CITIES if c != from_city])
-                    daily_allowance = calculate_domestic_amount(from_city, to_city)
-                    ticket_price = daily_allowance
+                    ticket_price = calculate_domestic_amount(from_city, to_city)
+                    daily_allowance = 70  # Sabit günlük müavinət
                 else:
                     country = st.selectbox("Ölkə", list(COUNTRIES.keys()))
                     daily_allowance = COUNTRIES[country]
@@ -318,15 +320,14 @@ with tab1:
                 
                 if start_date and end_date and end_date >= start_date:
                     trip_days = calculate_days(start_date, end_date)
-                    total_amount = calculate_total_amount(daily_allowance, trip_days, payment_type)
+                    total_amount = calculate_total_amount(daily_allowance, trip_days, payment_type, ticket_price)
                     
-                    # Bilet qiyməti yalnız ölkə daxili üçün
                     if trip_type == "Ölkə daxili":
-                        st.metric("🚌 Biletin qiyməti", f"{ticket_price} AZN", 
+                        st.metric("🚌 Bilet qiyməti", f"{ticket_price} AZN", 
                                  help="Seçilmiş marşrut üzrə nəqliyyat xərci")
+                        st.metric("📅 Günlük müavinət", f"{daily_allowance} AZN", 
+                                 help="Sabit günlük müavinət məbləği")
                     
-                    st.metric("📅 Günlük məbləğ", f"{daily_allowance} AZN", 
-                             help="Məsafə və ölkəyə görə müəyyən edilmiş günlük məbləğ")
                     st.metric("⏳ Ezamiyyət müddəti", f"{trip_days} gün")
                     st.metric("💳 Ümumi ödəniləcək məbləğ", f"{total_amount:.2f} AZN", 
                              delta="10% endirim" if payment_type == "10% ödəniş edilməklə" else None)
@@ -343,10 +344,10 @@ with tab1:
                         "Ödəniş növü": payment_type,
                         "Marşrut": f"{from_city} → {to_city}" if trip_type == "Ölkə daxili" else country,
                         "Bilet qiyməti": ticket_price,
+                        "Günlük müavinət": daily_allowance,
                         "Başlanğıc tarixi": start_date.strftime("%Y-%m-%d"),
                         "Bitmə tarixi": end_date.strftime("%Y-%m-%d"),
                         "Günlər": trip_days,
-                        "Günlük məbləğ": daily_allowance,
                         "Ümumi məbləğ": total_amount,
                         "Məqsəd": purpose
                     }
