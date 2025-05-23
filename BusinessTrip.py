@@ -340,14 +340,14 @@ def get_currency_rates(date=None):
         currencies = []
         
         for valute in soup.find_all('Valute'):
-            nominal_text = valute.find('Nominal').text
             # Ədədi hissəni ayırmaq üçün split() istifadə edirik
+            nominal_text = valute.find('Nominal').text.strip()
             nominal = int(nominal_text.split()[0])  # Yalnız birinci hissəni götürürük
             
             currencies.append({
                 'Kod': valute['Code'],
                 'Valyuta': valute.find('Name').text,
-                'Məzənnə': float(valute.find('Value').text),
+                'Məzənnə': float(valute.find('Value').text.replace(',', '.')),
                 'Nominal': nominal
             })
             
