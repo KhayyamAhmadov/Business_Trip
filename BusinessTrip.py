@@ -785,13 +785,18 @@ with admin_tabs[1]:
         df = load_trip_data()
         
         if not df.empty:
+            # Tarix sütunlarını avtomatik çevir
+            date_columns = ['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']
+            for col in date_columns:
+                if col in df.columns:
+                    df[col] = pd.to_datetime(df[col], errors='coerce')
+
             # Filtr və axtarış seçimləri
             st.markdown("#### 🔍 Filtr və Axtarış")
             
             col1, col2, col3 = st.columns(3)
             
             with col1:
-                # Tarix filtri
                 date_filter = st.selectbox(
                     "📅 Tarix filtri",
                     ["Hamısı", "Son 7 gün", "Son 30 gün", "Son 3 ay", "Bu il", "Seçilmiş aralıq"]
@@ -802,33 +807,53 @@ with admin_tabs[1]:
                     end_date = st.date_input("Bitmə tarixi")
             
             with col2:
-                # Şöbə filtri
                 if 'Şöbə' in df.columns:
                     departments = ["Hamısı"] + sorted(df['Şöbə'].unique().tolist())
                     selected_dept = st.selectbox("🏢 Şöbə filtri", departments)
             
             with col3:
-                # Ezamiyyət növü filtri
                 if 'Ezamiyyət növü' in df.columns:
                     trip_types = ["Hamısı"] + df['Ezamiyyət növü'].unique().tolist()
                     selected_type = st.selectbox("✈️ Ezamiyyət növü", trip_types)
             
-            # Axtarış qutusu
             search_term = st.text_input("🔎 Ad və ya soyad üzrə axtarış")
-            
-            # Filtirləmə tətbiqi
+
+            # Filtirləmə məntiqi
             filtered_df = df.copy()
-            
-            # ... (əvvəlki filtr məntiqi)
+            if date_filter != "Hamısı" and 'Tarix' in df.columns:
+                if date_filter == "Seçilmiş aralıq":
+                    filtered_df = filtered_df[
+                        (filtered_df['Tarix'].dt.date >= start_date) & 
+                        (filtered_df['Tarix'].dt.date <= end_date)
+                    ]
+                else:
+                    now = datetime.now()
+                    if date_filter == "Son 7 gün":
+                        cutoff = now - timedelta(days=7)
+                    elif date_filter == "Son 30 gün":
+                        cutoff = now - timedelta(days=30)
+                    elif date_filter == "Son 3 ay":
+                        cutoff = now - timedelta(days=90)
+                    elif date_filter == "Bu il":
+                        cutoff = datetime(now.year, 1, 1)
+                    filtered_df = filtered_df[filtered_df['Tarix'] >= cutoff]
+
+            if selected_dept != "Hamısı" and 'Şöbə' in df.columns:
+                filtered_df = filtered_df[filtered_df['Şöbə'] == selected_dept]
+
+            if selected_type != "Hamısı" and 'Ezamiyyət növü' in df.columns:
+                filtered_df = filtered_df[filtered_df['Ezamiyyət növü'] == selected_type]
+
+            if search_term:
+                mask = filtered_df['Ad'].str.contains(search_term, case=False, na=False) | filtered_df['Soyad'].str.contains(search_term, case=False, na=False)
+                filtered_df = filtered_df[mask]
 
             # Nəticələr
             st.markdown(f"#### 📊 Nəticələr ({len(filtered_df)} qeyd)")
             
             if len(filtered_df) > 0:
-                # Sütun seçimi
                 available_columns = filtered_df.columns.tolist()
-                default_columns = [col for col in ['Ad', 'Soyad', 'Şöbə', 'Marşrut', 'Ümumi məbləğ', 'Başlanğıc tarixi'] 
-                                 if col in available_columns]
+                default_columns = [col for col in ['Ad', 'Soyad', 'Şöbə', 'Marşrut', 'Ümumi məbləğ', 'Başlanğıc tarixi'] if col in available_columns]
                 
                 selected_columns = st.multiselect(
                     "Göstəriləcək sütunları seçin",
@@ -837,12 +862,46 @@ with admin_tabs[1]:
                 )
                 
                 if selected_columns:
-                    # ... (sütun konfiqurasiyası)
+                    display_df = filtered_df[selected_columns].copy()
                     
-                    # Dəyişiklikləri saxla düyməsi
-                    if st.button("💾 Dəyişiklikləri Saxla", type="primary"):  # <-- DÜZÜLTMƏ BU SƏTRDƏDİR
+                    # Sütun konfiqurasiyası
+                    column_config = {}
+                    for col in selected_columns:
+                        if col in date_columns:
+                            column_config[col] = st.column_config.DatetimeColumn(
+                                col,
+                                format="DD.MM.YYYY HH:mm" if col == 'Tarix' else "DD.MM.YYYY"
+                            )
+                        elif col in ['Ümumi məbləğ', 'Günlük müavinət', 'Bilet qiyməti']:
+                            column_config[col] = st.column_config.NumberColumn(
+                                col,
+                                format="%.2f AZN"
+                            )
+                    
+                    edited_df = st.data_editor(
+                        display_df,
+                        column_config=column_config,
+                        use_container_width=True,
+                        height=600,
+                        key="admin_data_editor"
+                    )
+                    
+                    # Dəyişiklikləri saxla
+                    if st.button("💾 Dəyişiklikləri Saxla", type="primary"):
                         try:
-                            # ... (saxlama məntiqi)
+                            # Tarix sütunlarını formatla
+                            for col in date_columns:
+                                if col in edited_df.columns:
+                                    edited_df[col] = pd.to_datetime(edited_df[col], errors='coerce')
+                            
+                            # Əsas dataframe-i yenilə
+                            df.update(edited_df)
+                            
+                            # Faylı saxla
+                            df.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+                            st.success("✅ Dəyişikliklər saxlanıldı!")
+                            st.rerun()
+                            
                         except Exception as e:
                             st.error(f"❌ Saxlama xətası: {str(e)}")
                 
@@ -856,8 +915,7 @@ with admin_tabs[1]:
             st.warning("📭 Hələ heç bir məlumat yoxdur")
             
     except Exception as e:
-        st.error(f"❌ Məlumat idarəetməsi xətası: {str(e)}")
-       
+        st.error(f"❌ Məlumat idarəetməsi xətası: {str(e)}")       
         
         # 3. ANALİTİKA TAB
         with admin_tabs[2]:
