@@ -565,95 +565,202 @@ with tab2:
                     # Əsas metrikalar
                     col1, col2, col3, col4, col5 = st.columns(5)
                     
-                    with col1:
-                        st.metric(
-                            "📋 Ümumi Ezamiyyət",
-                            len(df),
-                            delta=f"+{len(df[df['Tarix'] >= datetime.now() - timedelta(days=30)])}" if 'Tarix' in df.columns else None
-                        )
-                    
-                    with col2:
-                        total_amount = df['Ümumi məbləğ'].sum()
-                        st.metric(
-                            "💰 Ümumi Xərclər",
-                            f"{total_amount:,.2f} AZN",
-                            delta=f"{total_amount/len(df):.2f} AZN orta"
-                        )
-                    
-                    with col3:
-                        if 'Günlər' in df.columns:
-                            avg_days = df['Günlər'].mean()
-                            st.metric("⏱️ Orta Müddət", f"{avg_days:.1f} gün")
-                        else:
-                            st.metric("⏱️ Orta Müddət", "N/A")
-                    
-                    with col4:
-                        active_users = df['Ad'].nunique() if 'Ad' in df.columns else 0
-                        st.metric("👥 Aktiv İstifadəçilər", active_users)
-                    
-                    with col5:
-                        if 'Ezamiyyət növü' in df.columns:
-                            international_pct = (df['Ezamiyyət növü'] == 'Ölkə xarici').mean() * 100
-                            st.metric("🌍 Beynəlxalq %", f"{international_pct:.1f}%")
-                        else:
-                            st.metric("🌍 Beynəlxalq %", "N/A")
+            with col1:
+                # Interaktiv tarix seçimi ilə trend analizi
+                st.markdown("### 📈 Xərclərin Zaman üzrə Dəyişimi")
+                
+                date_col = 'Başlanğıc tarixi' if 'Başlanğıc tarixi' in df.columns else 'Tarix'
+                df[date_col] = pd.to_datetime(df[date_col])
+                
+                # Tarix aralığı seçimi
+                min_date = df[date_col].min().date()
+                max_date = df[date_col].max().date()
+                selected_dates = st.date_input(
+                    "Tarix aralığını seçin",
+                    value=(min_date, max_date),
+                    min_value=min_date,
+                    max_value=max_date
+                )
+                
+                # Filtrə görə məlumat
+                filtered_df = df[
+                    (df[date_col].dt.date >= selected_dates[0]) & 
+                    (df[date_col].dt.date <= selected_dates[1])
+                ]
+                
+                # Xərc trendləri
+                fig = px.line(
+                    filtered_df.resample('W', on=date_col).sum().reset_index(),
+                    x=date_col,
+                    y='Ümumi məbləğ',
+                    title='Həftəlik Xərc Trendləri',
+                    markers=True,
+                    line_shape='spline',
+                    template='plotly_white'
+                )
+                fig.update_traces(
+                    line=dict(width=3, color='#6366f1'),
+                    marker=dict(size=8, color='#8b5cf6')
+                )
+                fig.update_layout(
+                    hoverlabel=dict(bgcolor="white", font_size=12),
+                    xaxis_title='',
+                    yaxis_title='Ümumi Xərc (AZN)'
+                )
+                st.plotly_chart(fig, use_container_width=True)
 
-                    # Son fəaliyyətlər
-                    st.markdown("### 📅 Son Ezamiyyətlər")
-                    recent_trips = df.head(10)
-                    
-                    for idx, row in recent_trips.iterrows():
-                        with st.container():
-                            col1, col2, col3, col4 = st.columns([2, 2, 1, 1])
-                            with col1:
-                                st.write(f"**{row.get('Ad', 'N/A')} {row.get('Soyad', 'N/A')}**")
-                                st.caption(row.get('Şöbə', 'N/A')[:50] + "...")
-                            with col2:
-                                st.write(f"📍 {row.get('Marşrut', 'N/A')}")
-                                st.caption(f"🗓️ {row.get('Başlanğıc tarixi', 'N/A')}")
-                            with col3:
-                                st.write(f"💰 {row.get('Ümumi məbləğ', 0):.2f} AZN")
-                            with col4:
-                                status_color = "🟢" if row.get('Ödəniş növü') == "Ödənişsiz" else "🟡"
-                                st.write(f"{status_color} {row.get('Ödəniş növü', 'N/A')}")
-                            st.divider()
+            with col2:
+                # Şöbələr üzrə interaktiv treemap
+                st.markdown("### 🌳 Şöbə Xərcləri")
+                
+                fig = px.treemap(
+                    df,
+                    path=['Şöbə'],
+                    values='Ümumi məbləğ',
+                    color='Ümumi məbləğ',
+                    color_continuous_scale='Blues',
+                    hover_data=['Ezamiyyət növü', 'Günlər']
+                )
+                fig.update_layout(
+                    margin=dict(t=30, l=0, r=0, b=0),
+                    height=500
+                )
+                fig.update_traces(
+                    textinfo='label+value+percent parent',
+                    texttemplate='<b>%{label}</b><br>%{value:.2f} AZN<br>(%{percentParent:.1%})'
+                )
+                st.plotly_chart(fig, use_container_width=True)
 
-                    # Tez-tez görmə qrafikleri
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        if 'Ezamiyyət növü' in df.columns:
-                            fig = px.pie(
-                                df, 
-                                names='Ezamiyyət növü', 
-                                title='🌍 Ezamiyyət Növləri Payı',
-                                color_discrete_sequence=['#667eea', '#764ba2'],
-                                hole=0.4
-                            )
-                            fig.update_traces(textposition='inside', textinfo='percent+label')
-                            st.plotly_chart(fig, use_container_width=True)
-                    
-                    with col2:
-                        if 'Ödəniş növü' in df.columns:
-                            payment_stats = df['Ödəniş növü'].value_counts()
-                            fig = px.bar(
-                                x=payment_stats.index,
-                                y=payment_stats.values,
-                                title='💳 Ödəniş Növləri',
-                                color=payment_stats.values,
-                                color_continuous_scale='Blues'
-                            )
-                            fig.update_layout(showlegend=False)
-                            st.plotly_chart(fig, use_container_width=True)
+            # Yeni interaktiv heatmap
+            st.markdown("### 🔥 Aylıq Aktivlik Xəritəsi")
+            
+            heatmap_df = df.copy()
+            heatmap_df['Ay'] = heatmap_df[date_col].dt.month_name()
+            heatmap_df['Həftənin Günü'] = heatmap_df[date_col].dt.day_name()
+            heatmap_df['Həftə'] = heatmap_df[date_col].dt.isocalendar().week
+            
+            fig = px.density_heatmap(
+                heatmap_df,
+                x='Həftənin Günü',
+                y='Ay',
+                z='Ümumi məbləğ',
+                histfunc='sum',
+                color_continuous_scale='YlGnBu',
+                category_orders={
+                    "Həftənin Günü": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+                    "Ay": ["January", "February", "March", "April", "May", "June", 
+                           "July", "August", "September", "October", "November", "December"]
+                }
+            )
+            fig.update_layout(
+                xaxis_title='',
+                yaxis_title='',
+                coloraxis_colorbar=dict(title='Ümumi Xərc')
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
-                else:
-                    st.warning("📭 Hələ heç bir ezamiyyət qeydiyyatı yoxdur")
-                    
-                    # Boş hal üçün demo məlumatlar
-                    st.info("🚀 Sistemə ilk ezamiyyəti əlavə etmək üçün 'Yeni Ezamiyyət' bölməsinə keçin")
-                    
-            except Exception as e:
-                st.error(f"❌ Dashboard yüklənərkən xəta: {str(e)}")
+        else:
+            st.warning("📭 Hələ heç bir ezamiyyət qeydiyyatı yoxdur")
+            
+    except Exception as e:
+        st.error(f"❌ Dashboard yüklənərkən xəta: {str(e)}")
+
+# 2. ANALİTİKA TAB yeniləməsi
+with admin_tabs[2]:
+    st.markdown("### 📈 Detallı Analitika və Hesabatlar")
+    
+    try:
+        df = load_trip_data()
+        
+        if not df.empty:
+            # Yeni interaktiv scatter matrix
+            st.markdown("#### 🔍 Çoxölçülü Analiz")
+            
+            numeric_cols = ['Ümumi məbləğ', 'Günlər', 'Günlük müavinət', 'Bilet qiyməti']
+            selected_cols = st.multiselect(
+                "Analiz üçün sütunları seçin",
+                numeric_cols,
+                default=numeric_cols[:3]
+            )
+            
+            if len(selected_cols) >= 2:
+                fig = px.scatter_matrix(
+                    df,
+                    dimensions=selected_cols,
+                    color='Ezamiyyət növü',
+                    hover_name='Marşrut',
+                    title='Parametr Arası Əlaqələr'
+                )
+                fig.update_traces(
+                    diagonal_visible=False,
+                    showupperhalf=False,
+                    marker=dict(size=4, opacity=0.6)
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.warning("Minimum 2 ədəd rəqəmsal sütun seçin")
+
+            # Dinamik filtrlənə bilən box plot
+            st.markdown("#### 📦 Xərc Paylanması")
+            
+            col1, col2 = st.columns([1, 3])
+            with col1:
+                group_by = st.selectbox(
+                    "Qruplaşdırma üçün sütun",
+                    ['Ezamiyyət növü', 'Şöbə', 'Ödəniş növü']
+                )
+                log_scale = st.checkbox("Loqarifmik miqyas")
+                
+            with col2:
+                fig = px.box(
+                    df,
+                    x=group_by,
+                    y='Ümumi məbləğ',
+                    color=group_by,
+                    points="all",
+                    hover_data=['Ad', 'Soyad'],
+                    log_y=log_scale
+                )
+                fig.update_layout(
+                    showlegend=False,
+                    xaxis_title='',
+                    yaxis_title='Ümumi Xərc (AZN)'
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
+            # Dinamik map vizualizasiyası (əlavə məlumat tələb edir)
+            st.markdown("#### 🌍 Coğrafi Xərc Xəritəsi")
+            
+            # Geokoordinatlar üçün nümunə məlumat (əlavə edilməlidir)
+            geo_df = pd.DataFrame({
+                'Şəhər': ['Bakı', 'Gəncə', 'Sumqayıt'],
+                'Lat': [40.4093, 40.6828, 40.5897],
+                'Lon': [49.8671, 46.3606, 49.6686],
+                'Ümumi Xərc': [df[df['Marşrut'].str.contains(city)]['Ümumi məbləğ'].sum() 
+                              for city in ['Bakı', 'Gəncə', 'Sumqayıt']]
+            })
+            
+            fig = px.scatter_geo(
+                geo_df,
+                lat='Lat',
+                lon='Lon',
+                size='Ümumi Xərc',
+                hover_name='Şəhər',
+                projection='natural earth',
+                title='Şəhərlər üzrə xərclər'
+            )
+            fig.update_geos(
+                resolution=50,
+                showcountries=True,
+                countrycolor="Black"
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+        else:
+            st.warning("📊 Analiz üçün məlumat yoxdur")
+            
+    except Exception as e:
+        st.error(f"❌ Analitika xətası: {str(e)}")
 
         # 2. MƏLUMAT İDARƏETMƏSİ TAB
         with admin_tabs[1]:
