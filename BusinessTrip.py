@@ -592,8 +592,9 @@ with admin_tabs[0]:
                 ]
                 
                 # Xərc trendləri
+                weekly_data = filtered_df.set_index(date_col).resample('W')['Ümumi məbləğ'].sum().reset_index()
                 fig = px.line(
-                    filtered_df.resample('W', on=date_col).sum().reset_index(),
+                    weekly_data,
                     x=date_col,
                     y='Ümumi məbləğ',
                     title='Həftəlik Xərc Trendləri',
@@ -601,6 +602,7 @@ with admin_tabs[0]:
                     line_shape='spline',
                     template='plotly_white'
                 )
+
                 fig.update_traces(
                     line=dict(width=3, color='#6366f1'),
                     marker=dict(size=8, color='#8b5cf6')
@@ -611,6 +613,15 @@ with admin_tabs[0]:
                     yaxis_title='Ümumi Xərc (AZN)'
                 )
                 st.plotly_chart(fig, use_container_width=True)
+
+            
+                # Rəqəmsal olmayan sütunları sil
+                numeric_df = filtered_df.select_dtypes(include=['number'])
+                if not numeric_df.empty:
+                    weekly_data = numeric_df.resample('W', on=date_col).sum().reset_index()
+                else:
+                    st.warning("Hesablama üçün rəqəmsal məlumat yoxdur")
+
 
             with col2:
                 # Şöbələr üzrə interaktiv treemap
