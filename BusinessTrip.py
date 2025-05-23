@@ -333,18 +333,22 @@ def get_currency_rates(date=None):
             date = pd.to_datetime(date)
             
         url = f"https://www.cbar.az/currencies/{date.strftime('%d.%m.%Y')}.xml"
-        response = requests.get(url)  # <-- Artıq requests istifadə edilə bilər
+        response = requests.get(url)
         response.raise_for_status()
         
         soup = BeautifulSoup(response.content, 'xml')
         currencies = []
         
         for valute in soup.find_all('Valute'):
+            nominal_text = valute.find('Nominal').text
+            # Ədədi hissəni ayırmaq üçün split() istifadə edirik
+            nominal = int(nominal_text.split()[0])  # Yalnız birinci hissəni götürürük
+            
             currencies.append({
                 'Kod': valute['Code'],
                 'Valyuta': valute.find('Name').text,
                 'Məzənnə': float(valute.find('Value').text),
-                'Nominal': int(valute.find('Nominal').text)
+                'Nominal': nominal
             })
             
         return pd.DataFrame(currencies)
@@ -352,7 +356,6 @@ def get_currency_rates(date=None):
     except Exception as e:
         st.error(f"Valyuta məlumatları gətirilərkən xəta: {str(e)}")
         return pd.DataFrame()
-
 
 
 # ƏSAS İNTERFEYS
