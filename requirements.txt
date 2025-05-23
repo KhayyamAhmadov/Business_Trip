@@ -3,3 +3,4 @@ pandas
 xlsxwriter
 python-telegram-bot
 plotly
+openpyxl 
