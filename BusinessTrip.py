@@ -32,13 +32,17 @@ st.markdown("""
         text-align: center;
         margin-bottom: 2rem;
     }
-    /* Input sahələri üçün stil düzəlişləri */
+    .login-box .stTextInput {
+        width: 70%;
+        margin: 0 auto;
+    }
     .stTextInput input {
         background-color: rgba(255,255,255,0.2)!important;
         color: white!important;
         border: 1px solid rgba(255,255,255,0.3)!important;
+        border-radius: 8px!important;
+        padding: 8px 12px!important;
     }
-    /* Placeholder rəngi */
     .stTextInput input::placeholder {
         color: rgba(255,255,255,0.7)!important;
     }
