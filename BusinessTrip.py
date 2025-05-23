@@ -3,6 +3,9 @@ import pandas as pd
 from datetime import datetime
 import plotly.express as px
 from io import BytesIO
+import requests
+import xml.etree.ElementTree as ET
+
 
 # 1. İLK STREAMLIT ƏMRİ OLMALIDIR!
 st.set_page_config(
