@@ -231,12 +231,58 @@ PAYMENT_TYPES = {
 def load_trip_data():
     """Ezamiyyət məlumatlarını yükləyir"""
     try:
-        return pd.read_excel("ezamiyyet_melumatlari.xlsx")
-    except FileNotFoundError:
-        return pd.DataFrame()
+        if os.path.exists("ezamiyyet_melumatlari.xlsx"):
+            df = pd.read_excel("ezamiyyet_melumatlari.xlsx")
+            return df
+        else:
+            return pd.DataFrame()
     except Exception as e:
         st.error(f"Məlumat yükləmə xətası: {str(e)}")
         return pd.DataFrame()
+
+def check_admin_session():
+    if 'admin_session_time' in st.session_state:
+        if datetime.now() - st.session_state.admin_session_time > timedelta(minutes=30):
+            st.session_state.admin_logged = False
+            return False
+    return True
+
+def load_system_config():
+    try:
+        if os.path.exists("system_config.json"):
+            with open("system_config.json", "r", encoding="utf-8") as f:
+                return json.load(f)
+    except:
+        pass
+    return {}
+
+def write_log(action, details=""):
+    try:
+        log_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "action": action,
+            "details": details,
+            "user": "admin"
+        }
+        
+        log_file = "admin_logs.json"
+        logs = []
+        
+        if os.path.exists(log_file):
+            with open(log_file, "r", encoding="utf-8") as f:
+                logs = json.load(f)
+        
+        logs.append(log_entry)
+        
+        if len(logs) > 1000:
+            logs = logs[-1000:]
+        
+        with open(log_file, "w", encoding="utf-8") as f:
+            json.dump(logs, f, ensure_ascii=False, indent=2)
+            
+    except Exception as e:
+        pass
+
 
 def calculate_domestic_amount(from_city, to_city):
     """Daxili marşrut üçün bilet qiymətini hesablayır"""
