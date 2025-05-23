@@ -601,7 +601,8 @@ with tab2:
 
     # Sessiya müddəti yoxlanışı (30 dəqiqə)
     if st.session_state.admin_logged:
-        if datetime.now() - st.session_state.admin_session_time > timedelta(minutes=30):
+        time_diff = datetime.now() - st.session_state.admin_session_time
+        if time_diff > timedelta(minutes=30):
             st.session_state.admin_logged = False
             st.warning("Sessiya müddəti bitdi. Yenidən giriş edin.")
 
@@ -625,33 +626,63 @@ with tab2:
         </div>
         """, unsafe_allow_html=True)
         
-        # Qalan admin panel kodu burada...
+        # Session info və çıxış
+        col1, col2, col3 = st.columns([2, 1, 1])
+        with col1:
+            st.info(f"👋 Xoş gəlmisiniz, Admin! Sessiya: {st.session_state.admin_session_time.strftime('%H:%M')}")
+        with col2:
+            if st.button("🔄 Sessiya Yenilə"):
+                st.session_state.admin_session_time = datetime.now()
+                st.success("Sessiya yeniləndi!")
+        with col3:
+            if st.button("🚪 Çıxış Et", type="secondary"):
+                st.session_state.admin_logged = False
+                st.rerun()
+
+        # Ana tab bölməsi
+        admin_tabs = st.tabs([
+            "📊 Dashboard", 
+            "🗂️ Məlumat İdarəetməsi", 
+            "📥 İdxal/İxrac", 
+            "👥 İstifadəçi İdarəetməsi",
+            "🔧 Sistem Alətləri"
+        ])
+
+        # 1. DASHBOARD TAB
+        with admin_tabs[0]:
+            # Dashboard content here
+            pass
+
+        # 2. DATA MANAGEMENT TAB
+        with admin_tabs[1]:
+            # Data management content here
+            pass
+
+        # 3. IMPORT/EXPORT TAB
+        with admin_tabs[2]:
+            # Import/export content here
+            pass
+
+        # 4. USER MANAGEMENT TAB
+        with admin_tabs[3]:
+            # User management content here
+            pass
+
+        # 5. SYSTEM TOOLS TAB
+        with admin_tabs[4]:
+            # System tools content here
+            pass
 
     else:
         st.warning("🔐 Admin paneli üçün giriş tələb olunur")
         
         # Admin giriş forması
-        st.markdown("""
-        <div style="
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 3rem;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            margin: 2rem auto;
-            max-width: 500px;
-            text-align: center;
-        ">
-            <h2 style="color: white; margin-bottom: 2rem;">🔐 Admin Panel Giriş</h2>
-        </div>
-        """, unsafe_allow_html=True)
-
         with st.container():
             col1, col2, col3 = st.columns([1, 2, 1])
             with col2:
                 with st.form("admin_login_form"):
                     admin_user = st.text_input("👤 İstifadəçi adı", placeholder="admin")
                     admin_pass = st.text_input("🔒 Şifrə", type="password", placeholder="••••••••")
-                    remember_me = st.checkbox("🔄 Məni xatırla")
                     
                     submitted = st.form_submit_button("🚀 Giriş Et", use_container_width=True)
                     
@@ -662,6 +693,7 @@ with tab2:
                             st.rerun()
                         else:
                             st.error("❌ Yanlış giriş məlumatları!")
+
         st.stop()
 
     # Admin Panel Ana Səhifə
