@@ -1,9 +1,13 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
 import plotly.express as px
 from io import BytesIO
 import os
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+from datetime import datetime, timedelta
+import json
+
 
 
 # 1. İLK STREAMLIT ƏMRİ OLMALIDIR!
