@@ -1592,44 +1592,28 @@ with tab2:
                             except Exception as e:
                                 st.error(f"❌ Sıfırlama xətası: {str(e)}")
 
-# load_trip_data funksiyasının tamamlanması
-def load_trip_data():
-    """Ezamiyyət məlumatlarını yükləyir"""
-    try:
-        if os.path.exists("ezamiyyet_melumatlari.xlsx"):
-            df = pd.read_excel("ezamiyyet_melumatlari.xlsx")
-            return df
-        else:
-            # Boş DataFrame qaytarır
-            return pd.DataFrame()
-    except Exception as e:
-        st.error(f"Məlumat yükləmə xətası: {str(e)}")
-        return pd.DataFrame()
-
 # Admin panel kodunun sonuna əlavə edilməsi gereken hissələr
 
                 # Ana admin panel tab-larının sonuna əlavə kod
                 
                 # Sessiya izləmə
-                if st.session_state.admin_logged:
-                    write_log("admin_active", f"Session time: {st.session_state.admin_session_time}")
-                    
-                    # Footer məlumatları
-                    st.markdown("---")
-                    col1, col2, col3 = st.columns(3)
-                    
-                    with col1:
-                        st.caption(f"🔐 Admin Sessiyası: {st.session_state.admin_session_time.strftime('%H:%M:%S')}")
-                    
-                    with col2:
-                        try:
-                            df = load_trip_data()
-                            st.caption(f"📊 Cəmi məlumat: {len(df)} qeyd")
-                        except:
-                            st.caption("📊 Cəmi məlumat: 0 qeyd")
-                    
-                    with col3:
-                        st.caption(f"📅 Son yeniləmə: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
+        # Footer məlumatları
+        st.markdown("---")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.caption(f"🔐 Admin Sessiyası: {st.session_state.admin_session_time.strftime('%H:%M:%S')}")
+        
+        with col2:
+            try:
+                df = load_trip_data()
+                st.caption(f"📊 Cəmi məlumat: {len(df)} qeyd")
+            except:
+                st.caption("📊 Cəmi məlumat: 0 qeyd")
+        
+        with col3:
+            st.caption(f"📅 Son yeniləmə: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
+
 
 # Admin panel kodunun bitişi
     else:
