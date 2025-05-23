@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 import json
 import requests 
 from bs4 import BeautifulSoup
-
+import lxml
 
 
 # 1. İLK STREAMLIT ƏMRİ OLMALIDIR!
