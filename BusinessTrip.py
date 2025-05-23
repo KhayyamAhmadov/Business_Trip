@@ -322,6 +322,41 @@ def save_trip_data(data):
         st.error(f"Yadda saxlama xətası: {str(e)}")
         return False
 
+@st.cache_data(ttl=3600)  # 1 saatlıq cache
+def get_currency_rates(date=None):
+    """
+    Cbar.az-dan valyuta məzənnələrini çəkir
+    Format: https://www.cbar.az/currencies/DD.MM.YYYY.xml
+    """
+    try:
+        if not date:
+            date = datetime.now()
+        else:
+            date = pd.to_datetime(date)
+            
+        url = f"https://www.cbar.az/currencies/{date.strftime('%d.%m.%Y')}.xml"
+        response = requests.get(url)
+        response.raise_for_status()
+        
+        soup = BeautifulSoup(response.content, 'xml')
+        currencies = []
+        
+        for valute in soup.find_all('Valute'):
+            currencies.append({
+                'Kod': valute['Code'],
+                'Valyuta': valute.find('Name').text,
+                'Məzənnə': float(valute.find('Value').text),
+                'Nominal': int(valute.find('Nominal').text)
+            })
+            
+        return pd.DataFrame(currencies)
+    
+    except Exception as e:
+        st.error(f"Valyuta məlumatları gətirilərkən xəta: {str(e)}")
+        return pd.DataFrame()
+
+
+
 # ƏSAS İNTERFEYS
 st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
 tab1, tab2 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli"])
@@ -447,9 +482,57 @@ with tab1:
                 else:
                     st.error("Zəhmət olmasa bütün məcburi sahələri doldurun!")
 
-# admin paneli 
 
-# Admin Panel hissəsi - Təkmil versiya
+
+        # VALYUTA MƏZƏNNƏSİ HISSƏSİ
+        with st.expander("💱 Valyuta Məzənnələri (Cbar.az)", expanded=True):
+            selected_date = st.date_input(
+                "Məzənnə tarixini seçin",
+                value=datetime.now(),
+                max_value=datetime.now()
+            )
+            
+            if st.button("🔄 Məzənnələri Yenilə"):
+                st.cache_data.clear()
+            
+            try:
+                currency_df = get_currency_rates(selected_date)
+                if not currency_df.empty:
+                    cols = st.columns(3)
+                    currency_groups = [currency_df[i::3] for i in range(3)]
+                    
+                    for idx, col in enumerate(cols):
+                        with col:
+                            for _, row in currency_groups[idx].iterrows():
+                                st.markdown(f"""
+                                <div style="
+                                    background: #f8f9fa;
+                                    padding: 1rem;
+                                    border-radius: 10px;
+                                    margin-bottom: 1rem;
+                                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                                ">
+                                    <div style="display: flex; justify-content: space-between;">
+                                        <div>
+                                            <h4 style="margin: 0; color: #4a4a4a;">{row['Kod']}</h4>
+                                            <p style="margin: 0; font-size: 0.8rem; color: #666;">{row['Valyuta']}</p>
+                                        </div>
+                                        <div style="text-align: right;">
+                                            <h3 style="margin: 0; color: #6366f1;">{(row['Məzənnə']/row['Nominal']):.4f}</h3>
+                                            <p style="margin: 0; font-size: 0.8rem; color: #666;">1 {row['Kod']}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                else:
+                    st.warning("Bu tarix üçün məzənnə məlumatı tapılmadı")
+                    
+            except Exception as e:
+                st.error("Valyuta məlumatları gətirilərkən xəta yarandı")
+
+
+
+# Admin Panel hissəsi
 with tab2:
     # Admin sessiya idarəetməsi
     if 'admin_logged' not in st.session_state:
