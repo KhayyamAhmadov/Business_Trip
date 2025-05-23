@@ -605,8 +605,32 @@ with tab2:
             st.session_state.admin_logged = False
             st.warning("Sessiya müddəti bitdi. Yenidən giriş edin.")
 
-    # Admin giriş forması
-    if not st.session_state.admin_logged:
+    # Admin Panel məzmunu
+    if st.session_state.admin_logged:
+        # Header və Navigation
+        st.markdown("""
+        <div style="
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        ">
+            <h1 style="color: white; text-align: center; margin: 0;">
+                ⚙️ Admin İdarəetmə Paneli
+            </h1>
+            <p style="color: rgba(255,255,255,0.8); text-align: center; margin: 0.5rem 0 0 0;">
+                Ezamiyyət sisteminin tam idarəetməsi
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Qalan admin panel kodu burada...
+
+    else:
+        st.warning("🔐 Admin paneli üçün giriş tələb olunur")
+        
+        # Admin giriş forması
         st.markdown("""
         <div style="
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -620,10 +644,6 @@ with tab2:
             <h2 style="color: white; margin-bottom: 2rem;">🔐 Admin Panel Giriş</h2>
         </div>
         """, unsafe_allow_html=True)
-
-
-    else: 
-        st.warning("🔐 Admin paneli üçün giriş tələb olunur")
 
         with st.container():
             col1, col2, col3 = st.columns([1, 2, 1])
@@ -639,7 +659,6 @@ with tab2:
                         if admin_user == "admin" and admin_pass == "admin123":
                             st.session_state.admin_logged = True
                             st.session_state.admin_session_time = datetime.now()
-                            st.success("✅ Uğurlu giriş!")
                             st.rerun()
                         else:
                             st.error("❌ Yanlış giriş məlumatları!")
