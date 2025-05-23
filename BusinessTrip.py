@@ -283,18 +283,6 @@ with tab1:
         
         # Sol sütun
         with col1:
-            with st.expander("👤 Şəxsi Məlumatlar", expanded=True):
-                cols = st.columns(2)
-                with cols[0]:
-                    first_name = st.text_input("Ad", key="first_name")
-                    father_name = st.text_input("Ata adı", key="father_name")
-                with cols[1]:
-                    last_name = st.text_input("Soyad", key="last_name")
-                    position = st.text_input("Vəzifə", key="position")
-
-            with st.expander("🏢 Təşkilat Məlumatları", expanded=True):
-                department = st.selectbox("Şöbə", DEPARTMENTS, key="department")
-
             with st.expander("🧳 Ezamiyyət Detalları", expanded=True):
                 trip_type = st.radio("Ezamiyyət növü", ["Ölkə daxili", "Ölkə xarici"], key="trip_type")
                 payment_type = st.selectbox("Ödəniş növü", list(PAYMENT_TYPES.keys()), key="payment_type")
@@ -308,9 +296,30 @@ with tab1:
                     ticket_price = calculate_domestic_amount(from_city, to_city)
                     daily_allowance = 70  # Sabit günlük müavinət
                 else:
+                    # Yeni xarici ölkə parametrləri
                     country = st.selectbox("Ölkə", list(COUNTRIES.keys()))
-                    daily_allowance = COUNTRIES[country]
+                    payment_mode = st.selectbox(
+                        "Ödəniş rejimi",
+                        options=["Adi rejim", "Günlük Normaya 50% əlavə", "Günlük Normaya 30% əlavə"],
+                        help="""Ödəniş seçimləri:
+                        - Adi rejim: Standart günlük müavinət
+                        - 50% əlavə: Günlük müavinət + ölkə normasının 50%-i
+                        - 30% əlavə: Günlük müavinət + ölkə normasının 30%-i"""
+                    )
+                    
+                    # Ölkə əsas norması
+                    base_allowance = COUNTRIES[country]
+                    
+                    # Seçimə görə hesablama
+                    if payment_mode == "Adi rejim":
+                        daily_allowance = base_allowance
+                    elif payment_mode == "Günlük Normaya 50% əlavə":
+                        daily_allowance = base_allowance * 1.5
+                    else: # 30% əlavə
+                        daily_allowance = base_allowance * 1.3
+                        
                     ticket_price = 0
+
 
                 cols = st.columns(2)
                 with cols[0]:
