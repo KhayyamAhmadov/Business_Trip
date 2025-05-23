@@ -315,22 +315,35 @@ with tab1:
 
         # Sağ sütun (Hesablama)
         with col2:
-            with st.container():
-                st.markdown('<div class="section-header">💰 Hesablama</div>', unsafe_allow_html=True)
-                
-                if start_date and end_date and end_date >= start_date:
-                    trip_days = calculate_days(start_date, end_date)
-                    total_amount = calculate_total_amount(daily_allowance, trip_days, payment_type, ticket_price)
+            # Yenilənmiş hesablama hissəsi
+            with col2:
+                with st.container():
+                    st.markdown('<div class="section-header">💰 Hesablama</div>', unsafe_allow_html=True)
                     
-                    if trip_type == "Ölkə daxili":
-                        st.metric("🚌 Bilet qiyməti", f"{ticket_price} AZN", 
-                                 help="Seçilmiş marşrut üzrə nəqliyyat xərci")
+                    if start_date and end_date and end_date >= start_date:
+                        trip_days = calculate_days(start_date, end_date)
+                        
+                        # Günlük müavinət və bilet qiyməti
+                        if trip_type == "Ölkə daxili":
+                            ticket_price = calculate_domestic_amount(from_city, to_city)
+                            daily_allowance = 70  # Sabit günlük müavinət
+                        else:
+                            ticket_price = 0
+                            daily_allowance = COUNTRIES[country]
+                        
+                        total_amount = calculate_total_amount(daily_allowance, trip_days, payment_type, ticket_price)
+                        
+                        # Hər iki növ üçün günlük müavinət
                         st.metric("📅 Günlük müavinət", f"{daily_allowance} AZN", 
-                                 help="Sabit günlük müavinət məbləği")
-                    
-                    st.metric("⏳ Ezamiyyət müddəti", f"{trip_days} gün")
-                    st.metric("💳 Ümumi ödəniləcək məbləğ", f"{total_amount:.2f} AZN", 
-                             delta="10% endirim" if payment_type == "10% ödəniş edilməklə" else None)
+                                 help="Müəyyən edilmiş günlük müavinət məbləği")
+                        
+                        if trip_type == "Ölkə daxili":
+                            st.metric("🚌 Bilet qiyməti", f"{ticket_price} AZN", 
+                                     help="Seçilmiş marşrut üzrə nəqliyyat xərci")
+                        
+                        st.metric("⏳ Ezamiyyət müddəti", f"{trip_days} gün")
+                        st.metric("💳 Ümumi ödəniləcək məbləğ", f"{total_amount:.2f} AZN", 
+                                 delta="10% endirim" if payment_type == "10% ödəniş edilməklə" else None)
 
                 if st.button("✅ Yadda Saxla", type="primary", use_container_width=True):
                     trip_data = {
