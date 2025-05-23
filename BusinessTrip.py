@@ -524,4 +524,140 @@ with tab2:
                     if st.button("✅ Təsdiqlə və Yüklə"):
                         çatışmayanlar = [k for k,v in column_mapping.items() if not v]
                         if çatışmayanlar:
-                            st.error(f"Zəruri sütunlar seçilməyib: {', '.join(çatışmayanlar)
+                            st.error(f"Zəruri sütunlar seçilməyib: {', '.join(çatışmayanlar)}")
+                        else:
+                            # Mapping işləmi
+                            df_mapped = df_import.rename(columns={v: k for k, v in column_mapping.items() if v})
+                            
+                            # Məlumatları mövcud faylə əlavə et
+                            try:
+                                df_existing = pd.read_excel("ezamiyyet_melumatlari.xlsx")
+                                df_combined = pd.concat([df_existing, df_mapped], ignore_index=True)
+                            except FileNotFoundError:
+                                df_combined = df_mapped
+                            
+                            df_combined.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+                            st.success(f"✅ {len(df_mapped)} qeyd uğurla idxal edildi!")
+                            st.rerun()
+                    
+                    # Önizləmə
+                    if st.checkbox("📋 Məlumat önizləməsi"):
+                        st.dataframe(df_import.head(10), use_container_width=True)
+                        
+                except Exception as e:
+                    st.error(f"Fayl oxunarkən xəta: {str(e)}")
+
+        # Parametrlər sekmesi
+        with tab_settings:
+            st.markdown("### 🛠️ Sistem Parametrləri")
+            
+            # Ölkə və məbləğlərin redaktə edilməsi
+            with st.expander("🌍 Beynəlxalq Ezamiyyət Parametrləri", expanded=True):
+                st.markdown("#### Mövcud Ölkələr və Günlük Müavinətlər")
+                
+                # Yeni ölkə əlavə etmə
+                cols = st.columns([2, 1, 1])
+                with cols[0]:
+                    new_country = st.text_input("Yeni ölkə adı")
+                with cols[1]:
+                    new_allowance = st.number_input("Günlük müavinət (AZN)", min_value=0, value=300)
+                with cols[2]:
+                    if st.button("➕ Əlavə et"):
+                        if new_country and new_country not in COUNTRIES:
+                            COUNTRIES[new_country] = new_allowance
+                            st.success(f"{new_country} əlavə edildi!")
+                            st.rerun()
+                
+                # Mövcud ölkələri göstər və redaktə et
+                for country, allowance in COUNTRIES.items():
+                    cols = st.columns([2, 1, 1])
+                    with cols[0]:
+                        st.write(f"🌍 {country}")
+                    with cols[1]:
+                        new_val = st.number_input(f"Müavinət", value=allowance, key=f"country_{country}")
+                        if new_val != allowance:
+                            COUNTRIES[country] = new_val
+                    with cols[2]:
+                        if st.button("🗑️", key=f"del_{country}"):
+                            del COUNTRIES[country]
+                            st.rerun()
+
+            # Daxili marşrutların redaktə edilməsi
+            with st.expander("🚌 Daxili Marşrut Parametrləri"):
+                st.markdown("#### Daxili Marşrut Qiymətləri")
+                
+                # Yeni marşrut əlavə etmə
+                cols = st.columns([1, 1, 1, 1])
+                with cols[0]:
+                    route_from = st.selectbox("Haradan", CITIES, key="route_from")
+                with cols[1]:
+                    route_to = st.selectbox("Haraya", [c for c in CITIES if c != route_from], key="route_to")
+                with cols[2]:
+                    route_price = st.number_input("Qiymət (AZN)", min_value=0.0, value=10.0, step=0.5)
+                with cols[3]:
+                    if st.button("➕ Marşrut əlavə et"):
+                        DOMESTIC_ROUTES[(route_from, route_to)] = route_price
+                        st.success(f"{route_from} → {route_to} marşrutu əlavə edildi!")
+                        st.rerun()
+                
+                # Mövcud marşrutları göstər
+                route_df = pd.DataFrame([
+                    {"Haradan": k[0], "Haraya": k[1], "Qiymət": v} 
+                    for k, v in DOMESTIC_ROUTES.items()
+                ])
+                
+                if not route_df.empty:
+                    edited_routes = st.data_editor(
+                        route_df,
+                        use_container_width=True,
+                        num_rows="dynamic",
+                        column_config={
+                            "Qiymət": st.column_config.NumberColumn(
+                                "Qiymət (AZN)",
+                                min_value=0,
+                                max_value=100,
+                                step=0.5,
+                                format="%.2f AZN"
+                            )
+                        }
+                    )
+                    
+                    if st.button("💾 Marşrut dəyişikliklərini saxla"):
+                        # Yenilənmiş marşrutları saxla
+                        new_routes = {}
+                        for _, row in edited_routes.iterrows():
+                            new_routes[(row['Haradan'], row['Haraya'])] = row['Qiymət']
+                        DOMESTIC_ROUTES.clear()
+                        DOMESTIC_ROUTES.update(new_routes)
+                        st.success("Marşrut məlumatları yeniləndi!")
+
+            # Sistem məlumatları
+            with st.expander("📊 Sistem Məlumatları"):
+                st.markdown("#### Ümumi Statistikalar")
+                
+                try:
+                    df = pd.read_excel("ezamiyyet_melumatlari.xlsx")
+                    
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("Toplam Qeydlər", len(df))
+                    with col2:
+                        st.metric("Ən Son Qeyd", df['Tarix'].max() if not df.empty else "Yoxdur")
+                    with col3:
+                        st.metric("Fayl Ölçüsü", f"{len(df) * 0.5:.1f} KB" if not df.empty else "0 KB")
+                    
+                    # Sistem təmizliyi
+                    st.markdown("#### 🗑️ Sistem Təmizliyi")
+                    if st.button("⚠️ Bütün məlumatları sil", type="secondary"):
+                        if st.checkbox("Təsdiq edirəm ki, bütün məlumatları silmək istəyirəm"):
+                            try:
+                                import os
+                                if os.path.exists("ezamiyyet_melumatlari.xlsx"):
+                                    os.remove("ezamiyyet_melumatlari.xlsx")
+                                st.success("Bütün məlumatlar silindi!")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Silinmə zamanı xəta: {str(e)}")
+                
+                except FileNotFoundError:
+                    st.info("Hələ heç bir məlumat faylı yaradılmayıb")
