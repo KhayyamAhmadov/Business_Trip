@@ -324,12 +324,8 @@ def save_trip_data(data):
         st.error(f"Yadda saxlama xətası: {str(e)}")
         return False
 
-@st.cache_data(ttl=3600)  # 1 saatlıq cache
+@st.cache_data(ttl=3600)
 def get_currency_rates(date=None):
-    """
-    Cbar.az-dan valyuta məzənnələrini çəkir
-    Format: https://www.cbar.az/currencies/DD.MM.YYYY.xml
-    """
     try:
         if not date:
             date = datetime.now()
@@ -337,7 +333,7 @@ def get_currency_rates(date=None):
             date = pd.to_datetime(date)
             
         url = f"https://www.cbar.az/currencies/{date.strftime('%d.%m.%Y')}.xml"
-        response = requests.get(url)
+        response = requests.get(url)  # <-- Artıq requests istifadə edilə bilər
         response.raise_for_status()
         
         soup = BeautifulSoup(response.content, 'xml')
