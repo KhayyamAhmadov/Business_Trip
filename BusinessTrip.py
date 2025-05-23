@@ -306,30 +306,36 @@ with tab1:
                     with cols[1]:
                         to_city = st.selectbox("Haraya", [c for c in CITIES if c != from_city])
                     ticket_price = calculate_domestic_amount(from_city, to_city)
-                    daily_allowance = 70  # Sabit günlük müavinət
+                    daily_allowance = 70
                 else:
-                    # Yeni xarici ölkə parametrləri
                     country = st.selectbox("Ölkə", list(COUNTRIES.keys()))
+                    
+                    # Ödəniş rejimi seçimi
                     payment_mode = st.selectbox(
                         "Ödəniş rejimi",
                         options=["Adi rejim", "Günlük Normaya 50% əlavə", "Günlük Normaya 30% əlavə"],
-                        help="""Ödəniş seçimləri:
-                        - Adi rejim: Standart günlük müavinət
-                        - 50% əlavə: Günlük müavinət + ölkə normasının 50%-i
-                        - 30% əlavə: Günlük müavinət + ölkə normasının 30%-i"""
+                        help="Günlük müavinət normasının tətbiq edilmə üsulu"
                     )
                     
-                    # Ölkə əsas norması
+                    # Qonaqlama xərcləri seçimi
+                    accommodation = st.selectbox(
+                        "Qonaqlama xərcləri",
+                        options=["Adi rejim", "Yalnız yaşayış yeri ilə təmin edir", "Yalnız gündəlik xərcləri təmin edir"],
+                        help="""Qonaqlama tipinə görə əlavə əmsallar:
+                        - Adi: Əlavə yoxdur
+                        - Yaşayış yeri: Ümumi məbləğ +40%
+                        - Gündəlik xərclər: Ümumi məbləğ +60%"""
+                    )
+
+                    # Günlük müavinət hesabı
                     base_allowance = COUNTRIES[country]
-                    
-                    # Seçimə görə hesablama
                     if payment_mode == "Adi rejim":
                         daily_allowance = base_allowance
                     elif payment_mode == "Günlük Normaya 50% əlavə":
                         daily_allowance = base_allowance * 1.5
-                    else: # 30% əlavə
+                    else:
                         daily_allowance = base_allowance * 1.3
-                        
+                    
                     ticket_price = 0
 
                 cols = st.columns(2)
@@ -338,7 +344,7 @@ with tab1:
                 with cols[1]:
                     end_date = st.date_input("Bitmə tarixi")
                 
-                purpose = st.text_area("Ezamiyyət haqqında əlavə məlumat almaq üçün suallarınızı qeyd edin.", height=100)
+                purpose = st.text_area("Ezamiyyət haqqında əlavə məlumat", height=100)
 
         # Sağ sütun (Hesablama)
         with col2:
@@ -348,30 +354,34 @@ with tab1:
                 if start_date and end_date and end_date >= start_date:
                     trip_days = calculate_days(start_date, end_date)
                     
-                    # Günlük müavinət və bilet qiyməti
                     if trip_type == "Ölkə daxili":
                         ticket_price = calculate_domestic_amount(from_city, to_city)
-                        daily_allowance = 70  # Sabit günlük müavinət
+                        daily_allowance = 70
                     else:
                         ticket_price = 0
-                        # Burada daily_allowance yenidən təyin edilmir, artıq düzgün hesablanıb
                     
+                    # Əsas hesablama
                     total_amount = calculate_total_amount(daily_allowance, trip_days, payment_type, ticket_price)
                     
-                    # Hər iki növ üçün günlük müavinət
-                    st.metric("📅 Günlük müavinət", f"{daily_allowance} AZN", 
-                             help="Müəyyən edilmiş günlük müavinət məbləği")
+                    # Qonaqlama əmsalı
+                    if trip_type == "Ölkə xarici":
+                        if accommodation == "Yalnız yaşayış yeri ilə təmin edir":
+                            total_amount *= 1.4
+                        elif accommodation == "Yalnız gündəlik xərcləri təmin edir":
+                            total_amount *= 1.6
+                    
+                    # Görüntüləmə
+                    st.metric("📅 Günlük müavinət", f"{daily_allowance} AZN")
                     
                     if trip_type == "Ölkə daxili":
-                        st.metric("🚌 Bilet qiyməti", f"{ticket_price} AZN", 
-                                 help="Seçilmiş marşrut üzrə nəqliyyat xərci")
+                        st.metric("🚌 Bilet qiyməti", f"{ticket_price} AZN")
                     
                     st.metric("⏳ Ezamiyyət müddəti", f"{trip_days} gün")
-                    st.metric("💳 Ümumi ödəniləcək məbləğ", f"{total_amount:.2f} AZN", 
-                             delta="10% endirim" if payment_type == "10% ödəniş edilməklə" else None)
+                    st.metric("💳 Ümumi məbləğ", f"{total_amount:.2f} AZN",
+                             delta="40% artım" if accommodation in ["Yalnız yaşayış yeri ilə təmin edir", "Yalnız gündəlik xərcləri təmin edir"] else None)
 
             if st.button("✅ Yadda Saxla", type="primary", use_container_width=True):
-                if first_name and last_name and start_date and end_date:
+                if all([first_name, last_name, start_date, end_date]):
                     trip_data = {
                         "Tarix": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         "Ad": first_name,
@@ -381,6 +391,7 @@ with tab1:
                         "Şöbə": department,
                         "Ezamiyyət növü": trip_type,
                         "Ödəniş növü": payment_type,
+                        "Qonaqlama növü": accommodation if trip_type == "Ölkə xarici" else "Tətbiq edilmir",
                         "Marşrut": f"{from_city} → {to_city}" if trip_type == "Ölkə daxili" else country,
                         "Bilet qiyməti": ticket_price,
                         "Günlük müavinət": daily_allowance,
@@ -390,11 +401,12 @@ with tab1:
                         "Ümumi məbləğ": total_amount,
                         "Məqsəd": purpose
                     }
+                    
                     if save_trip_data(trip_data):
                         st.success("Məlumatlar uğurla yadda saxlanıldı!")
                         st.balloons()
                 else:
-                    st.error("Zəhmət olmasa bütün mütləq sahələri doldurun!")
+                    st.error("Zəhmət olmasa bütün məcburi sahələri doldurun!")
 # ============================== ADMIN PANELİ ==============================
 with tab2:
     # Admin giriş statusunun yoxlanılması
