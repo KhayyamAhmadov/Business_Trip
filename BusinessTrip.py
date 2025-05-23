@@ -179,9 +179,8 @@ DOMESTIC_ROUTES = {
     ("Bakı", "Ağdam"): 13.50,
     ("Bakı", "Ağdaş"): 10.30,
     ("Bakı", "Astara"): 10.40,
-    ("Bakı", "Ağdam"): 26.60,
     ("Bakı", "Şuşa"): 28.90,
-    ("Bakı", "Balakən "): 17.30,
+    ("Bakı", "Balakən"): 17.30,
     ("Bakı", "Beyləqan"): 10.00,
     ("Bakı", "Bərdə"): 11.60,
     ("Bakı", "Biləsuvar"): 6.50,
@@ -219,7 +218,6 @@ DOMESTIC_ROUTES = {
     ("Bakı", "Zaqatala"): 15.60,
     ("Bakı", "Zərdab"): 9.30
 }
-
 
 PAYMENT_TYPES = {
     "Ödənişsiz": 0,
@@ -299,9 +297,11 @@ with tab1:
                     with cols[1]:
                         to_city = st.selectbox("Haraya", [c for c in CITIES if c != from_city])
                     daily_allowance = calculate_domestic_amount(from_city, to_city)
+                    ticket_price = daily_allowance
                 else:
                     country = st.selectbox("Ölkə", list(COUNTRIES.keys()))
                     daily_allowance = COUNTRIES[country]
+                    ticket_price = 0
 
                 cols = st.columns(2)
                 with cols[0]:
@@ -320,10 +320,15 @@ with tab1:
                     trip_days = calculate_days(start_date, end_date)
                     total_amount = calculate_total_amount(daily_allowance, trip_days, payment_type)
                     
-                    st.metric("Günlük məbləğ", f"{daily_allowance} AZN", 
+                    # Bilet qiyməti yalnız ölkə daxili üçün
+                    if trip_type == "Ölkə daxili":
+                        st.metric("🚌 Biletin qiyməti", f"{ticket_price} AZN", 
+                                 help="Seçilmiş marşrut üzrə nəqliyyat xərci")
+                    
+                    st.metric("📅 Günlük məbləğ", f"{daily_allowance} AZN", 
                              help="Məsafə və ölkəyə görə müəyyən edilmiş günlük məbləğ")
-                    st.metric("Ezamiyyət müddəti", f"{trip_days} gün")
-                    st.metric("Ümumi ödəniləcək məbləğ", f"{total_amount:.2f} AZN", 
+                    st.metric("⏳ Ezamiyyət müddəti", f"{trip_days} gün")
+                    st.metric("💳 Ümumi ödəniləcək məbləğ", f"{total_amount:.2f} AZN", 
                              delta="10% endirim" if payment_type == "10% ödəniş edilməklə" else None)
 
                 if st.button("✅ Yadda Saxla", type="primary", use_container_width=True):
@@ -337,6 +342,7 @@ with tab1:
                         "Ezamiyyət növü": trip_type,
                         "Ödəniş növü": payment_type,
                         "Marşrut": f"{from_city} → {to_city}" if trip_type == "Ölkə daxili" else country,
+                        "Bilet qiyməti": ticket_price,
                         "Başlanğıc tarixi": start_date.strftime("%Y-%m-%d"),
                         "Bitmə tarixi": end_date.strftime("%Y-%m-%d"),
                         "Günlər": trip_days,
@@ -346,6 +352,7 @@ with tab1:
                     }
                     save_trip_data(trip_data)
                     st.success("Məlumatlar uğurla yadda saxlanıldı!")
+
 # ============================== ADMIN PANELI ==============================
 with tab2:
     with st.container():
