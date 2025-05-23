@@ -501,31 +501,39 @@ with st.expander("💱 Valyuta Məzənnələri (Cbar.az)", expanded=True):
         currency_df = get_currency_rates(selected_date)
         
         if not currency_df.empty:
-            # Sistem rənglərinə uyğun CSS
+            # Açıq rəng palitrası
             st.markdown("""
             <style>
-                .compact-card {
-                    background: rgba(99, 102, 241, 0.05);
-                    border: 1px solid rgba(99, 102, 241, 0.1);
+                .light-card {
+                    background: rgba(129, 131, 244, 0.1);
+                    border: 1px solid rgba(129, 131, 244, 0.2);
                     border-radius: 8px;
                     padding: 0.8rem;
-                    margin: 0.2rem;
+                    margin: 0.3rem;
                     flex: 1 1 30%;
+                    transition: all 0.3s ease;
                 }
-                .currency-header {
-                    color: #6366f1 !important;
+                .light-card:hover {
+                    background: rgba(129, 131, 244, 0.15);
+                }
+                .light-header {
+                    color: #8183f4 !important;
                     font-size: 1.1rem !important;
                     margin: 0 !important;
                 }
-                .rate-value {
-                    color: #8b5cf6 !important;
+                .light-rate {
+                    color: #a78bfa !important;
                     font-size: 1rem !important;
+                    margin: 0 !important;
+                }
+                .currency-desc {
+                    color: #777 !important;
+                    font-size: 0.75rem !important;
                     margin: 0 !important;
                 }
             </style>
             """, unsafe_allow_html=True)
 
-            # 3 sütunlu qrup
             cols = st.columns(3)
             currency_groups = [currency_df[i::3] for i in range(3)]
 
@@ -534,15 +542,15 @@ with st.expander("💱 Valyuta Məzənnələri (Cbar.az)", expanded=True):
                     for _, row in currency_groups[idx].iterrows():
                         rate = row['Məzənnə'] / row['Nominal']
                         st.markdown(f"""
-                        <div class="compact-card">
+                        <div class="light-card">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <div>
-                                    <p class="currency-header">{row['Kod']}</p>
-                                    <p style="color: #666; font-size: 0.75rem; margin: 0;">{row['Valyuta']}</p>
+                                    <p class="light-header">{row['Kod']}</p>
+                                    <p class="currency-desc">{row['Valyuta']}</p>
                                 </div>
                                 <div style="text-align: right;">
-                                    <p class="rate-value">{rate:.4f}</p>
-                                    <p style="color: #888; font-size: 0.7rem; margin: 0;">1 {row['Kod']}</p>
+                                    <p class="light-rate">{rate:.4f}</p>
+                                    <p class="currency-desc">1 {row['Kod']}</p>
                                 </div>
                             </div>
                         </div>
@@ -552,7 +560,6 @@ with st.expander("💱 Valyuta Məzənnələri (Cbar.az)", expanded=True):
             
     except Exception as e:
         st.error(f"Məzənnə yüklənərkən xəta: {str(e)}")
-
 
 # Admin Panel hissəsi
 with tab2:
