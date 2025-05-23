@@ -620,7 +620,11 @@ with tab2:
             <h2 style="color: white; margin-bottom: 2rem;">🔐 Admin Panel Giriş</h2>
         </div>
         """, unsafe_allow_html=True)
-        
+
+
+    else: 
+        st.warning("🔐 Admin paneli üçün giriş tələb olunur")
+
         with st.container():
             col1, col2, col3 = st.columns([1, 2, 1])
             with col2:
