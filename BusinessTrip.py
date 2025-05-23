@@ -1337,12 +1337,13 @@ with admin_tabs[1]:
             except Exception as e:
                 st.error(f"❌ Analitika xətası: {str(e)}")
 
-        # 4. İDXAL/İXRAC TAB
+# 4. İDXAL/İXRAC TAB
         with admin_tabs[3]:
             st.markdown("### 📥 Məlumat İdxal/İxrac Mərkəzi")
             
             col1, col2 = st.columns(2)
             
+            # İXRAC BÖLÜMÜ
             with col1:
                 st.markdown("#### 📤 İxrac Seçimləri")
                 
@@ -1350,152 +1351,156 @@ with admin_tabs[1]:
                     df = load_trip_data()
                     
                     if not df.empty:
-                        # İxrac formatları
+                        # Format seçimi
                         export_format = st.selectbox(
-                            "Fayl formatı",
-                            ["Excel (.xlsx)", "CSV (.csv)", "JSON (.json)"]
+                            "📄 Fayl formatı",
+                            ["Excel (.xlsx)", "CSV (.csv)", "JSON (.json)"],
+                            help="İxrac ediləcək fayl formatını seçin"
                         )
                         
-                        # Tarix aralığı
+                        # Tarix aralığı seçimi
+                        st.markdown("##### 📅 Tarix Aralığı")
                         col_a, col_b = st.columns(2)
                         with col_a:
-                            start_date = st.date_input("Başlanğıc tarixi", value=datetime.now() - timedelta(days=30))
+                            start_date = st.date_input(
+                                "Başlanğıc tarixi", 
+                                value=datetime.now() - timedelta(days=30),
+                                help="İxrac ediləcək məlumatların başlanğıc tarixi"
+                            )
                         with col_b:
-                            end_date = st.date_input("Bitmə tarixi", value=datetime.now())
+                            end_date = st.date_input(
+                                "Bitmə tarixi", 
+                                value=datetime.now(),
+                                help="İxrac ediləcək məlumatların bitmə tarixi"
+                            )
                         
                         # Sütun seçimi
+                        st.markdown("##### 📊 Sütun Seçimi")
                         all_columns = df.columns.tolist()
                         selected_cols = st.multiselect(
                             "İxrac ediləcək sütunlar",
                             all_columns,
-                            default=all_columns
+                            default=all_columns,
+                            help="İxrac ediləcək sütunları seçin"
                         )
                         
-                        if st.button("📤 İxrac Et", type="primary"):
-                            try:
-                                # Tarix filtri tətbiq et
-                                if 'Tarix' in df.columns:
-                                    df['Tarix'] = pd.to_datetime(df['Tarix'], errors='coerce')
-                                    mask = (df['Tarix'].dt.date >= start_date) & (df['Tarix'].dt.date <= end_date)
-                                    export_df = df[mask][selected_cols]
-                                else:
-                                    export_df = df[selected_cols]
-                                
-                                filename = f"ezamiyyet_ixrac_{datetime.now().strftime('%Y%m%d_%H%M')}"
-                                
-                                if export_format == "Excel (.xlsx)":
-                                    buffer = BytesIO()
-                                    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                                        export_df.to_excel(writer, index=False, sheet_name='Ezamiyyətlər')
-                                    
-                                    st.download_button(
-                                        "⬇️ Excel Faylını Yüklə",
-                                        data=buffer.getvalue(),
-                                        file_name=f"{filename}.xlsx",
-                                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                                    )
-                                
-                                elif export_format == "CSV (.csv)":
-                                    csv = export_df.to_csv(index=False).encode('utf-8')
-                                    st.download_button(
-                                        "⬇️ CSV Faylını Yüklə",
-                                        data=csv,
-                                        file_name=f"{filename}.csv",
-                                        mime="text/csv"
-                                    )
-                                
-                                elif export_format == "JSON (.json)":
-                                    json_str = export_df.to_json(orient='records', date_format='iso')
-                                    st.download_button(
-                                        "⬇️ JSON Faylını Yüklə",
-                                        data=json_str,
-                                        file_name=f"{filename}.json",
-                                        mime="application/json"
-                                    )
-                                
-                                st.success(f"✅ {len(export_df)} qeyd ixrac edildi!")
-                                
-                            except Exception as e:
-                                st.error(f"❌ İxrac xətası: {str(e)}")
-                    
+                        # Filtrlər
+                        st.markdown("##### 🔍 Əlavə Filtrlər")
+                        if 'Şöbə' in df.columns:
+                            departments = df['Şöbə'].unique().tolist()
+                            selected_depts = st.multiselect(
+                                "Şöbə filtri",
+                                departments,
+                                default=departments,
+                                help="Müəyyən şöbələri seçin"
+                            )
+                        
+                        # İxrac düyməsi
+                        if st.button("📤 İxrac Et", type="primary", use_container_width=True):
+                            if not selected_cols:
+                                st.error("❌ Ən azı bir sütun seçin!")
+                            elif start_date > end_date:
+                                st.error("❌ Başlanğıc tarixi bitmə tarixindən böyük ola bilməz!")
+                            else:
+                                with st.spinner("İxrac edilir..."):
+                                    success = export_data(df, export_format, start_date, end_date, 
+                                                       selected_cols, selected_depts if 'Şöbə' in df.columns else None)
+                                    if success:
+                                        st.balloons()
                     else:
                         st.info("📝 İxrac üçün məlumat yoxdur")
+                        st.markdown("İlk öncə məlumat əlavə edin və ya idxal edin.")
                 
                 except Exception as e:
                     st.error(f"❌ İxrac xətası: {str(e)}")
+                    with st.expander("🔍 Xəta təfərrüatları"):
+                        st.code(str(e))
             
+            # İDXAL BÖLÜMÜ
             with col2:
                 st.markdown("#### 📥 İdxal Seçimləri")
                 
                 uploaded_file = st.file_uploader(
-                    "Fayl seçin",
+                    "📎 Fayl seçin",
                     type=['xlsx', 'csv', 'json'],
-                    help="Excel, CSV və ya JSON formatında faylları idxal edə bilərsiniz"
+                    help="Excel (.xlsx), CSV (.csv) və ya JSON (.json) formatında faylları idxal edə bilərsiniz"
                 )
                 
                 if uploaded_file is not None:
                     try:
-                        # Fayl növünü müəyyən et
-                        file_extension = uploaded_file.name.split('.')[-1].lower()
+                        # Fayl məlumatları
+                        file_details = {
+                            "Fayl adı": uploaded_file.name,
+                            "Fayl ölçüsü": f"{uploaded_file.size / 1024:.2f} KB",
+                            "Fayl tipi": uploaded_file.type
+                        }
                         
-                        if file_extension == 'xlsx':
-                            new_df = pd.read_excel(uploaded_file)
-                        elif file_extension == 'csv':
-                            new_df = pd.read_csv(uploaded_file)
-                        elif file_extension == 'json':
-                            new_df = pd.read_json(uploaded_file)
+                        with st.expander("📋 Fayl məlumatları"):
+                            for key, value in file_details.items():
+                                st.write(f"**{key}:** {value}")
                         
-                        st.markdown("#### 👀 İdxal Əvvəli Nəzər")
-                        st.dataframe(new_df.head(), use_container_width=True)
+                        # Faylı oxu
+                        new_df = read_uploaded_file(uploaded_file)
                         
-                        st.info(f"📊 {len(new_df)} qeyd tapıldı, {len(new_df.columns)} sütun")
-                        
-                        # İdxal seçimləri
-                        import_mode = st.radio(
-                            "İdxal rejimi",
-                            ["Əlavə et", "Əvəzlə", "Birləşdir"]
-                        )
-                        
-                        if st.button("📥 İdxal Et", type="primary"):
-                            try:
-                                existing_df = load_trip_data()
-                                
-                                if import_mode == "Əlavə et":
-                                    if not existing_df.empty:
-                                        combined_df = pd.concat([existing_df, new_df], ignore_index=True)
-                                    else:
-                                        combined_df = new_df
-                                
-                                elif import_mode == "Əvəzlə":
-                                    combined_df = new_df
-                                
-                                elif import_mode == "Birləşdir":
-                                    if not existing_df.empty:
-                                        # Ümumi sütunları tap
-                                        common_cols = list(set(existing_df.columns) & set(new_df.columns))
-                                        if common_cols:
-                                            combined_df = pd.concat([existing_df, new_df], ignore_index=True)
-                                            combined_df = combined_df.drop_duplicates(subset=common_cols, keep='last')
-                                        else:
-                                            combined_df = pd.concat([existing_df, new_df], ignore_index=True)
-                                    else:
-                                        combined_df = new_df
-                                
-                                # Yeni məlumatları saxla
-                                combined_df.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
-                                
-                                st.success(f"✅ {len(new_df)} qeyd uğurla idxal edildi!")
-                                st.info("🔄 Dəyişikliklərin görünməsi üçün səhifəni yeniləyin")
-                                
-                            except Exception as e:
-                                st.error(f"❌ İdxal xətası: {str(e)}")
+                        if new_df is not None:
+                            # Məlumat nəzərə alınması
+                            st.markdown("##### 👀 İdxal Əvvəli Nəzər")
+                            
+                            # Məlumat statistikaları
+                            col_x, col_y, col_z = st.columns(3)
+                            with col_x:
+                                st.metric("📊 Qeyd sayı", len(new_df))
+                            with col_y:
+                                st.metric("📈 Sütun sayı", len(new_df.columns))
+                            with col_z:
+                                st.metric("💾 Ölçü", f"{new_df.memory_usage().sum() / 1024:.1f} KB")
+                            
+                            # Məlumat nümunəsi
+                            st.dataframe(new_df.head(10), use_container_width=True)
+                            
+                            # Sütun məlumatları
+                            with st.expander("📊 Sütun təfərrüatları"):
+                                for col in new_df.columns:
+                                    null_count = new_df[col].isnull().sum()
+                                    data_type = str(new_df[col].dtype)
+                                    st.write(f"**{col}:** {data_type} - {null_count} boş qeyd")
+                            
+                            # İdxal seçimləri
+                            st.markdown("##### ⚙️ İdxal Seçimləri")
+                            import_mode = st.radio(
+                                "İdxal rejimi",
+                                ["Əlavə et", "Əvəzlə", "Birləşdir"],
+                                help="Əlavə et: Mövcud məlumatlarla birləşdir\n"
+                                     "Əvəzlə: Mövcud məlumatları sil və yenilərini əlavə et\n"
+                                     "Birləşdir: Dublikatları birləşdir"
+                            )
+                            
+                            # Məlumat validasiyası seçimi
+                            validate_data = st.checkbox(
+                                "Məlumat validasiyası et",
+                                value=True,
+                                help="İdxal zamanı məlumat keyfiyyətini yoxla"
+                            )
+                            
+                            # İdxal düyməsi
+                            if st.button("📥 İdxal Et", type="primary", use_container_width=True):
+                                with st.spinner("İdxal edilir..."):
+                                    success = import_data(new_df, import_mode, validate_data)
+                                    if success:
+                                        st.balloons()
+                                        st.info("🔄 Dəyişikliklərin görünməsi üçün səhifəni yeniləyin")
                     
                     except Exception as e:
                         st.error(f"❌ Fayl oxuma xətası: {str(e)}")
+                        with st.expander("🔍 Xəta təfərrüatları"):
+                            st.code(str(e))
 
         # 5. SİSTEM PARAMETRLƏRİ TAB
         with admin_tabs[4]:
             st.markdown("### ⚙️ Sistem Konfiqurasiyası")
+            
+            # Mövcud konfiqurasiya yüklə
+            current_config = load_system_config()
             
             col1, col2 = st.columns(2)
             
@@ -1504,100 +1509,222 @@ with admin_tabs[1]:
                 
                 # Tema seçimi
                 theme_color = st.selectbox(
-                    "Tema rəngi",
-                    ["Mavi", "Yaşıl", "Qırmızı", "Bənövşəyi"]
+                    "🎨 Tema rəngi",
+                    ["Mavi", "Yaşıl", "Qırmızı", "Bənövşəyi", "Qara"],
+                    index=["Mavi", "Yaşıl", "Qırmızı", "Bənövşəyi", "Qara"].index(current_config.get("theme_color", "Mavi"))
                 )
                 
                 # Dil seçimi
                 language = st.selectbox(
-                    "Sistem dili",
-                    ["Azərbaycan", "English", "Русский"]
+                    "🌐 Sistem dili",
+                    ["Azərbaycan", "English", "Русский"],
+                    index=["Azərbaycan", "English", "Русский"].index(current_config.get("language", "Azərbaycan"))
                 )
                 
                 # Valyuta
                 currency = st.selectbox(
-                    "Valyuta",
-                    ["AZN", "USD", "EUR"]
+                    "💰 Valyuta",
+                    ["AZN", "USD", "EUR", "TRY"],
+                    index=["AZN", "USD", "EUR", "TRY"].index(current_config.get("currency", "AZN"))
                 )
                 
                 # Tarix formatı
                 date_format = st.selectbox(
-                    "Tarix formatı",
-                    ["DD.MM.YYYY", "MM/DD/YYYY", "YYYY-MM-DD"]
+                    "📅 Tarix formatı",
+                    ["DD.MM.YYYY", "MM/DD/YYYY", "YYYY-MM-DD"],
+                    index=["DD.MM.YYYY", "MM/DD/YYYY", "YYYY-MM-DD"].index(current_config.get("date_format", "DD.MM.YYYY"))
+                )
+                
+                # Zaman formatı
+                time_format = st.selectbox(
+                    "🕐 Zaman formatı",
+                    ["24 saat", "12 saat"],
+                    index=["24 saat", "12 saat"].index(current_config.get("time_format", "24 saat"))
                 )
             
             with col2:
                 st.markdown("#### 📊 Məlumat Parametrləri")
                 
                 # Səhifə başına qeyd sayı
-                records_per_page = st.number_input(
-                    "Səhifə başına qeyd sayı",
+                records_per_page = st.slider(
+                    "📄 Səhifə başına qeyd sayı",
                     min_value=10,
                     max_value=100,
-                    value=20
+                    value=current_config.get("records_per_page", 20),
+                    step=5
                 )
                 
                 # Avtomatik backup
-                auto_backup = st.checkbox("Avtomatik backup", value=True)
+                auto_backup = st.checkbox(
+                    "💾 Avtomatik backup",
+                    value=current_config.get("auto_backup", True)
+                )
                 
                 if auto_backup:
                     backup_frequency = st.selectbox(
-                        "Backup tezliyi",
-                        ["Gündəlik", "Həftəlik", "Aylıq"]
+                        "🔄 Backup tezliyi",
+                        ["Gündəlik", "Həftəlik", "Aylıq"],
+                        index=["Gündəlik", "Həftəlik", "Aylıq"].index(current_config.get("backup_frequency", "Həftəlik"))
+                    )
+                    
+                    backup_location = st.text_input(
+                        "📂 Backup qovluğu",
+                        value=current_config.get("backup_location", "./backups/"),
+                        help="Backup fayllarının saxlanacağı qovluq"
                     )
                 
                 # Məlumat saxlama müddəti
-                data_retention = st.number_input(
-                    "Məlumat saxlama müddəti (ay)",
+                data_retention = st.slider(
+                    "📦 Məlumat saxlama müddəti (ay)",
                     min_value=6,
                     max_value=120,
-                    value=24
+                    value=current_config.get("data_retention", 24),
+                    step=6
                 )
+                
+                # Performans parametrləri
+                st.markdown("##### ⚡ Performans")
+                
+                cache_enabled = st.checkbox(
+                    "🗄️ Cache aktiv",
+                    value=current_config.get("cache_enabled", True),
+                    help="Məlumat yaddaşa alınaraq sürət artırılır"
+                )
+                
+                if cache_enabled:
+                    cache_duration = st.slider(
+                        "Cache müddəti (dəqiqə)",
+                        min_value=1,
+                        max_value=60,
+                        value=current_config.get("cache_duration", 15)
+                    )
             
+            # Bildiriş parametrləri
             st.markdown("#### 🔔 Bildiriş Parametrləri")
             
             col1, col2, col3 = st.columns(3)
             
             with col1:
-                email_notifications = st.checkbox("Email bildirişləri", value=True)
+                st.markdown("##### 📧 Email")
+                email_notifications = st.checkbox(
+                    "Email bildirişləri",
+                    value=current_config.get("email_notifications", True)
+                )
                 if email_notifications:
-                    admin_email = st.text_input("Admin email", value="admin@company.com")
+                    admin_email = st.text_input(
+                        "Admin email",
+                        value=current_config.get("admin_email", "admin@company.com")
+                    )
+                    email_frequency = st.selectbox(
+                        "Email tezliyi",
+                        ["Dərhal", "Gündəlik", "Həftəlik"],
+                        index=["Dərhal", "Gündəlik", "Həftəlik"].index(current_config.get("email_frequency", "Gündəlik"))
+                    )
             
             with col2:
-                sms_notifications = st.checkbox("SMS bildirişləri")
+                st.markdown("##### 📱 SMS")
+                sms_notifications = st.checkbox(
+                    "SMS bildirişləri",
+                    value=current_config.get("sms_notifications", False)
+                )
                 if sms_notifications:
-                    admin_phone = st.text_input("Admin telefon", value="+994xxxxxxxxx")
+                    admin_phone = st.text_input(
+                        "Admin telefon",
+                        value=current_config.get("admin_phone", "+994xxxxxxxxx")
+                    )
+                    sms_provider = st.selectbox(
+                        "SMS provayderi",
+                        ["Azercell", "Bakcell", "Nar"],
+                        index=["Azercell", "Bakcell", "Nar"].index(current_config.get("sms_provider", "Azercell"))
+                    )
             
             with col3:
-                system_notifications = st.checkbox("Sistem bildirişləri", value=True)
+                st.markdown("##### 🔔 Sistem")
+                system_notifications = st.checkbox(
+                    "Sistem bildirişləri",
+                    value=current_config.get("system_notifications", True)
+                )
+                if system_notifications:
+                    notification_sound = st.checkbox(
+                        "Bildiriş səsi",
+                        value=current_config.get("notification_sound", True)
+                    )
+                    notification_popup = st.checkbox(
+                        "Popup bildirişlər",
+                        value=current_config.get("notification_popup", True)
+                    )
+            
+            # Təhlükəsizlik parametrləri
+            st.markdown("#### 🔒 Təhlükəsizlik Parametrləri")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                session_timeout = st.slider(
+                    "🕐 Sessiya müddəti (dəqiqə)",
+                    min_value=15,
+                    max_value=480,
+                    value=current_config.get("session_timeout", 120)
+                )
+                
+                max_login_attempts = st.slider(
+                    "🔐 Maksimum giriş cəhdi",
+                    min_value=3,
+                    max_value=10,
+                    value=current_config.get("max_login_attempts", 5)
+                )
+            
+            with col2:
+                password_complexity = st.checkbox(
+                    "🔑 Şifrə mürəkkəbliyi",
+                    value=current_config.get("password_complexity", True)
+                )
+                
+                two_factor_auth = st.checkbox(
+                    "📱 İki faktorlu autentifikasiya",
+                    value=current_config.get("two_factor_auth", False)
+                )
             
             # Parametrləri saxla
-            if st.button("💾 Parametrləri Saxla", type="primary"):
-                try:
-                    config = {
+            st.markdown("---")
+            col1, col2, col3 = st.columns([1, 2, 1])
+            
+            with col2:
+                if st.button("💾 Parametrləri Saxla", type="primary", use_container_width=True):
+                    config_data = {
                         "theme_color": theme_color,
                         "language": language,
                         "currency": currency,
                         "date_format": date_format,
+                        "time_format": time_format,
                         "records_per_page": records_per_page,
                         "auto_backup": auto_backup,
                         "backup_frequency": backup_frequency if auto_backup else None,
+                        "backup_location": backup_location if auto_backup else None,
                         "data_retention": data_retention,
+                        "cache_enabled": cache_enabled,
+                        "cache_duration": cache_duration if cache_enabled else None,
                         "email_notifications": email_notifications,
                         "admin_email": admin_email if email_notifications else None,
+                        "email_frequency": email_frequency if email_notifications else None,
                         "sms_notifications": sms_notifications,
                         "admin_phone": admin_phone if sms_notifications else None,
+                        "sms_provider": sms_provider if sms_notifications else None,
                         "system_notifications": system_notifications,
+                        "notification_sound": notification_sound if system_notifications else None,
+                        "notification_popup": notification_popup if system_notifications else None,
+                        "session_timeout": session_timeout,
+                        "max_login_attempts": max_login_attempts,
+                        "password_complexity": password_complexity,
+                        "two_factor_auth": two_factor_auth,
                         "last_updated": datetime.now().isoformat()
                     }
                     
-                    with open("system_config.json", "w", encoding="utf-8") as f:
-                        json.dump(config, f, ensure_ascii=False, indent=2)
-                    
-                    st.success("✅ Sistem parametrləri saxlanıldı!")
-                    
-                except Exception as e:
-                    st.error(f"❌ Parametr saxlama xətası: {str(e)}")
+                    if save_system_config(config_data):
+                        st.success("✅ Sistem parametrləri uğurla saxlanıldı!")
+                        st.info("🔄 Bəzi dəyişikliklər səhifə yenilənəndən sonra tətbiq olunacaq")
+                    else:
+                        st.error("❌ Parametrləri saxlamaq mümkün olmadı!")
 
         # 6. İSTİFADƏÇİ İDARƏETMƏSİ TAB
         with admin_tabs[5]:
