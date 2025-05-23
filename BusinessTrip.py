@@ -283,6 +283,18 @@ with tab1:
         
         # Sol sütun
         with col1:
+            with st.expander("👤 Şəxsi Məlumatlar", expanded=True):
+                cols = st.columns(2)
+                with cols[0]:
+                    first_name = st.text_input("Ad", key="first_name")
+                    father_name = st.text_input("Ata adı", key="father_name")
+                with cols[1]:
+                    last_name = st.text_input("Soyad", key="last_name")
+                    position = st.text_input("Vəzifə", key="position")
+
+            with st.expander("🏢 Təşkilat Məlumatları", expanded=True):
+                department = st.selectbox("Şöbə", DEPARTMENTS, key="department")
+
             with st.expander("🧳 Ezamiyyət Detalları", expanded=True):
                 trip_type = st.radio("Ezamiyyət növü", ["Ölkə daxili", "Ölkə xarici"], key="trip_type")
                 payment_type = st.selectbox("Ödəniş növü", list(PAYMENT_TYPES.keys()), key="payment_type")
@@ -320,7 +332,6 @@ with tab1:
                         
                     ticket_price = 0
 
-
                 cols = st.columns(2)
                 with cols[0]:
                     start_date = st.date_input("Başlanğıc tarixi")
@@ -343,7 +354,7 @@ with tab1:
                         daily_allowance = 70  # Sabit günlük müavinət
                     else:
                         ticket_price = 0
-                        daily_allowance = COUNTRIES[country]
+                        # Burada daily_allowance yenidən təyin edilmir, artıq düzgün hesablanıb
                     
                     total_amount = calculate_total_amount(daily_allowance, trip_days, payment_type, ticket_price)
                     
@@ -384,7 +395,6 @@ with tab1:
                         st.balloons()
                 else:
                     st.error("Zəhmət olmasa bütün mütləq sahələri doldurun!")
-
 # ============================== ADMIN PANELİ ==============================
 with tab2:
     # Admin giriş statusunun yoxlanılması
