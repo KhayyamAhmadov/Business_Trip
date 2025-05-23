@@ -452,35 +452,108 @@ with tab2:
                                 color_continuous_scale='Bluered')
                     st.plotly_chart(fig, use_container_width=True)
 
-                # Ətraflı məlumat cədvəli
+                # ƏTRAFLI MƏLUMAT CƏDVƏLİ - YENİ VERSİYA
                 with st.expander("🔍 Bütün Qeydlər", expanded=True):
-                    edited_df = st.data_editor(df, 
-                                             use_container_width=True,
-                                             height=600,
-                                             column_config={
-                                                 "Tarix": st.column_config.DatetimeColumn(),
-                                                 "Ümumi məbləğ": st.column_config.NumberColumn(
-                                                     format="%.2f AZN"
-                                                 )
-                                             })
+                    # DataFrame sütunlarını yoxla və column_config-i dinamik olaraq yarat
+                    column_config = {}
+                    
+                    # Yalnız mövcud sütunlar üçün konfiqurasiya əlavə et
+                    if 'Tarix' in df.columns:
+                        column_config['Tarix'] = st.column_config.DatetimeColumn(
+                            "Tarix",
+                            format="DD.MM.YYYY HH:mm"
+                        )
+                    
+                    if 'Ümumi məbləğ' in df.columns:
+                        column_config['Ümumi məbləğ'] = st.column_config.NumberColumn(
+                            "Ümumi məbləğ",
+                            format="%.2f AZN",
+                            min_value=0
+                        )
+                    
+                    if 'Günlük müavinət' in df.columns:
+                        column_config['Günlük müavinət'] = st.column_config.NumberColumn(
+                            "Günlük müavinət",
+                            format="%.2f AZN",
+                            min_value=0
+                        )
+                    
+                    if 'Bilet qiyməti' in df.columns:
+                        column_config['Bilet qiyməti'] = st.column_config.NumberColumn(
+                            "Bilet qiyməti",
+                            format="%.2f AZN",
+                            min_value=0
+                        )
+                    
+                    if 'Günlər' in df.columns:
+                        column_config['Günlər'] = st.column_config.NumberColumn(
+                            "Günlər",
+                            format="%d",
+                            min_value=1
+                        )
+                    
+                    # Data editor-i konfiqurasiya ilə çağır
+                    edited_df = st.data_editor(
+                        df, 
+                        use_container_width=True,
+                        height=600,
+                        column_config=column_config,
+                        hide_index=True,
+                        num_rows="dynamic"
+                    )
                     
                     # Silinmə əməliyyatı
-                    to_delete = st.multiselect("Qeydləri seçin", df.index.tolist(), 
-                                             format_func=lambda x: f"{df.iloc[x]['Ad']} {df.iloc[x]['Soyad']} - {df.iloc[x]['Marşrut']}")
-                    
-                    if st.button("Seçilmiş qeydləri sil 🔴", type="primary"):
-                        if to_delete:
-                            df = df.drop(to_delete)
-                            df.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
-                            st.success(f"{len(to_delete)} qeyd silindi!")
-                            st.rerun()
+                    if len(df) > 0:
+                        # Seçim üçün daha yaxşı format
+                        display_options = []
+                        for idx, row in df.iterrows():
+                            display_text = f"{row.get('Ad', 'N/A')} {row.get('Soyad', 'N/A')} - {row.get('Marşrut', 'N/A')} ({row.get('Tarix', 'N/A')})"
+                            display_options.append((idx, display_text))
+                        
+                        selected_indices = st.multiselect(
+                            "Silinəcək qeydləri seçin",
+                            options=[idx for idx, _ in display_options],
+                            format_func=lambda x: next(text for idx, text in display_options if idx == x)
+                        )
+                        
+                        if selected_indices and st.button("🗑️ Seçilmiş qeydləri sil", type="secondary"):
+                            try:
+                                # Seçilmiş qeydləri sil
+                                df_updated = df.drop(selected_indices).reset_index(drop=True)
+                                df_updated.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+                                st.success(f"✅ {len(selected_indices)} qeyd uğurla silindi!")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Silinmə zamanı xəta: {str(e)}")
+                    else:
+                        st.info("Silinəcək qeyd yoxdur")
 
-                # İxrac düyməsi
-                csv = df.to_csv(index=False).encode('utf-8')
-                st.download_button("📊 Məlumatları ixrac et", 
-                                  data=csv,
-                                  file_name="ezamiyyet_melumatlari.csv",
-                                  mime="text/csv")
+                # İxrac düyməsi - YENİ VERSİYA
+                if len(df) > 0:
+                    try:
+                        csv = df.to_csv(index=False).encode('utf-8')
+                        st.download_button(
+                            "📊 CSV formatında ixrac et", 
+                            data=csv,
+                            file_name=f"ezamiyyet_melumatlari_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                            mime="text/csv"
+                        )
+                        
+                        # Excel formatında da ixrac imkanı
+                        buffer = BytesIO()
+                        df.to_excel(buffer, index=False)
+                        excel_data = buffer.getvalue()
+                        
+                        st.download_button(
+                            "📊 Excel formatında ixrac et",
+                            data=excel_data,
+                            file_name=f"ezamiyyet_melumatlari_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        )
+                    except Exception as e:
+                        st.error(f"İxrac zamanı xəta: {str(e)}")
+                else:
+                    st.warning("İxrac ediləcək məlumat yoxdur")
             else:
                 st.warning("Hələ heç bir məlumat yoxdur")
 
