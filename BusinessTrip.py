@@ -8,7 +8,7 @@ from plotly.subplots import make_subplots
 from datetime import datetime, timedelta
 import json
 import requests 
-import beautifulsoup4
+from bs4 import beautifulsoup4
 
 
 
