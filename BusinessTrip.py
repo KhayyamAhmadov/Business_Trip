@@ -487,88 +487,71 @@ with tab1:
 
 # ========== VALYUTA MƏZƏNNƏSİ HISSƏSİ ==========
 with st.expander("💱 Valyuta Məzənnələri (Cbar.az)", expanded=True):
-    # Tarix seçimi
     selected_date = st.date_input(
         "Məzənnə tarixini seçin",
         value=datetime.now().date(),
-        max_value=datetime.now().date()
+        max_value=datetime.now().date(),
+        format="DD.MM.YYYY"
     )
     
-    # Yenilə düyməsi
-    if st.button("🔄 Məzənnələri Yenilə", help="Məzənnələri yeniləmək üçün klik edin"):
+    if st.button("🔄 Yenilə", help="Son məzənnələri yüklə"):
         st.cache_data.clear()
-    
+
     try:
         currency_df = get_currency_rates(selected_date)
         
         if not currency_df.empty:
-            # CSS Grid üçün style
+            # Sistem rənglərinə uyğun CSS
             st.markdown("""
             <style>
-                .currency-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-                    gap: 1rem;
-                    padding: 0.5rem 0;
+                .compact-card {
+                    background: rgba(99, 102, 241, 0.05);
+                    border: 1px solid rgba(99, 102, 241, 0.1);
+                    border-radius: 8px;
+                    padding: 0.8rem;
+                    margin: 0.2rem;
+                    flex: 1 1 30%;
                 }
-                .currency-card {
-                    background: white;
-                    border-radius: 10px;
-                    padding: 1rem;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                    transition: transform 0.2s;
+                .currency-header {
+                    color: #6366f1 !important;
+                    font-size: 1.1rem !important;
+                    margin: 0 !important;
                 }
-                .currency-card:hover {
-                    transform: translateY(-2px);
-                }
-                .currency-code {
-                    color: #4a4a4a;
-                    font-weight: 600;
-                    margin: 0;
-                }
-                .currency-name {
-                    color: #666;
-                    font-size: 0.85rem;
-                    margin: 0;
-                }
-                .currency-rate {
-                    color: #6366f1;
-                    font-size: 1.2rem;
-                    margin: 0;
+                .rate-value {
+                    color: #8b5cf6 !important;
+                    font-size: 1rem !important;
+                    margin: 0 !important;
                 }
             </style>
             """, unsafe_allow_html=True)
-            
-            # Grid konteyneri
-            st.markdown('<div class="currency-grid">', unsafe_allow_html=True)
-            
-            # Valyuta kartları
-            for _, row in currency_df.iterrows():
-                rate = row['Məzənnə'] / row['Nominal']
-                st.markdown(f"""
-                <div class="currency-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <p class="currency-code">{row['Kod']}</p>
-                            <p class="currency-name">{row['Valyuta']}</p>
+
+            # 3 sütunlu qrup
+            cols = st.columns(3)
+            currency_groups = [currency_df[i::3] for i in range(3)]
+
+            for idx, col in enumerate(cols):
+                with col:
+                    for _, row in currency_groups[idx].iterrows():
+                        rate = row['Məzənnə'] / row['Nominal']
+                        st.markdown(f"""
+                        <div class="compact-card">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <p class="currency-header">{row['Kod']}</p>
+                                    <p style="color: #666; font-size: 0.75rem; margin: 0;">{row['Valyuta']}</p>
+                                </div>
+                                <div style="text-align: right;">
+                                    <p class="rate-value">{rate:.4f}</p>
+                                    <p style="color: #888; font-size: 0.7rem; margin: 0;">1 {row['Kod']}</p>
+                                </div>
+                            </div>
                         </div>
-                        <div style="text-align: right;">
-                            <p class="currency-rate">{rate:.4f}</p>
-                            <p class="currency-name">1 {row['Kod']} =</p>
-                        </div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            st.markdown('</div>', unsafe_allow_html=True)
-            
+                        """, unsafe_allow_html=True)
         else:
-            st.warning(f"{selected_date.strftime('%d.%m.%Y')} tarixi üçün məzənnə məlumatı tapılmadı")
+            st.warning(f"{selected_date.strftime('%d.%m.%Y')} üçün məlumat yoxdur")
             
     except Exception as e:
-        st.error(f"⛔ Xəta: Valyuta məlumatları alınarkən problem yarandı. {str(e)}")
-
-
+        st.error(f"Məzənnə yüklənərkən xəta: {str(e)}")
 
 
 # Admin Panel hissəsi
