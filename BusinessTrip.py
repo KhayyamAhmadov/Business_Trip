@@ -485,52 +485,49 @@ with tab1:
 
 
 
-        # VALYUTA MƏZƏNNƏSİ HISSƏSİ
-        with st.expander("💱 Valyuta Məzənnələri (Cbar.az)", expanded=True):
-            selected_date = st.date_input(
-                "Məzənnə tarixini seçin",
-                value=datetime.now(),
-                max_value=datetime.now()
-            )
-            
-            if st.button("🔄 Məzənnələri Yenilə"):
-                st.cache_data.clear()
-            
-            try:
-                currency_df = get_currency_rates(selected_date)
-                if not currency_df.empty:
-                    cols = st.columns(3)
-                    currency_groups = [currency_df[i::3] for i in range(3)]
-                    
-                    for idx, col in enumerate(cols):
-                        with col:
-                            for _, row in currency_groups[idx].iterrows():
-                                st.markdown(f"""
-                                <div style="
-                                    background: #f8f9fa;
-                                    padding: 1rem;
-                                    border-radius: 10px;
-                                    margin-bottom: 1rem;
-                                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                                ">
-                                    <div style="display: flex; justify-content: space-between;">
-                                        <div>
-                                            <h4 style="margin: 0; color: #4a4a4a;">{row['Kod']}</h4>
-                                            <p style="margin: 0; font-size: 0.8rem; color: #666;">{row['Valyuta']}</p>
-                                        </div>
-                                        <div style="text-align: right;">
-                                            <h3 style="margin: 0; color: #6366f1;">{(row['Məzənnə']/row['Nominal']):.4f}</h3>
-                                            <p style="margin: 0; font-size: 0.8rem; color: #666;">1 {row['Kod']}</p>
+            # ========== VALYUTA MƏZƏNNƏSİ HISSƏSİ ==========
+            with st.expander("💱 Valyuta Məzənnələri (Cbar.az)", expanded=True):
+                selected_date = st.date_input(...)
+                
+                if st.button("🔄 Məzənnələri Yenilə"):
+                    st.cache_data.clear()
+                
+                try:
+                    currency_df = get_currency_rates(selected_date)
+                    if not currency_df.empty:
+                        cols = st.columns(3)
+                        currency_groups = [currency_df[i::3] for i in range(3)]
+                        
+                        for idx, col in enumerate(cols):
+                            with col:
+                                # ===== ƏLAVƏ EDİLƏCƏK HISSƏ =====
+                                for _, row in currency_groups[idx].iterrows():
+                                    st.markdown(f"""
+                                    <div style="
+                                        background: #f8f9fa;
+                                        padding: 1rem;
+                                        border-radius: 10px;
+                                        margin-bottom: 1rem;
+                                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                                    ">
+                                        <div style="display: flex; justify-content: space-between;">
+                                            <div>
+                                                <h4 style="margin: 0; color: #4a4a4a;">{row['Kod']}</h4>
+                                                <p style="margin: 0; font-size: 0.8rem; color: #666;">{row['Valyuta']}</p>
+                                            </div>
+                                            <div style="text-align: right;">
+                                                <h3 style="margin: 0; color: #6366f1;">{(row['Məzənnə']/row['Nominal']):.4f}</h3>
+                                                <p style="margin: 0; font-size: 0.8rem; color: #666;">1 {row['Kod']}</p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                """, unsafe_allow_html=True)
-                else:
-                    st.warning("Bu tarix üçün məzənnə məlumatı tapılmadı")
-                    
-            except Exception as e:
-                st.error("Valyuta məlumatları gətirilərkən xəta yarandı")
-
+                                    """, unsafe_allow_html=True)
+                                # ================================
+                    else:
+                        st.warning("Bu tarix üçün məzənnə məlumatı tapılmadı")
+                        
+                except Exception as e:
+                    st.error("Valyuta məlumatları gətirilərkən xəta yarandı")
 
 
 # Admin Panel hissəsi
