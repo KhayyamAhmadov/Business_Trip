@@ -776,169 +776,69 @@ with admin_tabs[2]:
     except Exception as e:
         st.error(f"❌ Analitika xətası: {str(e)}")
 
-        # 2. MƏLUMAT İDARƏETMƏSİ TAB
-        with admin_tabs[1]:
-            st.markdown("### 🗂️ Məlumatların İdarə Edilməsi")
+# 2. MƏLUMAT İDARƏETMƏSİ TAB düzəlişləri
+with admin_tabs[1]:
+    st.markdown("### 🗂️ Məlumatların İdarə Edilməsi")
+    
+    try:
+        df = load_trip_data()
+        
+        if not df.empty:
+            # Tarix sütunlarını avtomatik çevir
+            date_columns = ['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']
+            for col in date_columns:
+                if col in df.columns:
+                    df[col] = pd.to_datetime(df[col], errors='coerce')
             
-            try:
-                df = load_trip_data()
+            # ...ƏVVƏLKİ KODLAR...
+            
+            if selected_columns:
+                display_df = filtered_df[selected_columns].copy()
                 
-                if not df.empty:
-                    # Filtr və axtarış seçimləri
-                    st.markdown("#### 🔍 Filtr və Axtarış")
-                    
-                    col1, col2, col3 = st.columns(3)
-                    
-                    with col1:
-                        # Tarix filtri
-                        date_filter = st.selectbox(
-                            "📅 Tarix filtri",
-                            ["Hamısı", "Son 7 gün", "Son 30 gün", "Son 3 ay", "Bu il", "Seçilmiş aralıq"]
+                # Sütun konfiqurasiyası
+                column_config = {}
+                for col in selected_columns:
+                    if col in date_columns:
+                        column_config[col] = st.column_config.DatetimeColumn(
+                            col,
+                            format="DD.MM.YYYY HH:mm" if col == 'Tarix' else "DD.MM.YYYY",
+                            required=True
                         )
-                        
-                        if date_filter == "Seçilmiş aralıq":
-                            start_date = st.date_input("Başlanğıc tarixi")
-                            end_date = st.date_input("Bitmə tarixi")
-                    
-                    with col2:
-                        # Şöbə filtri
-                        if 'Şöbə' in df.columns:
-                            departments = ["Hamısı"] + sorted(df['Şöbə'].unique().tolist())
-                            selected_dept = st.selectbox("🏢 Şöbə filtri", departments)
-                    
-                    with col3:
-                        # Ezamiyyət növü filtri
-                        if 'Ezamiyyət növü' in df.columns:
-                            trip_types = ["Hamısı"] + df['Ezamiyyət növü'].unique().tolist()
-                            selected_type = st.selectbox("✈️ Ezamiyyət növü", trip_types)
-                    
-                    # Axtarış qutusu
-                    search_term = st.text_input("🔎 Ad və ya soyad üzrə axtarış")
-                    
-                    # Filtirləmə tətbiqi
-                    filtered_df = df.copy()
-                    
-                    if date_filter != "Hamısı" and 'Tarix' in df.columns:
-                        df['Tarix'] = pd.to_datetime(df['Tarix'], errors='coerce')
-                        now = datetime.now()
-                        
-                        if date_filter == "Son 7 gün":
-                            filtered_df = filtered_df[filtered_df['Tarix'] >= now - timedelta(days=7)]
-                        elif date_filter == "Son 30 gün":
-                            filtered_df = filtered_df[filtered_df['Tarix'] >= now - timedelta(days=30)]
-                        elif date_filter == "Son 3 ay":
-                            filtered_df = filtered_df[filtered_df['Tarix'] >= now - timedelta(days=90)]
-                        elif date_filter == "Bu il":
-                            filtered_df = filtered_df[filtered_df['Tarix'].dt.year == now.year]
-                        elif date_filter == "Seçilmiş aralıq":
-                            if 'start_date' in locals() and 'end_date' in locals():
-                                filtered_df = filtered_df[
-                                    (filtered_df['Tarix'].dt.date >= start_date) & 
-                                    (filtered_df['Tarix'].dt.date <= end_date)
-                                ]
-                    
-                    if selected_dept != "Hamısı" and 'Şöbə' in df.columns:
-                        filtered_df = filtered_df[filtered_df['Şöbə'] == selected_dept]
-                    
-                    if selected_type != "Hamısı" and 'Ezamiyyət növü' in df.columns:
-                        filtered_df = filtered_df[filtered_df['Ezamiyyət növü'] == selected_type]
-                    
-                    if search_term:
-                        mask = False
-                        if 'Ad' in filtered_df.columns:
-                            mask |= filtered_df['Ad'].str.contains(search_term, case=False, na=False)
-                        if 'Soyad' in filtered_df.columns:
-                            mask |= filtered_df['Soyad'].str.contains(search_term, case=False, na=False)
-                        filtered_df = filtered_df[mask]
-                    
-                    # Nəticələr
-                    st.markdown(f"#### 📊 Nəticələr ({len(filtered_df)} qeyd)")
-                    
-                    if len(filtered_df) > 0:
-                        # Sütun seçimi
-                        available_columns = filtered_df.columns.tolist()
-                        default_columns = [col for col in ['Ad', 'Soyad', 'Şöbə', 'Marşrut', 'Ümumi məbləğ', 'Başlanğıc tarixi'] 
-                                         if col in available_columns]
-                        
-                        selected_columns = st.multiselect(
-                            "Göstəriləcək sütunları seçin",
-                            available_columns,
-                            default=default_columns
+                    elif col in ['Ümumi məbləğ', 'Günlük müavinət', 'Bilet qiyməti']:
+                        column_config[col] = st.column_config.NumberColumn(
+                            col,
+                            format="%.2f AZN"
                         )
+                    else:
+                        column_config[col] = None
+                
+                # Redaktə edilə bilən cədvəl
+                edited_df = st.data_editor(
+                    display_df,
+                    column_config=column_config,
+                    use_container_width=True,
+                    height=600,
+                    key="admin_data_editor"
+                )
+                
+                # Dəyişiklikləri saxlama
+                if st.button("💾 Dəyişiklikləri Saxla", type="primary"):
+                    try:
+                        # Tarix sütunlarını formatla
+                        for col in date_columns:
+                            if col in edited_df.columns:
+                                edited_df[col] = pd.to_datetime(edited_df[col], errors='coerce')
                         
-                        if selected_columns:
-                            display_df = filtered_df[selected_columns].copy()
-                            
-                            # Sütun konfiqurasiyası
-                            column_config = {}
-                            for col in selected_columns:
-                                if col in ['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']:
-                                    column_config[col] = st.column_config.DatetimeColumn(
-                                        col,
-                                        format="DD.MM.YYYY HH:mm" if col == 'Tarix' else "DD.MM.YYYY"
-                                    )
-                                elif col in ['Ümumi məbləğ', 'Günlük müavinət', 'Bilet qiyməti']:
-                                    column_config[col] = st.column_config.NumberColumn(
-                                        col,
-                                        format="%.2f AZN"
-                                    )
-                            
-                            # Redaktə edilə bilən cədvəl
-                            edited_df = st.data_editor(
-                                display_df,
-                                column_config=column_config,
-                                use_container_width=True,
-                                height=600,
-                                key="admin_data_editor"
-                            )
-                            
-                            # Dəyişiklikləri saxlama
-                            if st.button("💾 Dəyişiklikləri Saxla", type="primary"):
-                                try:
-                                    # Redaktə olunmuş məlumatları əsas DataFrame-ə tətbiq et
-                                    for idx, row in edited_df.iterrows():
-                                        for col in selected_columns:
-                                            df.loc[idx, col] = row[col]
-                                    
-                                    # Faylı yenilə
-                                    df.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
-                                    st.success("✅ Dəyişikliklər saxlanıldı!")
-                                    
-                                except Exception as e:
-                                    st.error(f"❌ Saxlama xətası: {str(e)}")
-                            
-                            # Kütləvi əməliyyatlar
-                            st.markdown("#### ⚡ Kütləvi Əməliyyatlar")
-                            
-                            col1, col2, col3 = st.columns(3)
-                            
-                            with col1:
-                                if st.button("📤 Seçilmiş qeydləri ixrac et"):
-                                    csv = filtered_df.to_csv(index=False).encode('utf-8')
-                                    st.download_button(
-                                        "⬇️ CSV Yüklə",
-                                        data=csv,
-                                        file_name=f"filtrlenmis_ezamiyyetler_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
-                                        mime="text/csv"
-                                    )
-                            
-                            with col2:
-                                selected_indices = st.multiselect(
-                                    "Silinəcək qeydləri seçin",
-                                    options=filtered_df.index.tolist(),
-                                    format_func=lambda x: f"{filtered_df.loc[x, 'Ad'] if 'Ad' in filtered_df.columns else 'N/A'} {filtered_df.loc[x, 'Soyad'] if 'Soyad' in filtered_df.columns else 'N/A'} - {filtered_df.loc[x, 'Marşrut'] if 'Marşrut' in filtered_df.columns else 'N/A'}"
-                                )
-                            
-                            with col3:
-                                if selected_indices and st.button("🗑️ Seçilmiş qeydləri sil", type="secondary"):
-                                    if st.checkbox("⚠️ Silmə əməliyyatını təsdiq edirəm"):
-                                        try:
-                                            df_updated = df.drop(selected_indices)
-                                            df_updated.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
-                                            st.success(f"✅ {len(selected_indices)} qeyd silindi!")
-                                            st.rerun()
-                                        except Exception as e:
-                                            st.error(f"❌ Silinmə xətası: {str(e)}")
+                        # Redaktə olunmuş məlumatları əsas DataFrame-ə tətbiq et
+                        df.update(edited_df)
+                        
+                        # Faylı yenilə
+                        df.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+                        st.success("✅ Dəyişikliklər saxlanıldı!")
+                        
+                    except Exception as e:
+                        st.error(f"❌ Saxlama xətası: {str(e)}")
+            
                         
                         else:
                             st.warning("Zəhmət olmasa göstəriləcək sütunları seçin")
