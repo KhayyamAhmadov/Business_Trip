@@ -545,26 +545,28 @@ with tab2:
         ])
 
         # 1. DASHBOARD TAB
-        with admin_tabs[0]:
-            try:
-                df = load_trip_data()
-                
-                if not df.empty:
-                    # Tarixi sütunları düzəlt
-                    if 'Tarix' in df.columns:
-                        df['Tarix'] = pd.to_datetime(df['Tarix'], errors='coerce')
-                    if 'Başlanğıc tarixi' in df.columns:
-                        df['Başlanğıc tarixi'] = pd.to_datetime(df['Başlanğıc tarixi'], errors='coerce')
-                    
-                    # Rəqəmsal sütunları düzəlt
-                    numeric_cols = ['Ümumi məbləğ', 'Günlük müavinət', 'Bilet qiyməti']
-                    for col in numeric_cols:
-                        if col in df.columns:
-                            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
-                    
-                    # Əsas metrikalar
-                    col1, col2, col3, col4, col5 = st.columns(5)
-                    
+
+# 1. DASHBOARD TAB
+with admin_tabs[0]:
+    try:
+        df = load_trip_data()
+        
+        if not df.empty:
+            # Tarixi sütunları düzəlt
+            if 'Tarix' in df.columns:
+                df['Tarix'] = pd.to_datetime(df['Tarix'], errors='coerce')
+            if 'Başlanğıc tarixi' in df.columns:
+                df['Başlanğıc tarixi'] = pd.to_datetime(df['Başlanğıc tarixi'], errors='coerce')
+            
+            # Rəqəmsal sütunları düzəlt
+            numeric_cols = ['Ümumi məbləğ', 'Günlük müavinət', 'Bilet qiyməti']
+            for col in numeric_cols:
+                if col in df.columns:
+                    df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+            
+            # Əsas metrikalar
+            col1, col2, col3, col4, col5 = st.columns(5)
+            
             with col1:
                 # Interaktiv tarix seçimi ilə trend analizi
                 st.markdown("### 📈 Xərclərin Zaman üzrə Dəyişimi")
@@ -581,6 +583,7 @@ with tab2:
                     min_value=min_date,
                     max_value=max_date
                 )
+
                 
                 # Filtrə görə məlumat
                 filtered_df = df[
