@@ -4,3 +4,5 @@ xlsxwriter
 python-telegram-bot
 plotly
 openpyxl 
+requests 
+beautifulsoup4
