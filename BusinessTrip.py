@@ -6,7 +6,7 @@ from io import BytesIO
 
 # 1. İLK STREAMLIT ƏMRİ OLMALIDIR!
 st.set_page_config(
-    page_title="Ezamiyyət İdarəetmə Sistemi",
+    page_title="Ezamiyyət Hesablama Sistemi",
     page_icon="✈️",
     layout="wide",
     initial_sidebar_state="collapsed"
