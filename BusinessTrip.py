@@ -229,8 +229,9 @@ PAYMENT_TYPES = {
 }
 
 # ============================== FUNKSİYALAR ==============================
+# FUNKSİYALAR
 def calculate_domestic_amount(from_city, to_city):
-    return DOMESTIC_ROUTES.get((from_city, to_city)) or DOMESTIC_ROUTES.get((to_city, from_city)) or 70
+    return DOMESTIC_ROUTES.get((from_city, to_city), 70)
 
 def calculate_days(start_date, end_date):
     return (end_date - start_date).days + 1
@@ -247,58 +248,38 @@ def save_trip_data(data):
         except FileNotFoundError:
             df_combined = df_new
         df_combined.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
-        return df_combined
+        return True
     except Exception as e:
-        st.error(f"Məlumat saxlanarkən xəta: {str(e)}")
-        return None
+        st.error(f"Xəta: {str(e)}")
+        return False
 
-def load_trip_data():
-    try:
-        df = pd.read_excel("ezamiyyet_melumatlari.xlsx")
-        required_columns = {
-            'Tarix': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            'Günlər': 0,
-            'Ümumi məbləğ': 0,
-            'Ödəniş növü': 'Tam ödəniş edilməklə',
-            'Marşrut': 'Təyin edilməyib',
-            'Bilet qiyməti': 0,
-            'Günlük müavinət': 70
-        }
-        for col, default in required_columns.items():
-            if col not in df.columns:
-                df[col] = default
-        return df
-    except (FileNotFoundError, pd.errors.EmptyDataError):
-        return pd.DataFrame()
-
-# ============================== ƏSAS İNTERFEYS ==============================
+# ƏSAS İNTERFEYS
 st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
-
 tab1, tab2 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli"])
 
-# ============================== YENİ EZAMİYYƏT HISSESI ==============================
+# YENİ EZAMİYYƏT HISSESI
 with tab1:
     with st.container():
         col1, col2 = st.columns([2, 1], gap="large")
         
-        # Sol sütun
+        # Sol Sütun
         with col1:
             with st.expander("👤 Şəxsi Məlumatlar", expanded=True):
                 cols = st.columns(2)
                 with cols[0]:
-                    first_name = st.text_input("Ad", key="first_name")
-                    father_name = st.text_input("Ata adı", key="father_name")
+                    first_name = st.text_input("Ad")
+                    father_name = st.text_input("Ata adı")
                 with cols[1]:
-                    last_name = st.text_input("Soyad", key="last_name")
-                    position = st.text_input("Vəzifə", key="position")
+                    last_name = st.text_input("Soyad")
+                    position = st.text_input("Vəzifə")
 
-            with st.expander("🏢 Təşkilat Məlumatları", expanded=True):
-                department = st.selectbox("Şöbə", DEPARTMENTS, key="department")
+            with st.expander("🏢 Təşkilat Məlumatları"):
+                department = st.selectbox("Şöbə", DEPARTMENTS)
 
-            with st.expander("🧳 Ezamiyyət Detalları", expanded=True):
-                trip_type = st.radio("Ezamiyyət növü", ["Ölkə daxili", "Ölkə xarici"], key="trip_type")
-                payment_type = st.selectbox("Ödəniş növü", list(PAYMENT_TYPES.keys()), key="payment_type")
-
+            with st.expander("🧳 Ezamiyyət Detalları"):
+                trip_type = st.radio("Növ", ["Ölkə daxili", "Ölkə xarici"])
+                payment_type = st.selectbox("Ödəniş növü", list(PAYMENT_TYPES.keys()))
+                
                 if trip_type == "Ölkə daxili":
                     cols = st.columns(2)
                     with cols[0]:
@@ -309,25 +290,14 @@ with tab1:
                     daily_allowance = 70
                 else:
                     country = st.selectbox("Ölkə", list(COUNTRIES.keys()))
-                    
-                    # Ödəniş rejimi seçimi
                     payment_mode = st.selectbox(
                         "Ödəniş rejimi",
-                        options=["Adi rejim", "Günlük Normaya 50% əlavə", "Günlük Normaya 30% əlavə"],
-                        help="Günlük müavinət normasının tətbiq edilmə üsulu"
+                        options=["Adi rejim", "Günlük Normaya 50% əlavə", "Günlük Normaya 30% əlavə"]
                     )
-                    
-                    # Qonaqlama xərcləri seçimi
                     accommodation = st.selectbox(
                         "Qonaqlama xərcləri",
-                        options=["Adi rejim", "Yalnız yaşayış yeri ilə təmin edir", "Yalnız gündəlik xərcləri təmin edir"],
-                        help="""Qonaqlama tipinə görə əlavə əmsallar:
-                        - Adi: Əlavə yoxdur
-                        - Yaşayış yeri: Ümumi məbləğ +40%
-                        - Gündəlik xərclər: Ümumi məbləğ +60%"""
+                        options=["Adi rejim", "Yalnız yaşayış yeri ilə təmin edir", "Yalnız gündəlik xərcləri təmin edir"]
                     )
-
-                    # Günlük müavinət hesabı
                     base_allowance = COUNTRIES[country]
                     if payment_mode == "Adi rejim":
                         daily_allowance = base_allowance
@@ -335,7 +305,6 @@ with tab1:
                         daily_allowance = base_allowance * 1.5
                     else:
                         daily_allowance = base_allowance * 1.3
-                    
                     ticket_price = 0
 
                 cols = st.columns(2)
@@ -344,43 +313,42 @@ with tab1:
                 with cols[1]:
                     end_date = st.date_input("Bitmə tarixi")
                 
-                purpose = st.text_area("Ezamiyyət haqqında əlavə məlumat", height=100)
+                purpose = st.text_area("Ezamiyyət məqsədi")
 
-        # Sağ sütun (Hesablama)
+        # Sağ Sütun (Hesablama)
         with col2:
             with st.container():
                 st.markdown('<div class="section-header">💰 Hesablama</div>', unsafe_allow_html=True)
                 
                 if start_date and end_date and end_date >= start_date:
                     trip_days = calculate_days(start_date, end_date)
-                    
-                    if trip_type == "Ölkə daxili":
-                        ticket_price = calculate_domestic_amount(from_city, to_city)
-                        daily_allowance = 70
-                    else:
-                        ticket_price = 0
-                    
-                    # Əsas hesablama
                     total_amount = calculate_total_amount(daily_allowance, trip_days, payment_type, ticket_price)
                     
                     # Qonaqlama əmsalı
                     if trip_type == "Ölkə xarici":
                         if accommodation == "Yalnız yaşayış yeri ilə təmin edir":
                             total_amount *= 1.4
+                            delta_label = "40% artım (Yaşayış)"
                         elif accommodation == "Yalnız gündəlik xərcləri təmin edir":
                             total_amount *= 1.6
+                            delta_label = "60% artım (Gündəlik)"
+                        else:
+                            delta_label = None
+                    else:
+                        delta_label = None
                     
-                    # Görüntüləmə
                     st.metric("📅 Günlük müavinət", f"{daily_allowance} AZN")
-                    
                     if trip_type == "Ölkə daxili":
-                        st.metric("🚌 Bilet qiyməti", f"{ticket_price} AZN")
-                    
-                    st.metric("⏳ Ezamiyyət müddəti", f"{trip_days} gün")
-                    st.metric("💳 Ümumi məbləğ", f"{total_amount:.2f} AZN",
-                             delta="40% artım" if accommodation in ["Yalnız yaşayış yeri ilə təmin edir", "Yalnız gündəlik xərcləri təmin edir"] else None)
+                        st.metric("🚌 Nəqliyyat xərci", f"{ticket_price} AZN")
+                    st.metric("⏳ Müddət", f"{trip_days} gün")
+                    st.metric(
+                        "💳 Ümumi məbləğ", 
+                        f"{total_amount:.2f} AZN", 
+                        delta=delta_label,
+                        delta_color="normal" if delta_label else "off"
+                    )
 
-            if st.button("✅ Yadda Saxla", type="primary", use_container_width=True):
+            if st.button("✅ Yadda Saxla", use_container_width=True):
                 if all([first_name, last_name, start_date, end_date]):
                     trip_data = {
                         "Tarix": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -401,9 +369,8 @@ with tab1:
                         "Ümumi məbləğ": total_amount,
                         "Məqsəd": purpose
                     }
-                    
                     if save_trip_data(trip_data):
-                        st.success("Məlumatlar uğurla yadda saxlanıldı!")
+                        st.success("Məlumatlar yadda saxlandı!")
                         st.balloons()
                 else:
                     st.error("Zəhmət olmasa bütün məcburi sahələri doldurun!")
@@ -745,3 +712,14 @@ with tab2:
                 
                 except FileNotFoundError:
                     st.info("Hələ heç bir məlumat faylı yaradılmayıb")
+
+if __name__ == "__main__":
+    if not os.path.exists("ezamiyyet_melumatlari.xlsx"):
+        pd.DataFrame(columns=[
+            'Tarix', 'Ad', 'Soyad', 'Ata adı', 'Vəzifə', 'Şöbə', 
+            'Ezamiyyət növü', 'Ödəniş növü', 'Qonaqlama növü',
+            'Marşrut', 'Bilet qiyməti', 'Günlük müavinət', 
+            'Başlanğıc tarixi', 'Bitmə tarixi', 'Günlər', 
+            'Ümumi məbləğ', 'Məqsəd'
+        ]).to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+
