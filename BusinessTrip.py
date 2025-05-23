@@ -386,58 +386,108 @@ with tab2:
                 st.error("Giriş məlumatları yanlışdır!")
 
         if st.session_state.get('admin_logged'):
-            st.markdown('<div class="section-header">📊 İdarəetmə Paneli</div>', unsafe_allow_html=True)
-            df = load_trip_data()
+            # Yeni Admin Alt Tablar
+            tab_manage, tab_import = st.tabs(["📊 Mövcud Məlumatlar", "📥 İdxal Funksiyaları"])
             
-            if not df.empty:
-                with st.expander("📋 Bütün Qeydlər", expanded=True):
-                    st.dataframe(df, use_container_width=True, height=400)
+            with tab_manage:
+                st.markdown('<div class="section-header">📊 İdarəetmə Paneli</div>', unsafe_allow_html=True)
+                df = load_trip_data()
                 
-                cols = st.columns(3)
-                with cols[0]:
-                    st.metric("Ümumi Ezamiyyət", len(df))
-                with cols[1]:
-                    st.metric("Ümumi Xərc", f"{df['Ümumi məbləğ'].sum():.2f} AZN")
-                with cols[2]:
-                    st.metric("Orta Müddət", f"{df['Günlər'].mean():.1f} gün")
-                
-                with st.expander("📈 Statistika", expanded=True):
-                    cols = st.columns(2)
-                    with cols[0]:
-                        fig = px.pie(df, names='Ezamiyyət növü', 
-                                   title='Ezamiyyət Növlərinin Dağılımı',
-                                   color_discrete_sequence=['#6366f1', '#8b5cf6'])
-                        st.plotly_chart(fig, use_container_width=True)
+                if not df.empty:
+                    with st.expander("📋 Bütün Qeydlər", expanded=True):
+                        st.dataframe(df, use_container_width=True, height=400)
                     
+                    cols = st.columns(3)
+                    with cols[0]:
+                        st.metric("Ümumi Ezamiyyət", len(df))
                     with cols[1]:
-                        fig = px.bar(df.sort_values('Ümumi məbləğ', ascending=False).head(10), 
-                                   x='Şöbə', y='Ümumi məbləğ', 
-                                   title='Top 10 Xərc Edən Şöbə',
-                                   color='Ümumi məbləğ',
-                                   color_continuous_scale='Bluered')
-                        st.plotly_chart(fig, use_container_width=True)
-                
-                with st.expander("📤 İxrac Funksiyaları"):
-                    output = BytesIO()
-                    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                        df.to_excel(writer, index=False, sheet_name='Ezamiyyətlər')
-                        st.download_button(
-                            label="📥 Excel faylını yüklə",
-                            data=output.getvalue(),
-                            file_name="ezamiyyet_qeydleri.xlsx",
-                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        st.metric("Ümumi Xərc", f"{df['Ümumi məbləğ'].sum():.2f} AZN")
+                    with cols[2]:
+                        st.metric("Orta Müddət", f"{df['Günlər'].mean():.1f} gün")
+                    
+                    with st.expander("📈 Statistika", expanded=True):
+                        cols = st.columns(2)
+                        with cols[0]:
+                            fig = px.pie(df, names='Ezamiyyət növü', 
+                                       title='Ezamiyyət Növlərinin Dağılımı',
+                                       color_discrete_sequence=['#6366f1', '#8b5cf6'])
+                            st.plotly_chart(fig, use_container_width=True)
+                        
+                        with cols[1]:
+                            fig = px.bar(df.sort_values('Ümumi məbləğ', ascending=False).head(10), 
+                                       x='Şöbə', y='Ümumi məbləğ', 
+                                       title='Top 10 Xərc Edən Şöbə',
+                                       color='Ümumi məbləğ',
+                                       color_continuous_scale='Bluered')
+                            st.plotly_chart(fig, use_container_width=True)
+                    
+                    with st.expander("📤 İxrac Funksiyaları"):
+                        output = BytesIO()
+                        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                            df.to_excel(writer, index=False, sheet_name='Ezamiyyətlər')
+                            st.download_button(
+                                label="📥 Excel faylını yüklə",
+                                data=output.getvalue(),
+                                file_name="ezamiyyet_qeydleri.xlsx",
+                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            )
+                    
+                    with st.expander("🗑️ Qeyd Silmə", expanded=True):
+                        selected = st.multiselect(
+                            "Silinəcək qeydləri seçin:",
+                            options=df.index,
+                            format_func=lambda x: f"{df.iloc[x]['Ad']} {df.iloc[x]['Soyad']} | {df.iloc[x]['Marşrut']}"
                         )
+                        if st.button("🔴 Seçilmişləri sil", type="primary"):
+                            df = df.drop(selected)
+                            df.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+                            st.success(f"{len(selected)} qeyd silindi!")
+                            st.rerun()
+                else:
+                    st.warning("Hələ heç bir qeyd mövcud deyil")
+            
+            with tab_import:
+                st.markdown('<div class="section-header">📥 Excel Fayl İdxalı</div>', unsafe_allow_html=True)
+                st.info("""
+                **İdxal tələbləri:**
+                - Fayl .xlsx formatında olmalıdır
+                - Aşağıdakı sütunları ehtiva etməlidir:
+                  - Tarix, Ad, Soyad, Ata adı, Vəzifə, Şöbə, Ezamiyyət növü, Ödəniş növü
+                  - Marşrut, Bilet qiyməti, Günlük müavinət, Başlanğıc tarixi, Bitmə tarixi
+                  - Günlər, Ümumi məbləğ, Məqsəd
+                """)
                 
-                with st.expander("🗑️ Qeyd Silmə", expanded=True):
-                    selected = st.multiselect(
-                        "Silinəcək qeydləri seçin:",
-                        options=df.index,
-                        format_func=lambda x: f"{df.iloc[x]['Ad']} {df.iloc[x]['Soyad']} | {df.iloc[x]['Marşrut']}"
-                    )
-                    if st.button("🔴 Seçilmişləri sil", type="primary"):
-                        df = df.drop(selected)
-                        df.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
-                        st.success(f"{len(selected)} qeyd silindi!")
-                        st.rerun()
-            else:
-                st.warning("Hələ heç bir qeyd mövcud deyil")
+                uploaded_file = st.file_uploader("Excel faylını seçin", type=["xlsx"], key="excel_importer")
+                
+                if uploaded_file is not None:
+                    try:
+                        uploaded_df = pd.read_excel(uploaded_file)
+                        
+                        # Validate columns
+                        required_columns = [
+                            "Tarix", "Ad", "Soyad", "Ata adı", "Vəzifə", "Şöbə", 
+                            "Ezamiyyət növü", "Ödəniş növü", "Marşrut", "Bilet qiyməti", 
+                            "Günlük müavinət", "Başlanğıc tarixi", "Bitmə tarixi", 
+                            "Günlər", "Ümumi məbləğ", "Məqsəd"
+                        ]
+                        
+                        missing_columns = [col for col in required_columns if col not in uploaded_df.columns]
+                        
+                        if missing_columns:
+                            st.error(f"⚠️ Faylda aşağıdaki tələb olunan sütunlar yoxdur: {', '.join(missing_columns)}")
+                        else:
+                            # Load existing data and combine
+                            existing_df = load_trip_data()
+                            combined_df = pd.concat([existing_df, uploaded_df], ignore_index=True)
+                            
+                            # Save combined data
+                            combined_df.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+                            
+                            st.success(f"✅ Uğurla idxal edildi! Yeni qeyd sayı: {len(uploaded_df)}")
+                            st.markdown(f"**Ümumi qeyd sayı:** {len(combined_df)}")
+                            
+                            with st.expander("İdxal edilən məlumatların ilk 5 qeydi", expanded=True):
+                                st.dataframe(uploaded_df.head(), use_container_width=True)
+                    
+                    except Exception as e:
+                        st.error(f"❌ Xəta baş verdi: {str(e)}")
