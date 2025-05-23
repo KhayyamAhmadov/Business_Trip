@@ -33,7 +33,7 @@ st.markdown("""
         margin-bottom: 2rem;
     }
     .login-box .stTextInput {
-        width: 70%;
+        width: 30%;
         margin: 0 auto;
     }
     .stTextInput input {
@@ -42,6 +42,7 @@ st.markdown("""
         border: 1px solid rgba(255,255,255,0.3)!important;
         border-radius: 8px!important;
         padding: 8px 12px!important;
+        font-size: 14px!important;
     }
     .stTextInput input::placeholder {
         color: rgba(255,255,255,0.7)!important;
@@ -204,16 +205,16 @@ def calculate_total_amount(daily_allowance, days, payment_type):
 def save_trip_data(data):
     try:
         df_new = pd.DataFrame([data])
-        df_existing = pd.read_csv("ezamiyyet_melumatlari.csv")
+        df_existing = pd.read_excel("ezamiyyet_melumatlari.xlsx")
         df_combined = pd.concat([df_existing, df_new], ignore_index=True)
     except FileNotFoundError:
         df_combined = df_new
-    df_combined.to_csv("ezamiyyet_melumatlari.csv", index=False)
+    df_combined.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
     return df_combined
 
 def load_trip_data():
     try:
-        df = pd.read_csv("ezamiyyet_melumatlari.csv")
+        df = pd.read_excel("ezamiyyet_melumatlari.xlsx")
         required_columns = {
             'Tarix': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             'Günlər': 0,
@@ -240,7 +241,6 @@ with tab1:
         
         # Sol sütun
         with col1:
-            # Şəxsi məlumatlar
             with st.expander("👤 Şəxsi Məlumatlar", expanded=True):
                 cols = st.columns(2)
                 with cols[0]:
@@ -250,11 +250,9 @@ with tab1:
                     last_name = st.text_input("Soyad", key="last_name")
                     position = st.text_input("Vəzifə", key="position")
 
-            # Təşkilat məlumatları
             with st.expander("🏢 Təşkilat Məlumatları", expanded=True):
                 department = st.selectbox("Şöbə", DEPARTMENTS, key="department")
 
-            # Ezamiyyət detalları
             with st.expander("🧳 Ezamiyyət Detalları", expanded=True):
                 trip_type = st.radio("Ezamiyyət növü", ["Ölkə daxili", "Ölkə xarici"], key="trip_type")
                 payment_type = st.selectbox("Ödəniş növü", list(PAYMENT_TYPES.keys()), key="payment_type")
@@ -338,11 +336,9 @@ with tab2:
             df = load_trip_data()
             
             if not df.empty:
-                # Bütün qeydlər
                 with st.expander("📋 Bütün Qeydlər", expanded=True):
                     st.dataframe(df, use_container_width=True, height=400)
                 
-                # Statistik panellər
                 cols = st.columns(3)
                 with cols[0]:
                     st.metric("Ümumi Ezamiyyət", len(df))
@@ -351,7 +347,6 @@ with tab2:
                 with cols[2]:
                     st.metric("Orta Müddət", f"{df['Günlər'].mean():.1f} gün")
                 
-                # Qrafiklər
                 with st.expander("📈 Statistika", expanded=True):
                     cols = st.columns(2)
                     with cols[0]:
@@ -368,7 +363,6 @@ with tab2:
                                    color_continuous_scale='Bluered')
                         st.plotly_chart(fig, use_container_width=True)
                 
-                # İxrac funksiyaları
                 with st.expander("📤 İxrac Funksiyaları"):
                     output = BytesIO()
                     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
@@ -380,7 +374,6 @@ with tab2:
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                         )
                 
-                # Qeyd silmə
                 with st.expander("🗑️ Qeyd Silmə", expanded=True):
                     selected = st.multiselect(
                         "Silinəcək qeydləri seçin:",
@@ -389,7 +382,7 @@ with tab2:
                     )
                     if st.button("🔴 Seçilmişləri sil", type="primary"):
                         df = df.drop(selected)
-                        df.to_csv("ezamiyyet_melumatlari.csv", index=False)
+                        df.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
                         st.success(f"{len(selected)} qeyd silindi!")
                         st.rerun()
             else:
