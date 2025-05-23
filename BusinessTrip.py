@@ -20,7 +20,8 @@ if 'logged_in' not in st.session_state:
 st.markdown("""
 <style>
     .login-box {
-        background: white;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
         padding: 2.5rem;
         border-radius: 15px;
         box-shadow: 0 0 20px rgba(0,0,0,0.1);
@@ -30,6 +31,16 @@ st.markdown("""
     .login-header {
         text-align: center;
         margin-bottom: 2rem;
+    }
+    /* Input sahələri üçün stil düzəlişləri */
+    .stTextInput input {
+        background-color: rgba(255,255,255,0.2)!important;
+        color: white!important;
+        border: 1px solid rgba(255,255,255,0.3)!important;
+    }
+    /* Placeholder rəngi */
+    .stTextInput input::placeholder {
+        color: rgba(255,255,255,0.7)!important;
     }
 </style>
 """, unsafe_allow_html=True)
