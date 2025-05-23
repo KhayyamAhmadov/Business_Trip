@@ -375,33 +375,79 @@ with tab1:
 
 # ============================== ADMIN PANELİ ==============================
 with tab2:
+    # Admin giriş statusunun yoxlanılması
     if 'admin_logged' not in st.session_state:
         st.session_state.admin_logged = False
 
+    # Giriş edilməyibsə
     if not st.session_state.admin_logged:
-        # ... (Admin giriş formu eyni qalır) ...
+        with st.container():
+            st.markdown('<div class="login-box"><div class="login-header"><h2>🔐 Admin Girişi</h2></div>', unsafe_allow_html=True)
+            
+            cols = st.columns(2)
+            with cols[0]:
+                admin_user = st.text_input("İstifadəçi adı", key="admin_user")
+            with cols[1]:
+                admin_pass = st.text_input("Şifrə", type="password", key="admin_pass")
+            
+            if st.button("Giriş et", key="admin_login_btn"):
+                if admin_user == "admin" and admin_pass == "admin123":
+                    st.session_state.admin_logged = True
+                    st.rerun()
+                else:
+                    st.error("Yanlış giriş məlumatları!")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+        st.stop()
 
+    # Giriş edildikdə
     if st.session_state.admin_logged:
         st.markdown('<div class="main-header"><h1>⚙️ Admin İdarəetmə Paneli</h1></div>', unsafe_allow_html=True)
         
+        # Çıxış düyməsi
         if st.button("🚪 Çıxış", key="logout_btn"):
             st.session_state.admin_logged = False
             st.rerun()
         
+        # Sekmələrin yaradılması
         tab_manage, tab_import, tab_settings = st.tabs(["📊 Məlumatlar", "📥 İdxal", "⚙️ Parametrlər"])
 
+        # Məlumatlar sekmesi
         with tab_manage:
             try:
                 df = load_trip_data()
                 if not df.empty:
+                    # Sütun tip konvertasiyaları
+                    datetime_cols = ['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']
+                    numeric_cols = ['Ümumi məbləğ', 'Günlük müavinət', 'Bilet qiyməti', 'Günlər']
+                    
+                    for col in datetime_cols:
+                        if col in df.columns:
+                            df[col] = pd.to_datetime(df[col], errors='coerce')
+                    
+                    for col in numeric_cols:
+                        if col in df.columns:
+                            df[col] = pd.to_numeric(df[col], errors='coerce')
+                            if col == 'Günlər':
+                                df[col] = df[col].astype('Int64')
+                    
                     df = df.sort_values("Tarix", ascending=False)
+                    
             except Exception as e:
                 st.error(f"Məlumatlar yüklənərkən xəta: {str(e)}")
                 df = pd.DataFrame()
 
             if not df.empty:
+                # Statistik kartlar
                 cols = st.columns(4)
-                # ... (Statistik kartlar eyni qalır) ...
+                with cols[0]:
+                    st.metric("Ümumi Ezamiyyət", len(df))
+                with cols[1]:
+                    st.metric("Ümumi Xərclər", f"{df['Ümumi məbləğ'].sum():.2f} AZN")
+                with cols[2]:
+                    st.metric("Orta Müddət", f"{df['Günlər'].mean():.1f} gün")
+                with cols[3]:
+                    st.metric("Aktiv İstifadəçilər", df['Ad'].nunique())
 
                 # Qrafiklər
                 cols = st.columns(2)
@@ -409,7 +455,7 @@ with tab2:
                     fig = px.pie(df, names='Ezamiyyət növü', title='Ezamiyyət Növlərinin Payı',
                                 color_discrete_sequence=px.colors.sequential.RdBu)
                     st.plotly_chart(fig, use_container_width=True)
-
+                
                 with cols[1]:
                     department_stats = df.groupby('Şöbə')['Ümumi məbləğ'].sum().nlargest(10)
                     fig = px.bar(department_stats, 
@@ -430,7 +476,7 @@ with tab2:
                         'Bilet qiyməti': st.column_config.NumberColumn(format="%.2f AZN"),
                         'Günlər': st.column_config.NumberColumn(format="%d")
                     }
-
+                    
                     edited_df = st.data_editor(
                         df,
                         column_config=column_config,
