@@ -1881,5 +1881,5 @@ with tab2:
 
 
 # Admin panel kodunun bitişi
-    else:
-        st.warning("🔐 Admin paneli üçün giriş tələb olunur")
+        else:
+            st.warning("🔐 Admin paneli üçün giriş tələb olunur")
