@@ -1082,14 +1082,14 @@ with tab2:
                                             except Exception as delete_error:
                                                 st.error(f"❌ Silinmə xətası: {str(delete_error)}")
                             
-                            else:
-                                st.warning("Zəhmət olmasa göstəriləcək sütunları seçin")
+                                        else:
+                                            st.warning("Zəhmət olmasa göstəriləcək sütunları seçin")
                         
-                        else:
-                            st.info("🔍 Filtrə uyğun qeyd tapılmadı")
+                                    else:
+                                        st.info("🔍 Filtrə uyğun qeyd tapılmadı")
                     
-            else:  # This else MUST align with if statement
-                st.warning("📭 Hələ heç bir məlumat yoxdur")
+                        else:  # This else MUST align with if statement
+                            st.warning("📭 Hələ heç bir məlumat yoxdur")
                 
         except Exception as e:
             st.error(f"❌ Məlumat idarəetməsi xətası: {str(e)}")
