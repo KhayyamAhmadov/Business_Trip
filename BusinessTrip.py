@@ -719,8 +719,7 @@ with tab2:
                 st.code(traceback.format_exc())
 
         # 2. MƏLUMAT İDARƏETMƏSİ TAB
-        # 2. MƏLUMAT İDARƏETMƏSİ TAB
-        with admin_tabs[1]:
+with admin_tabs[1]:
             st.markdown("### 🗂️ Məlumatların İdarə Edilməsi")
             
             try:
@@ -735,6 +734,119 @@ with tab2:
                     for col in date_columns:
                         if col in df.columns:
                             df[col] = pd.to_datetime(df[col], errors='coerce')
+                    
+                    # Dublikatları tapma və silmə bölməsi
+                    st.markdown("#### 🔍 Dublikat Təhlili")
+                    
+                    # Dublikat axtarışı üçün sütun seçimi
+                    duplicate_columns = st.multiselect(
+                        "Dublikat axtarışı üçün sütunları seçin",
+                        options=df.columns.tolist(),
+                        default=['Ad', 'Soyad', 'Başlanğıc tarixi', 'Marşrut'] if all(col in df.columns for col in ['Ad', 'Soyad', 'Başlanğıc tarixi', 'Marşrut']) else df.columns.tolist()[:4],
+                        help="Bu sütunlarda eyni dəyərlər olan qeydlər dublikat hesab ediləcək"
+                    )
+                    
+                    if duplicate_columns:
+                        # Dublikatları tap
+                        duplicates_mask = df.duplicated(subset=duplicate_columns, keep=False)
+                        duplicates_df = df[duplicates_mask].copy()
+                        
+                        if len(duplicates_df) > 0:
+                            st.warning(f"⚠️ {len(duplicates_df)} dublikat qeyd tapıldı!")
+                            
+                            # Dublikat qruplarını göstər
+                            duplicate_groups = df[duplicates_mask].groupby(duplicate_columns, dropna=False)
+                            
+                            with st.expander(f"🔍 Dublikat Qeydlər ({len(duplicate_groups)} qrup)", expanded=False):
+                                for name, group in duplicate_groups:
+                                    if len(group) > 1:
+                                        st.markdown(f"**Qrup:** {', '.join([f'{col}: {val}' for col, val in zip(duplicate_columns, name) if pd.notna(val)])}")
+                                        
+                                        # Seçilmiş sütunları göstər
+                                        display_cols = []
+                                        preferred_display = ['Ad', 'Soyad', 'Şöbə', 'Marşrut', 'Başlanğıc tarixi', 'Ümumi məbləğ']
+                                        for col in preferred_display:
+                                            if col in group.columns:
+                                                display_cols.append(col)
+                                        
+                                        if not display_cols:
+                                            display_cols = group.columns.tolist()[:6]
+                                        
+                                        st.dataframe(group[display_cols], use_container_width=True, hide_index=False)
+                                        st.markdown("---")
+                            
+                            # Dublikat silmə seçimləri
+                            col1, col2 = st.columns(2)
+                            
+                            with col1:
+                                duplicate_strategy = st.selectbox(
+                                    "Dublikat silmə strategiyası",
+                                    [
+                                        "İlk qeydi saxla",
+                                        "Son qeydi saxla", 
+                                        "Ən yüksək məbləği saxla",
+                                        "Ən aşağı məbləği saxla",
+                                        "Manuel seçim"
+                                    ]
+                                )
+                            
+                            with col2:
+                                if st.button("🧹 Dublikatları Təmizlə", type="primary"):
+                                    try:
+                                        if duplicate_strategy == "İlk qeydi saxla":
+                                            cleaned_df = df.drop_duplicates(subset=duplicate_columns, keep='first')
+                                            removed_count = len(df) - len(cleaned_df)
+                                            
+                                        elif duplicate_strategy == "Son qeydi saxla":
+                                            cleaned_df = df.drop_duplicates(subset=duplicate_columns, keep='last')
+                                            removed_count = len(df) - len(cleaned_df)
+                                            
+                                        elif duplicate_strategy == "Ən yüksək məbləği saxla":
+                                            if 'Ümumi məbləğ' in df.columns:
+                                                # Hər qrup üçün ən yüksək məbləği olan qeydi saxla
+                                                idx_to_keep = df.groupby(duplicate_columns, dropna=False)['Ümumi məbləğ'].idxmax()
+                                                cleaned_df = df.loc[idx_to_keep].drop_duplicates()
+                                                # Dublikat olmayanları da əlavə et
+                                                non_duplicates = df[~duplicates_mask]
+                                                cleaned_df = pd.concat([cleaned_df, non_duplicates]).drop_duplicates()
+                                                removed_count = len(df) - len(cleaned_df)
+                                            else:
+                                                st.error("'Ümumi məbləğ' sütunu tapılmadı!")
+                                                continue
+                                                
+                                        elif duplicate_strategy == "Ən aşağı məbləği saxla":
+                                            if 'Ümumi məbləğ' in df.columns:
+                                                # Hər qrup üçün ən aşağı məbləği olan qeydi saxla
+                                                idx_to_keep = df.groupby(duplicate_columns, dropna=False)['Ümumi məbləğ'].idxmin()
+                                                cleaned_df = df.loc[idx_to_keep].drop_duplicates()
+                                                # Dublikat olmayanları da əlavə et
+                                                non_duplicates = df[~duplicates_mask]
+                                                cleaned_df = pd.concat([cleaned_df, non_duplicates]).drop_duplicates()
+                                                removed_count = len(df) - len(cleaned_df)
+                                            else:
+                                                st.error("'Ümumi məbləğ' sütunu tapılmadı!")
+                                                continue
+                                        
+                                        elif duplicate_strategy == "Manuel seçim":
+                                            st.info("Manuel seçim üçün aşağıdakı bölmədən qeydləri seçin və silin.")
+                                            continue
+                                        
+                                        # Təsdiq soruşu
+                                        if st.checkbox(f"⚠️ {removed_count} dublikat qeydin silinməsini təsdiq edirəm"):
+                                            # Faylı yenilə
+                                            cleaned_df.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+                                            st.success(f"✅ {removed_count} dublikat qeyd silindi!")
+                                            time.sleep(2)
+                                            st.rerun()
+                                            
+                                    except Exception as clean_error:
+                                        st.error(f"❌ Dublikat təmizləmə xətası: {str(clean_error)}")
+                                        st.code(traceback.format_exc())
+                        
+                        else:
+                            st.success("✅ Dublikat qeyd tapılmadı!")
+                    
+                    st.markdown("---")
                     
                     # Filtr və axtarış seçimləri
                     st.markdown("#### 🔍 Filtr və Axtarış")
@@ -983,7 +1095,6 @@ with tab2:
                 st.error(f"❌ Məlumat idarəetməsi xətası: {str(e)}")
                 import traceback
                 st.code(traceback.format_exc())
-
         # 3. ANALİTİKA TAB
         with admin_tabs[2]:
             st.markdown("### 📈 Detallı Analitika və Hesabatlar")
