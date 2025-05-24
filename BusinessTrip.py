@@ -727,13 +727,15 @@ with tab2:
                         currency = st.selectbox(
                             "Valyuta seçin",
                             options=df['Valyuta'].unique(),
-                            index=0
-                        )
+                            index=0)
+                    
                     with cols_hist[1]:
                         start_date_hist = st.date_input(
                             "Başlanğıc tarixi",
                             datetime.today() - timedelta(days=30),
                             key="start_date"
+                    
+                    
                     with cols_hist[2]:
                         end_date_hist = st.date_input(
                             "Bitmə tarixi",
