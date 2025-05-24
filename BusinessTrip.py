@@ -639,7 +639,7 @@ with tab2:
                     
                     # Önizləmə
                     with st.expander("📋 İdxal önizləməsi (İlk 10 qeyd)", expanded=False):
-                        st.dataframe(df_mapped.head(10), 
+                        st.dataframe(df_mapped.head(10)) 
         
                     if st.button("✅ Təsdiqlə və Yüklə"):
                         # Mövcud məlumatlarla birləşdir
