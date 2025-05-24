@@ -1088,13 +1088,14 @@ with tab2:
                         else:
                             st.info("🔍 Filtrə uyğun qeyd tapılmadı")
                     
-                    else:
-                        st.warning("📭 Hələ heç bir məlumat yoxdur")
-                        
-                except Exception as e:
-                    st.error(f"❌ Məlumat idarəetməsi xətası: {str(e)}")
-                    import traceback
-                    st.code(traceback.format_exc())
+            else:  # This else MUST align with if statement
+                st.warning("📭 Hələ heç bir məlumat yoxdur")
+                
+        except Exception as e:
+            st.error(f"❌ Məlumat idarəetməsi xətası: {str(e)}")
+            import traceback
+            st.code(traceback.format_exc())
+
 
 
         # 3. ANALİTİKA TAB
