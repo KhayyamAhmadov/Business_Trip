@@ -5,6 +5,7 @@ import plotly.express as px
 from io import BytesIO
 import requests
 import xml.etree.ElementTree as ET
+import os
 
 
 # 1. İLK STREAMLIT ƏMRİ OLMALIDIR!
