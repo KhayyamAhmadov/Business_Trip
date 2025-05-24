@@ -178,6 +178,19 @@ COUNTRIES = {
     "ABŞ": 650
 }
 
+COUNTRY_CITIES = {
+    "Türkiyə": ["İstanbul", "Ankara", "İzmir", "Antalya", "Bursa", "Digər"],
+    "Gürcüstan": ["Tbilisi", "Batumi", "Kutaisi", "Zugdidi", "Digər"],
+    "Almaniya": ["Berlin", "Münhen", "Frankfurt", "Hamburg", "Digər"],
+    "BƏƏ": ["Dubai", "Abu Dabi", "Şarqah", "Əcman", "Digər"],
+    "Rusiya": ["Moskva", "Sankt-Peterburq", "Kazan", "Soçi", "Digər"],
+    "İran": ["Təbriz", "Tehran", "İsfahan", "Məşhəd", "Digər"],
+    "İtaliya": ["Roma", "Milan", "Venesiya", "Florensiya", "Digər"],
+    "Fransa": ["Paris", "Marsel", "Lion", "Nitsa", "Digər"],
+    "İngiltərə": ["London", "Manchester", "Birmingem", "Liverpul", "Digər"],
+    "ABŞ": ["Nyu York", "Los Anceles", "Çikaqo", "Mayami", "Digər"]
+}
+
 DOMESTIC_ROUTES = {
     ("Bakı", "Ağcabədi"): 10.50,
     ("Bakı", "Ağdam"): 13.50,
@@ -296,6 +309,10 @@ with tab1:
                     daily_allowance = 70
                 else:
                     country = st.selectbox("Ölkə", list(COUNTRIES.keys()))
+                    # Yeni əlavə edilən şəhər seçimi
+                    city_options = COUNTRY_CITIES.get(country, ["Digər"])
+                    selected_city = st.selectbox("Şəhər", city_options)
+                    
                     payment_mode = st.selectbox(
                         "Ödəniş rejimi",
                         options=["Adi rejim", "Günlük Normaya 50% əlavə", "Günlük Normaya 30% əlavə"]
@@ -366,7 +383,8 @@ with tab1:
                         "Ezamiyyət növü": trip_type,
                         "Ödəniş növü": payment_type,
                         "Qonaqlama növü": accommodation if trip_type == "Ölkə xarici" else "Tətbiq edilmir",
-                        "Marşrut": f"{from_city} → {to_city}" if trip_type == "Ölkə daxili" else country,
+                        # Şəhər məlumatı əlavə edildi
+                        "Marşrut": f"{from_city} → {to_city}" if trip_type == "Ölkə daxili" else f"{country} - {selected_city}",
                         "Bilet qiyməti": ticket_price,
                         "Günlük müavinət": daily_allowance,
                         "Başlanğıc tarixi": start_date.strftime("%Y-%m-%d"),
