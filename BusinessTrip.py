@@ -6,6 +6,7 @@ from io import BytesIO
 import requests
 import xml.etree.ElementTree as ET
 import os
+from bs4 import BeautifulSoup
 
 
 # 1. İLK STREAMLIT ƏMRİ OLMALIDIR!
