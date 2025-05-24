@@ -280,10 +280,10 @@ def get_currency_rates(date):
     try:
         formatted_date = date.strftime("%Y%m%d")
         url = f"https://www.cbar.az/currencies/{formatted_date}.xml"
-        response = requests.get(url)
-        response.raise_for_status()  # HTTP xətalarını yoxlayır
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
         
-        # XML strukturunu yoxlayırıq
+        # XML strukturunu yoxlamaq
         try:
             root = ET.fromstring(response.content)
         except ET.ParseError as e:
@@ -291,28 +291,42 @@ def get_currency_rates(date):
             return pd.DataFrame()
             
         currencies = []
-        for valute in root.findall('Valute'):
-            try:
-                currency_data = {
-                    'Kod': valute.get('Code'),
-                    'Valyuta': valute.find('Name').text,
-                    'Miqdar': float(valute.find('Nominal').text),
-                    'Kurs (AZN)': float(valute.find('Value').text.replace(',', '.'))
-                }
-                currency_data['1 vahid üçün'] = currency_data['Kurs (AZN)'] / currency_data['Miqdar']
-                currencies.append(currency_data)
-            except (AttributeError, ValueError) as e:
-                st.warning(f"Valyuta məlumatları oxunarkən xəta: {str(e)}")
-                continue
+        # Düzgün XML strukturuna uyğun parsing
+        for val_type in root.findall('.//ValType'):
+            for valute in val_type.findall('Valute'):
+                try:
+                    currency_data = {
+                        'Kod': valute.get('Code'),
+                        'Valyuta': valute.find('Name').text,
+                        'Miqdar': float(valute.find('Nominal').text),
+                        'Kurs (AZN)': float(valute.find('Value').text.replace(',', '.'))
+                    }
+                    currency_data['1 vahid üçün'] = currency_data['Kurs (AZN)'] / currency_data['Miqdar']
+                    currencies.append(currency_data)
+                except Exception as e:
+                    st.warning(f"Valyuta məlumatları oxunarkən xəta: {str(e)}")
+                    continue
                 
         return pd.DataFrame(currencies) if currencies else pd.DataFrame()
         
-    except requests.exceptions.HTTPError as e:
-        st.error(f"HTTP xətası: {str(e)}")
+    except requests.exceptions.RequestException as e:
+        st.error(f"Şəbəkə xətası: {str(e)}")
         return pd.DataFrame()
     except Exception as e:
-        st.error(f"Ümumi xəta: {str(e)}")
+        st.error(f"Gözlənilməz xəta: {str(e)}")
         return pd.DataFrame()
+
+# Valyuta tarixçəsi üçün köhnə funksiya yeniləməsi
+def get_historical_rates(currency, days=7):
+    rates = []
+    for i in range(days, 0, -1):
+        date = datetime.today() - timedelta(days=i)
+        df = get_currency_rates(date)
+        if not df.empty and currency in df['Valyuta'].values:
+            rate = df[df['Valyuta'] == currency]['1 vahid üçün'].values[0]
+            rates.append({"Tarix": date, "Kurs": rate})
+    return pd.DataFrame(rates)
+
 
 
 # ƏSAS İNTERFEYS
@@ -443,71 +457,72 @@ with tab1:
                               
             
             # VALYUTA MƏZƏNNƏLƏRİ
-            with st.expander("💵 Valyuta Məzənnələri (CBAR)", expanded=True):
-                cols = st.columns([2, 1])
-                with cols[0]:
-                    selected_date = st.date_input(
-                        "Məzənnə tarixi",
-                        datetime.today(),
-                        max_value=datetime.today(),
-                        format="DD.MM.YYYY",
-                        key="currency_date"
-                    )
-                
-                with cols[1]:
-                    if st.button("💱 Məzənnələri yenilə", use_container_width=True):
-                        st.session_state.currency_data = get_currency_rates(selected_date)
-                
-                if 'currency_data' in st.session_state and not st.session_state.currency_data.empty:
-                    st.dataframe(
-                        st.session_state.currency_data[['Valyuta', '1 vahid üçün']],
-                        column_config={
-                            "1 vahid üçün": st.column_config.NumberColumn(
-                                "Məzənnə",
-                                format="%.4f AZN",
-                                help="1 vahid valyuta üçün AZN ekvivalenti"
-                            )
-                        },
-                        use_container_width=True,
-                        hide_index=True,
-                        height=300
-                    )
+                with st.expander("💵 Valyuta Məzənnələri (CBAR)", expanded=True):
+                    cols = st.columns([2, 1])
+                    with cols[0]:
+                        selected_date = st.date_input(
+                            "Məzənnə tarixi",
+                            datetime.today(),
+                            max_value=datetime.today(),
+                            format="DD.MM.YYYY",
+                            key="currency_date"
+                        )
                     
-                    # Valyuta seçim üçün filtr
-                    selected_currency = st.selectbox(
-                        "Detallı məzənnə tarixçəsi üçün valyuta seçin",
-                        options=st.session_state.currency_data['Valyuta'].unique(),
-                        index=0
-                    )
+                    with cols[1]:
+                        if st.button("💱 Məzənnələri yenilə", use_container_width=True):
+                            st.session_state.currency_data = get_currency_rates(selected_date)
                     
-                    if selected_currency:
-                        # Son 7 günlük tarixçə
-                        st.markdown(f"**{selected_currency} üçün son 7 günlük dəyişikliklər:**")
-                        dates = [selected_date - timedelta(days=i) for i in range(7, 0, -1)]
-                        historical_data = []
-                        
-                        for date in dates:
-                            df = get_currency_rates(date)
-                            if not df.empty:
-                                rate = df[df['Valyuta'] == selected_currency]['1 vahid üçün'].values[0]
-                                historical_data.append({"Tarix": date, "Kurs": rate})
-                        
-                        if historical_data:
-                            df_history = pd.DataFrame(historical_data)
-                            fig = px.line(
-                                df_history, 
-                                x='Tarix', 
-                                y='Kurs',
-                                markers=True,
-                                labels={'Kurs': 'AZN ilə məzənnə'},
+                    if 'currency_data' in st.session_state:
+                        if not st.session_state.currency_data.empty:
+                            # DataFrame formatı üçün təkmilləşdirmə
+                            display_df = st.session_state.currency_data[['Valyuta', '1 vahid üçün']].copy()
+                            display_df['Məzənnə'] = display_df['1 vahid üçün'].apply(lambda x: f"{x:.4f} AZN")
+                            
+                            st.dataframe(
+                                display_df[['Valyuta', 'Məzənnə']],
+                                column_config={
+                                    "Valyuta": "Valyuta",
+                                    "Məzənnə": st.column_config.TextColumn(
+                                        "Məzənnə",
+                                        help="1 vahid valyuta üçün AZN ekvivalenti"
+                                    )
+                                },
+                                use_container_width=True,
+                                hide_index=True,
                                 height=300
                             )
-                            st.plotly_chart(fig, use_container_width=True)
-                
-                elif 'currency_data' in st.session_state:
-                    st.warning("Seçilmiş tarix üçün məzənnə məlumatı tapılmadı!")
-                else:
-                    st.info("Məzənnələri görmək üçün 'Yenilə' düyməsini basın")
+                            
+                            # Tarixçə üçün interaktiv seçim
+                            selected_currency = st.selectbox(
+                                "Valyuta seçin",
+                                options=st.session_state.currency_data['Valyuta'].unique(),
+                                index=0
+                            )
+                            
+                            if selected_currency:
+                                df_history = get_historical_rates(selected_currency)
+                                if not df_history.empty:
+                                    fig = px.line(
+                                        df_history, 
+                                        x='Tarix', 
+                                        y='Kurs',
+                                        markers=True,
+                                        labels={'Kurs': 'AZN ilə məzənnə'},
+                                        title=f"{selected_currency} üçün son 7 günlük məzənnə dəyişikliyi",
+                                        height=300
+                                    )
+                                    fig.update_layout(
+                                        xaxis_title='Tarix',
+                                        yaxis_title='Məzənnə (AZN)',
+                                        hovermode="x unified"
+                                    )
+                                    st.plotly_chart(fig, use_container_width=True)
+                                else:
+                                    st.warning("Seçilmiş valyuta üçün tarixçə məlumatı tapılmadı!")
+                        else:
+                            st.warning("Seçilmiş tarix üçün məzənnə məlumatı tapılmadı!")
+                    else:
+                        st.info("Məzənnələri görmək üçün 'Yenilə' düyməsini basın")
 
 # ============================== ADMIN PANELİ ==============================
 with tab2:
