@@ -1873,6 +1873,6 @@ with tab2:
         
         with col3:
             st.caption(f"📅 Son yeniləmə: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
-
-    else:
-        st.warning("🔐 Admin paneli üçün giriş tələb olunur")
+    
+        else:
+            st.warning("🔐 Admin paneli üçün giriş tələb olunur")
