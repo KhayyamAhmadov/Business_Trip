@@ -384,6 +384,7 @@ with tab1:
                             currency = COUNTRIES[country]['cities'][selected_city]['currency']
                         
                         # Valyuta konvertasiyası
+                        # Valyuta konvertasiyası
                         exchange_rate = CURRENCY_RATES.get(currency, 1)
                         base_allowance_azn = base_allowance * exchange_rate
                         
@@ -393,13 +394,14 @@ with tab1:
                             options=["Adi rejim", "Günlük Normaya 50% əlavə", "Günlük Normaya 30% əlavə"]
                         )
                         
-                        # Hesablamalar
+                        # DÜZGÜN HESABLAMA -->
                         if payment_mode == "Adi rejim":
-                            daily_allowance = base_allowance_azn
+                            daily_allowance = float(base_allowance_azn)
                         elif payment_mode == "Günlük Normaya 50% əlavə":
-                            daily_allowance = base_allowance_azn * 1.5
+                            daily_allowance = float(base_allowance_azn * 1.5)
                         else:
-                            daily_allowance = base_allowance_azn * 1.3
+                            daily_allowance = float(base_allowance_azn * 1.3)
+
 
 
                 cols = st.columns(2)
