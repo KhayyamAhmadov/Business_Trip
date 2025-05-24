@@ -399,9 +399,35 @@ with tab1:
                         delta_color="normal" if delta_label else "off"
                     )
 
-
+            if st.button("✅ Yadda Saxla", use_container_width=True):
+                if all([first_name, last_name, start_date, end_date]):
+                    trip_data = {
+                        "Tarix": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "Ad": first_name,
+                        "Soyad": last_name,
+                        "Ata adı": father_name,
+                        "Vəzifə": position,
+                        "Şöbə": department,
+                        "Ezamiyyət növü": trip_type,
+                        "Ödəniş növü": payment_type,
+                        "Qonaqlama növü": accommodation if trip_type == "Ölkə xarici" else "Tətbiq edilmir",
+                        # Şəhər məlumatı əlavə edildi
+                        "Marşrut": f"{from_city} → {to_city}" if trip_type == "Ölkə daxili" else f"{country} - {selected_city}",
+                        "Bilet qiyməti": ticket_price,
+                        "Günlük müavinət": daily_allowance,
+                        "Başlanğıc tarixi": start_date.strftime("%Y-%m-%d"),
+                        "Bitmə tarixi": end_date.strftime("%Y-%m-%d"),
+                        "Günlər": trip_days,
+                        "Ümumi məbləğ": total_amount,
+                        "Məqsəd": purpose
+                    }
+                    if save_trip_data(trip_data):
+                        st.success("Məlumatlar yadda saxlandı!")
+                else:
+                    st.error("Zəhmət olmasa bütün məcburi sahələri doldurun!")
+                              
             
-             # VALYUTA MƏZƏNNƏLƏRİ
+            # VALYUTA MƏZƏNNƏLƏRİ
             with st.expander("💵 Valyuta Məzənnələri (CBAR)", expanded=True):
                 cols = st.columns([2, 1])
                 with cols[0]:
@@ -468,34 +494,6 @@ with tab1:
                 else:
                     st.info("Məzənnələri görmək üçün 'Yenilə' düyməsini basın")
 
-            
-
-            if st.button("✅ Yadda Saxla", use_container_width=True):
-                if all([first_name, last_name, start_date, end_date]):
-                    trip_data = {
-                        "Tarix": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        "Ad": first_name,
-                        "Soyad": last_name,
-                        "Ata adı": father_name,
-                        "Vəzifə": position,
-                        "Şöbə": department,
-                        "Ezamiyyət növü": trip_type,
-                        "Ödəniş növü": payment_type,
-                        "Qonaqlama növü": accommodation if trip_type == "Ölkə xarici" else "Tətbiq edilmir",
-                        # Şəhər məlumatı əlavə edildi
-                        "Marşrut": f"{from_city} → {to_city}" if trip_type == "Ölkə daxili" else f"{country} - {selected_city}",
-                        "Bilet qiyməti": ticket_price,
-                        "Günlük müavinət": daily_allowance,
-                        "Başlanğıc tarixi": start_date.strftime("%Y-%m-%d"),
-                        "Bitmə tarixi": end_date.strftime("%Y-%m-%d"),
-                        "Günlər": trip_days,
-                        "Ümumi məbləğ": total_amount,
-                        "Məqsəd": purpose
-                    }
-                    if save_trip_data(trip_data):
-                        st.success("Məlumatlar yadda saxlandı!")
-                else:
-                    st.error("Zəhmət olmasa bütün məcburi sahələri doldurun!")
 # ============================== ADMIN PANELİ ==============================
 with tab2:
     # Admin giriş statusunun yoxlanılması
