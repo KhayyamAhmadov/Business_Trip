@@ -293,6 +293,13 @@ def load_domestic_allowances():
         df.to_excel("domestic_allowances.xlsx", index=False)
         return df.set_index('Şəhər')['Müavinət'].to_dict()
 
+def save_domestic_allowances(data):
+    df = pd.DataFrame({
+        'Şəhər': data.keys(),
+        'Müavinət': data.values()
+    })
+    df.to_excel("domestic_allowances.xlsx", index=False)
+
 
 
 # ƏSAS İNTERFEYS
@@ -329,8 +336,8 @@ with tab1:
                     with cols[1]:
                         to_city = st.selectbox("Haraya", [c for c in CITIES if c != from_city])
                     ticket_price = calculate_domestic_amount(from_city, to_city)
-                    domestic_allowances = load_domestic_allowances()
-                    daily_allowance = domestic_allowances.get(to_city, domestic_allowances['Digər'])
+                    domestic_allowances = load_domestic_allowances()  # Yeni funksiya
+                    daily_allowance = domestic_allowances.get(to_city, domestic_allowances['Digər'])  # Dinamik yükləmə
                 else:
                     country = st.selectbox("Ölkə", list(COUNTRIES.keys()))
                     # Yeni əlavə edilən şəhər seçimi
@@ -687,29 +694,77 @@ with tab2:
 
 
                         # Yeni əlavə edilən hissə
-            with st.expander("🏙️ Daxili Ezamiyyət Müavinətləri", expanded=True):
-                st.markdown("#### Şəhərlər üzrə günlük müavinətlər")
+            with st.expander("🏙️ Daxili Ezamiyyət Müavinətləri (Ətraflı)", expanded=True):
+                st.markdown("""
+                **Təlimat:**
+                - Mövcud şəhərlərin müavinətlərini dəyişə bilərsiniz
+                - Yeni şəhərlər əlavə edə bilərsiniz
+                - "Digər" kateqoriyası siyahıda olmayan bütün şəhərlər üçün əsas götürülür
+                """)
                 
-                domestic_allowances = load_domestic_allowances()
-                new_allowances = {}
+                # Yeni şəhər əlavə etmə paneli
+                st.markdown("### ➕ Yeni Şəhər Əlavə Et")
+                cols = st.columns([2, 1, 1])
+                with cols[0]:
+                    new_city = st.text_input("Şəhər adı", key="new_city")
+                with cols[1]:
+                    new_city_allowance = st.number_input("Müavinət (AZN)", min_value=0, value=90, key="new_city_allowance")
+                with cols[2]:
+                    if st.button("Əlavə et", key="add_new_city"):
+                        allowances = load_domestic_allowances()
+                        if new_city and new_city not in allowances:
+                            allowances[new_city] = new_city_allowance
+                            save_domestic_allowances(allowances)
+                            st.success(f"{new_city} əlavə edildi!")
+                            st.rerun()
+                        else:
+                            st.error("Zəhmət olmasa etibarlı şəhər adı daxil edin!")
+
+                # Mövcud şəhərlərin idarə edilməsi
+                st.markdown("### 📋 Mövcud Şəhər Müavinətləri")
+                allowances = load_domestic_allowances()
                 
-                cities_order = ['Bakı', 'Naxçıvan', 'Gəncə', 'Sumqayıt', 'Digər']
-                for city in cities_order:
-                    new_val = st.number_input(
-                        f"{city} müavinəti (AZN)",
-                        min_value=0,
-                        value=int(domestic_allowances.get(city, 90)),
-                        key=f"allowance_{city}"
-                    )
-                    new_allowances[city] = new_val
+                # Default 'Digər' sütununu qorumaq üçün
+                other_allowance = allowances.get('Digər', 90)
                 
-                if st.button("💾 Yenilə", key="save_domestic_allowances"):
-                    df = pd.DataFrame({
-                        'Şəhər': new_allowances.keys(),
-                        'Müavinət': new_allowances.values()
-                    })
-                    df.to_excel("domestic_allowances.xlsx", index=False)
-                    st.success("Müavinətlər uğurla yeniləndi!")
+                # Şəhərləri düzəlt
+                cities = [city for city in allowances if city != 'Digər']
+                cities.sort()
+                
+                for city in cities:
+                    cols = st.columns([3, 2, 1])
+                    with cols[0]:
+                        st.write(f"🏙️ {city}")
+                    with cols[1]:
+                        new_allowance = st.number_input(
+                            "Müavinət",
+                            min_value=0,
+                            value=int(allowances[city]),
+                            key=f"allowance_{city}"
+                        )
+                    with cols[2]:
+                        if city != 'Digər' and st.button("🗑️", key=f"del_{city}"):
+                            del allowances[city]
+                            save_domestic_allowances(allowances)
+                            st.rerun()
+                    
+                    if new_allowance != allowances[city]:
+                        allowances[city] = new_allowance
+                        save_domestic_allowances(allowances)
+                        st.rerun()
+
+                # Digər kateqoriyası üçün
+                st.markdown("### 🔄 Digər Şəhərlər")
+                new_other = st.number_input(
+                    "Digər şəhərlər üçün müavinət (AZN)",
+                    min_value=0,
+                    value=int(other_allowance),
+                    key="other_allowance"
+                )
+                if new_other != other_allowance:
+                    allowances['Digər'] = new_other
+                    save_domestic_allowances(allowances)
+                    st.rerun()
 
 
             # Daxili marşrutların redaktə edilməsi
