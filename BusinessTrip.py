@@ -314,19 +314,7 @@ def get_currency_rates(date):
         return pd.DataFrame()
     except Exception as e:
         st.error(f"Gözlənilməz xəta: {str(e)}")
-        return pd.DataFrame()        
-def get_historical_rates(currency, start_date, end_date):
-    """Seçilmiş tarix aralığı üçün tarixçə məlumatları"""
-    dates = pd.date_range(start=start_date, end=end_date)
-    rates = []
-    
-    for date in dates:
-        df = get_currency_rates(date)
-        if not df.empty and currency in df['Valyuta'].values:
-            rate = df[df['Valyuta'] == currency]['1 vahid üçün'].values[0]
-            rates.append({"Tarix": date.date(), "Kurs": rate})
-    
-    return pd.DataFrame(rates)
+        return pd.DataFrame()  
 
 
 # ƏSAS İNTERFEYS
