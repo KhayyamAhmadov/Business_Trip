@@ -237,6 +237,14 @@ DOMESTIC_ROUTES = {
     ("Bakı", "Zərdab"): 9.30
 }
 
+DOMESTIC_ALLOWANCES = {
+    "Bakı": 125,
+    "Naxçıvan": 100,
+    "Gəncə": 95,
+    "Sumqayıt": 95,
+    "Digər": 90
+}
+
 PAYMENT_TYPES = {
     "Ödənişsiz": 0,
     "10% ödəniş edilməklə": 0.1,
@@ -272,6 +280,18 @@ def save_trip_data(data):
     except Exception as e:
         st.error(f"Xəta: {str(e)}")
         return False
+
+def load_domestic_allowances():
+    try:
+        df = pd.read_excel("domestic_allowances.xlsx")
+        return df.set_index('Şəhər')['Müavinət'].to_dict()
+    except FileNotFoundError:
+        df = pd.DataFrame({
+            'Şəhər': ['Bakı', 'Naxçıvan', 'Gəncə', 'Sumqayıt', 'Digər'],
+            'Müavinət': [125, 100, 95, 95, 90]
+        })
+        df.to_excel("domestic_allowances.xlsx", index=False)
+        return df.set_index('Şəhər')['Müavinət'].to_dict()
 
 
 
@@ -309,7 +329,8 @@ with tab1:
                     with cols[1]:
                         to_city = st.selectbox("Haraya", [c for c in CITIES if c != from_city])
                     ticket_price = calculate_domestic_amount(from_city, to_city)
-                    daily_allowance = 70
+                    domestic_allowances = load_domestic_allowances()
+                    daily_allowance = domestic_allowances.get(to_city, domestic_allowances['Digər'])
                 else:
                     country = st.selectbox("Ölkə", list(COUNTRIES.keys()))
                     # Yeni əlavə edilən şəhər seçimi
@@ -663,6 +684,33 @@ with tab2:
                         if st.button("🗑️", key=f"del_{country}"):
                             del COUNTRIES[country]
                             st.rerun()
+
+
+                        # Yeni əlavə edilən hissə
+            with st.expander("🏙️ Daxili Ezamiyyət Müavinətləri", expanded=True):
+                st.markdown("#### Şəhərlər üzrə günlük müavinətlər")
+                
+                domestic_allowances = load_domestic_allowances()
+                new_allowances = {}
+                
+                cities_order = ['Bakı', 'Naxçıvan', 'Gəncə', 'Sumqayıt', 'Digər']
+                for city in cities_order:
+                    new_val = st.number_input(
+                        f"{city} müavinəti (AZN)",
+                        min_value=0,
+                        value=int(domestic_allowances.get(city, 90)),
+                        key=f"allowance_{city}"
+                    )
+                    new_allowances[city] = new_val
+                
+                if st.button("💾 Yenilə", key="save_domestic_allowances"):
+                    df = pd.DataFrame({
+                        'Şəhər': new_allowances.keys(),
+                        'Müavinət': new_allowances.values()
+                    })
+                    df.to_excel("domestic_allowances.xlsx", index=False)
+                    st.success("Müavinətlər uğurla yeniləndi!")
+
 
             # Daxili marşrutların redaktə edilməsi
             with st.expander("🚌 Daxili Marşrut Parametrləri"):
