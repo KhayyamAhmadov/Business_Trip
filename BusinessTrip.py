@@ -556,20 +556,20 @@ with tab2:
             "🔧 Sistem Alətləri"
         ])
 
-        # 1. DASHBOARD TAB
+# 1. DASHBOARD TAB
         with admin_tabs[0]:
             try:
                 df = load_trip_data()
                 
                 if not df.empty:
-                    # Tarixi sütunları düzəlt
-                    if 'Tarix' in df.columns:
-                        df['Tarix'] = pd.to_datetime(df['Tarix'], errors='coerce')
-                    if 'Başlanğıc tarixi' in df.columns:
-                        df['Başlanğıc tarixi'] = pd.to_datetime(df['Başlanğıc tarixi'], errors='coerce')
+                    # Tarixi sütunları düzəlt - Xəta həlli
+                    date_columns = ['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']
+                    for col in date_columns:
+                        if col in df.columns:
+                            df[col] = pd.to_datetime(df[col], errors='coerce')
                     
-                    # Rəqəmsal sütunları düzəlt
-                    numeric_cols = ['Ümumi məbləğ', 'Günlük müavinət', 'Bilet qiyməti']
+                    # Rəqəmsal sütunları düzəlt - Xəta həlli
+                    numeric_cols = ['Ümumi məbləğ', 'Günlük müavinət', 'Bilet qiyməti', 'Günlər']
                     for col in numeric_cols:
                         if col in df.columns:
                             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
@@ -578,94 +578,145 @@ with tab2:
                     col1, col2, col3, col4, col5 = st.columns(5)
                     
                     with col1:
+                        recent_count = 0
+                        if 'Tarix' in df.columns:
+                            recent_mask = df['Tarix'] >= (datetime.now() - timedelta(days=30))
+                            recent_count = recent_mask.sum()
+                        
                         st.metric(
                             "📋 Ümumi Ezamiyyət",
                             len(df),
-                            delta=f"+{len(df[df['Tarix'] >= datetime.now() - timedelta(days=30)])}" if 'Tarix' in df.columns else None
+                            delta=f"+{recent_count}" if recent_count > 0 else None
                         )
                     
                     with col2:
-                        total_amount = df['Ümumi məbləğ'].sum()
+                        total_amount = df['Ümumi məbləğ'].sum() if 'Ümumi məbləğ' in df.columns else 0
+                        avg_amount = total_amount / len(df) if len(df) > 0 and total_amount > 0 else 0
+                        
                         st.metric(
                             "💰 Ümumi Xərclər",
                             f"{total_amount:,.2f} AZN",
-                            delta=f"{total_amount/len(df):.2f} AZN orta"
+                            delta=f"{avg_amount:.2f} AZN orta"
                         )
                     
                     with col3:
-                        if 'Günlər' in df.columns:
+                        if 'Günlər' in df.columns and df['Günlər'].notna().any():
                             avg_days = df['Günlər'].mean()
                             st.metric("⏱️ Orta Müddət", f"{avg_days:.1f} gün")
                         else:
                             st.metric("⏱️ Orta Müddət", "N/A")
                     
                     with col4:
-                        active_users = df['Ad'].nunique() if 'Ad' in df.columns else 0
+                        active_users = 0
+                        if 'Ad' in df.columns:
+                            active_users = df['Ad'].nunique()
                         st.metric("👥 Aktiv İstifadəçilər", active_users)
                     
                     with col5:
+                        international_pct = 0
                         if 'Ezamiyyət növü' in df.columns:
                             international_pct = (df['Ezamiyyət növü'] == 'Ölkə xarici').mean() * 100
-                            st.metric("🌍 Beynəlxalq %", f"{international_pct:.1f}%")
-                        else:
-                            st.metric("🌍 Beynəlxalq %", "N/A")
+                        st.metric("🌍 Beynəlxalq %", f"{international_pct:.1f}%")
 
-                    # Son fəaliyyətlər
+                    # Son fəaliyyətlər - Xəta həlli
                     st.markdown("### 📅 Son Ezamiyyətlər")
-                    recent_trips = df.head(10)
                     
-                    for idx, row in recent_trips.iterrows():
-                        with st.container():
-                            col1, col2, col3, col4 = st.columns([2, 2, 1, 1])
-                            with col1:
-                                st.write(f"**{row.get('Ad', 'N/A')} {row.get('Soyad', 'N/A')}**")
-                                st.caption(row.get('Şöbə', 'N/A')[:50] + "...")
-                            with col2:
-                                st.write(f"📍 {row.get('Marşrut', 'N/A')}")
-                                st.caption(f"🗓️ {row.get('Başlanğıc tarixi', 'N/A')}")
-                            with col3:
-                                st.write(f"💰 {row.get('Ümumi məbləğ', 0):.2f} AZN")
-                            with col4:
-                                status_color = "🟢" if row.get('Ödəniş növü') == "Ödənişsiz" else "🟡"
-                                st.write(f"{status_color} {row.get('Ödəniş növü', 'N/A')}")
-                            st.divider()
+                    # Sıralama üçün təhlükəsiz yanaşma
+                    display_df = df.copy()
+                    if 'Tarix' in display_df.columns:
+                        display_df = display_df.sort_values('Tarix', ascending=False, na_position='last')
+                    
+                    recent_trips = display_df.head(10)
+                    
+                    if len(recent_trips) > 0:
+                        for idx, row in recent_trips.iterrows():
+                            with st.container():
+                                col1, col2, col3, col4 = st.columns([2, 2, 1, 1])
+                                
+                                with col1:
+                                    ad = row.get('Ad', 'N/A') if pd.notna(row.get('Ad')) else 'N/A'
+                                    soyad = row.get('Soyad', 'N/A') if pd.notna(row.get('Soyad')) else 'N/A'
+                                    st.write(f"**{ad} {soyad}**")
+                                    
+                                    sobe = row.get('Şöbə', 'N/A') if pd.notna(row.get('Şöbə')) else 'N/A'
+                                    sobe_short = sobe[:50] + "..." if len(str(sobe)) > 50 else sobe
+                                    st.caption(sobe_short)
+                                
+                                with col2:
+                                    marsrut = row.get('Marşrut', 'N/A') if pd.notna(row.get('Marşrut')) else 'N/A'
+                                    st.write(f"📍 {marsrut}")
+                                    
+                                    bas_tarix = row.get('Başlanğıc tarixi', 'N/A')
+                                    if pd.notna(bas_tarix) and bas_tarix != 'N/A':
+                                        try:
+                                            formatted_date = pd.to_datetime(bas_tarix).strftime('%d.%m.%Y')
+                                            st.caption(f"🗓️ {formatted_date}")
+                                        except:
+                                            st.caption(f"🗓️ {bas_tarix}")
+                                    else:
+                                        st.caption("🗓️ N/A")
+                                
+                                with col3:
+                                    mebleg = row.get('Ümumi məbləğ', 0)
+                                    mebleg = float(mebleg) if pd.notna(mebleg) else 0
+                                    st.write(f"💰 {mebleg:.2f} AZN")
+                                
+                                with col4:
+                                    odenis = row.get('Ödəniş növü', 'N/A') if pd.notna(row.get('Ödəniş növü')) else 'N/A'
+                                    status_color = "🟢" if odenis == "Ödənişsiz" else "🟡"
+                                    st.write(f"{status_color} {odenis}")
+                                
+                                st.divider()
+                    else:
+                        st.info("📝 Göstəriləcək ezamiyyət yoxdur")
 
-                    # Tez-tez görmə qrafikleri
+                    # Qrafiklər - Xəta həlli
                     col1, col2 = st.columns(2)
                     
                     with col1:
-                        if 'Ezamiyyət növü' in df.columns:
-                            fig = px.pie(
-                                df, 
-                                names='Ezamiyyət növü', 
-                                title='🌍 Ezamiyyət Növləri Payı',
-                                color_discrete_sequence=['#667eea', '#764ba2'],
-                                hole=0.4
-                            )
-                            fig.update_traces(textposition='inside', textinfo='percent+label')
-                            st.plotly_chart(fig, use_container_width=True)
+                        if 'Ezamiyyət növü' in df.columns and df['Ezamiyyət növü'].notna().any():
+                            ezamiyyet_stats = df['Ezamiyyət növü'].value_counts()
+                            if len(ezamiyyet_stats) > 0:
+                                fig = px.pie(
+                                    values=ezamiyyet_stats.values,
+                                    names=ezamiyyet_stats.index,
+                                    title='🌍 Ezamiyyət Növləri Payı',
+                                    color_discrete_sequence=['#667eea', '#764ba2'],
+                                    hole=0.4
+                                )
+                                fig.update_traces(textposition='inside', textinfo='percent+label')
+                                st.plotly_chart(fig, use_container_width=True)
+                            else:
+                                st.info("📊 Ezamiyyət növü məlumatı yoxdur")
+                        else:
+                            st.info("📊 Ezamiyyət növü sütunu yoxdur")
                     
                     with col2:
-                        if 'Ödəniş növü' in df.columns:
+                        if 'Ödəniş növü' in df.columns and df['Ödəniş növü'].notna().any():
                             payment_stats = df['Ödəniş növü'].value_counts()
-                            fig = px.bar(
-                                x=payment_stats.index,
-                                y=payment_stats.values,
-                                title='💳 Ödəniş Növləri',
-                                color=payment_stats.values,
-                                color_continuous_scale='Blues'
-                            )
-                            fig.update_layout(showlegend=False)
-                            st.plotly_chart(fig, use_container_width=True)
+                            if len(payment_stats) > 0:
+                                fig = px.bar(
+                                    x=payment_stats.index,
+                                    y=payment_stats.values,
+                                    title='💳 Ödəniş Növləri',
+                                    color=payment_stats.values,
+                                    color_continuous_scale='Blues'
+                                )
+                                fig.update_layout(showlegend=False)
+                                st.plotly_chart(fig, use_container_width=True)
+                            else:
+                                st.info("📊 Ödəniş növü məlumatı yoxdur")
+                        else:
+                            st.info("📊 Ödəniş növü sütunu yoxdur")
 
                 else:
                     st.warning("📭 Hələ heç bir ezamiyyət qeydiyyatı yoxdur")
-                    
-                    # Boş hal üçün demo məlumatlar
                     st.info("🚀 Sistemə ilk ezamiyyəti əlavə etmək üçün 'Yeni Ezamiyyət' bölməsinə keçin")
                     
             except Exception as e:
                 st.error(f"❌ Dashboard yüklənərkən xəta: {str(e)}")
+                import traceback
+                st.code(traceback.format_exc())
 
         # 2. MƏLUMAT İDARƏETMƏSİ TAB
         with admin_tabs[1]:
