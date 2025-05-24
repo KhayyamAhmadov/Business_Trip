@@ -1099,8 +1099,7 @@ with tab2:
 
         # 3. ANALİTİKA TAB
         with admin_tabs[2]:
-            st.markdown("### 📈 Detallı Analitika və Hesabatlar")
-            
+            st.markdown("### 📈 Detallı Analitika və Hesabatlar")            
             try:
                 df = load_trip_data()
                 
