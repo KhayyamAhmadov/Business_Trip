@@ -232,7 +232,18 @@ def load_trip_data():
     """Ezamiyyət məlumatlarını yükləyir"""
     try:
         if os.path.exists("ezamiyyet_melumatlari.xlsx"):
-            df = pd.read_excel("ezamiyyet_melumatlari.xlsx")
+            # Explicitly parse date columns
+            df = pd.read_excel(
+                "ezamiyyet_melumatlari.xlsx",
+                parse_dates=['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']
+            )
+            
+            # Ensure proper datetime conversion for all date columns
+            date_columns = ['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']
+            for col in date_columns:
+                if col in df.columns:
+                    df[col] = pd.to_datetime(df[col], errors='coerce')
+            
             return df
         else:
             return pd.DataFrame()
@@ -423,7 +434,7 @@ with tab1:
             if st.button("✅ Yadda Saxla", use_container_width=True):
                 if all([first_name, last_name, start_date, end_date]):
                     trip_data = {
-                        "Tarix": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "Tarix": datetime.now(),  # Store as datetime object
                         "Ad": first_name,
                         "Soyad": last_name,
                         "Ata adı": father_name,
@@ -435,12 +446,13 @@ with tab1:
                         "Marşrut": f"{from_city} → {to_city}",
                         "Bilet qiyməti": ticket_price,
                         "Günlük müavinət": daily_allowance,
-                        "Başlanğıc tarixi": start_date.strftime("%Y-%m-%d"),
-                        "Bitmə tarixi": end_date.strftime("%Y-%m-%d"),
+                        "Başlanğıc tarixi": start_date,  # datetime.date object
+                        "Bitmə tarixi": end_date,        # datetime.date object
                         "Günlər": trip_days,
                         "Ümumi məbləğ": total_amount,
                         "Məqsəd": purpose
                     }
+                   
                     if save_trip_data(trip_data):
                         st.success("Məlumatlar yadda saxlandı!")
                         st.balloons()
@@ -754,7 +766,8 @@ with tab2:
                                 if col in ['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']:
                                     column_config[col] = st.column_config.DatetimeColumn(
                                         col,
-                                        format="DD.MM.YYYY HH:mm" if col == 'Tarix' else "DD.MM.YYYY"
+                                        format="DD.MM.YYYY HH:mm" if col == 'Tarix' else "DD.MM.YYYY",
+                                        required=True
                                     )
                                 elif col in ['Ümumi məbləğ', 'Günlük müavinət', 'Bilet qiyməti']:
                                     column_config[col] = st.column_config.NumberColumn(
@@ -774,6 +787,12 @@ with tab2:
                             # Dəyişiklikləri saxlama
                             if st.button("💾 Dəyişiklikləri Saxla", type="primary"):
                                 try:
+                                    # Validate date columns
+                                    date_columns = ['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']
+                                    for col in date_columns:
+                                        if col in edited_df.columns:
+                                            edited_df[col] = pd.to_datetime(edited_df[col], errors='coerce')
+                            
                                     # Redaktə olunmuş məlumatları əsas DataFrame-ə tətbiq et
                                     for idx, row in edited_df.iterrows():
                                         for col in selected_columns:
