@@ -372,32 +372,59 @@ with tab1:
                 st.markdown('<div class="section-header">💰 Hesablama</div>', unsafe_allow_html=True)
                 
                 if start_date and end_date and end_date >= start_date:
-                    trip_days = calculate_days(start_date, end_date)
-                    total_amount = (daily_allowance * trip_days) + ticket_price
-                    
-                    # Qonaqlama əmsalı
-                    if trip_type == "Ölkə xarici":
-                        if accommodation == "Yalnız yaşayış yeri ilə təmin edir":
-                            total_amount *= 1.4
-                            delta_label = "40% artım (Yaşayış)"
-                        elif accommodation == "Yalnız gündəlik xərcləri təmin edir":
-                            total_amount *= 1.6
-                            delta_label = "60% artım (Gündəlik)"
-                        else:
-                            delta_label = None
-                    else:
-                        delta_label = None
-                    
-                    st.metric("📅 Günlük müavinət", f"{daily_allowance} AZN")
+                    trip_days = (end_date - start_date).days + 1
+        
                     if trip_type == "Ölkə daxili":
+                        # Daxili ezamiyyət hesablamaları
+                        hotel_cost = 0.7 * daily_allowance * (trip_days - 1)
+                        daily_expenses = 0.3 * daily_allowance * trip_days
+                        total_amount = hotel_cost + daily_expenses + ticket_price
+        
+                        # Göstəricilər
+                        st.metric("📅 Günlük müavinət", f"{daily_allowance} AZN")
                         st.metric("🚌 Nəqliyyat xərci", f"{ticket_price} AZN")
-                    st.metric("⏳ Müddət", f"{trip_days} gün")
-                    st.metric(
-                        "💳 Ümumi məbləğ", 
-                        f"{total_amount:.2f} AZN", 
-                        delta=delta_label,
-                        delta_color="normal" if delta_label else "off"
-                    )
+                        st.metric("🏨 Mehmanxana xərcləri", f"{hotel_cost:.2f} AZN")
+                        st.metric("🍽️ Gündəlik xərclər", f"{daily_expenses:.2f} AZN")
+                        st.metric("⏳ Müddət", f"{trip_days} gün")
+                        st.metric("💳 Ümumi məbləğ", f"{total_amount:.2f} AZN")
+        
+                    else:
+                        # Xarici ezamiyyət hesablamaları
+                        base_allowance = COUNTRIES[country]
+                        if payment_mode == "Adi rejim":
+                            daily_allowance = base_allowance
+                        elif payment_mode == "Günlük Normaya 50% əlavə":
+                            daily_allowance = base_allowance * 1.5
+                        else:
+                            daily_allowance = base_allowance * 1.3
+        
+                        if accommodation == "Yalnız yaşayış yeri ilə təmin edir":
+                            daily_expenses = daily_allowance * 0.4 * trip_days
+                            total_amount = daily_expenses
+                            delta_label = "40% gündəlik xərclər"
+                        elif accommodation == "Yalnız gündəlik xərcləri təmin edir":
+                            nights = trip_days - 1 if trip_days > 1 else 0
+                            hotel_cost = daily_allowance * 0.6 * nights
+                            total_amount = hotel_cost
+                            delta_label = "60% mehmanxana xərcləri" if nights > 0 else None
+                        else:
+                            total_amount = daily_allowance * trip_days
+                            delta_label = None
+        
+                        # Göstəricilər
+                        st.metric("📅 Günlük müavinət", f"{daily_allowance} AZN")
+                        if accommodation == "Yalnız yaşayış yeri ilə təmin edir":
+                            st.metric("🍽️ Gündəlik xərclər (40%)", f"{daily_expenses:.2f} AZN")
+                        elif accommodation == "Yalnız gündəlik xərcləri təmin edir" and trip_days > 1:
+                            st.metric("🏨 Mehmanxana xərcləri (60%)", f"{hotel_cost:.2f} AZN")
+                        st.metric("⏳ Müddət", f"{trip_days} gün")
+                        st.metric(
+                            "💳 Ümumi məbləğ", 
+                            f"{total_amount:.2f} AZN", 
+                            delta=delta_label,
+                            delta_color="normal" if delta_label else "off"
+                        )
+
 
             if st.button("✅ Yadda Saxla", use_container_width=True):
                 if all([first_name, last_name, start_date, end_date]):
