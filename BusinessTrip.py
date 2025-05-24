@@ -597,11 +597,8 @@ with tab2:
         with tab_import:
             st.markdown("### Excel Fayl İdxalı")
             st.info("""
-            **Dəstəklənən formatlar:**
-            - .xlsx, .xls, .csv
             **Tələblər:**
-            1. Fayl aşağıdakı sütunları ehtiva etməlidir:
-               - Ad, Soyad, Başlanğıc tarixi, Bitmə tarixi
+            1. Eyni adlı sütunlar avtomatik uyğunlaşdırılacaq
             2. Tarixlər YYYY-MM-DD formatında olmalıdır
             3. Rəqəmsal dəyərlər AZN ilə olmalıdır
             """)
@@ -616,45 +613,49 @@ with tab2:
                     else:
                         df_import = pd.read_excel(uploaded_file)
                     
-                    # Sütun uyğunlaşdırmaları
-                    st.markdown("### Sütun Uyğunlaşdırmaları")
-                    column_mapping = {}
-                    tələb_olunan_sütunlar = ['Ad', 'Soyad', 'Başlanğıc tarixi', 'Bitmə tarixi', 'Ümumi məbləğ']
+                    # Avtomatik sütun uyğunlaşdırması
+                    existing_columns = [
+                        'Tarix', 'Ad', 'Soyad', 'Ata adı', 'Vəzifə', 'Şöbə', 
+                        'Ezamiyyət növü', 'Ödəniş növü', 'Qonaqlama növü', 'Marşrut',
+                        'Bilet qiyməti', 'Günlük müavinət', 'Başlanğıc tarixi',
+                        'Bitmə tarixi', 'Günlər', 'Ümumi məbləğ', 'Məqsəd'
+                    ]
                     
-                    for sütun in tələb_olunan_sütunlar:
-                        seçim = st.selectbox(
-                            f"{sütun} sütununu seçin",
-                            options=["--Seçin--"] + list(df_import.columns),
-                            key=f"map_{sütun}"
-                        )
-                        column_mapping[sütun] = seçim if seçim != "--Seçin--" else None
+                    # Sütunları filtrlə
+                    matched_columns = [col for col in df_import.columns if col in existing_columns]
+                    df_mapped = df_import[matched_columns].copy()
                     
-                    # Validasiya
-                    if st.button("✅ Təsdiqlə və Yüklə"):
-                        çatışmayanlar = [k for k,v in column_mapping.items() if not v]
-                        if çatışmayanlar:
-                            st.error(f"Zəruri sütunlar seçilməyib: {', '.join(çatışmayanlar)}")
-                        else:
-                            # Mapping işləmi
-                            df_mapped = df_import.rename(columns={v: k for k, v in column_mapping.items() if v})
-                            
-                            # Məlumatları mövcud faylə əlavə et
-                            try:
-                                df_existing = pd.read_excel("ezamiyyet_melumatlari.xlsx")
-                                df_combined = pd.concat([df_existing, df_mapped], ignore_index=True)
-                            except FileNotFoundError:
-                                df_combined = df_mapped
-                            
-                            df_combined.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
-                            st.success(f"✅ {len(df_mapped)} qeyd uğurla idxal edildi!")
-                            st.rerun()
+                    # Tarix konvertasiyaları
+                    date_columns = ['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']
+                    for col in date_columns:
+                        if col in df_mapped.columns:
+                            df_mapped[col] = pd.to_datetime(df_mapped[col], errors='coerce')
+                    
+                    # Rəqəmsal dəyərlərin konvertasiyası
+                    numeric_columns = ['Bilet qiyməti', 'Günlük müavinət', 'Günlər', 'Ümumi məbləğ']
+                    for col in numeric_columns:
+                        if col in df_mapped.columns:
+                            df_mapped[col] = pd.to_numeric(df_mapped[col], errors='coerce')
                     
                     # Önizləmə
-                    if st.checkbox("📋 Məlumat önizləməsi"):
-                        st.dataframe(df_import.head(10), use_container_width=True)
+                    with st.expander("📋 İdxal önizləməsi (İlk 10 qeyd)", expanded=False):
+                        st.dataframe(df_mapped.head(10), 
+        
+                    if st.button("✅ Təsdiqlə və Yüklə"):
+                        # Mövcud məlumatlarla birləşdir
+                        try:
+                            df_existing = pd.read_excel("ezamiyyet_melumatlari.xlsx")
+                            df_combined = pd.concat([df_existing, df_mapped], ignore_index=True)
+                        except FileNotFoundError:
+                            df_combined = df_mapped
                         
+                        # Faylı yenilə
+                        df_combined.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+                        st.success(f"✅ {len(df_mapped)} qeyd uğurla idxal edildi!")
+                        st.rerun()
+        
                 except Exception as e:
-                    st.error(f"Fayl oxunarkən xəta: {str(e)}")
+                    st.error(f"Xəta: {str(e)}")
         
 
         # Parametrlər sekmesi
