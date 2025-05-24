@@ -166,31 +166,49 @@ CITIES = [
     "Zəngilan", "Zərdab", "Nabran", "Xudat"
 ]
 
+# COUNTRIES = {
+#     "Türkiyə": 300,
+#     "Gürcüstan": 250,
+#     "Almaniya": 600,
+#     "BƏƏ": 500,
+#     "Rusiya": 400,
+#     "İran": 280,
+#     "İtaliya": 550,
+#     "Fransa": 580,
+#     "İngiltərə": 620,
+#     "ABŞ": 650
+# }
+
+# COUNTRY_CITIES = {
+#     "Türkiyə": ["İstanbul", "Ankara", "İzmir", "Antalya", "Bursa", "Digər"],
+#     "Gürcüstan": ["Tbilisi", "Batumi", "Kutaisi", "Zugdidi", "Digər"],
+#     "Almaniya": ["Berlin", "Münhen", "Frankfurt", "Hamburg", "Digər"],
+#     "BƏƏ": ["Dubai", "Abu Dabi", "Şarqah", "Əcman", "Digər"],
+#     "Rusiya": ["Moskva", "Sankt-Peterburq", "Kazan", "Soçi", "Digər"],
+#     "İran": ["Təbriz", "Tehran", "İsfahan", "Məşhəd", "Digər"],
+#     "İtaliya": ["Roma", "Milan", "Venesiya", "Florensiya", "Digər"],
+#     "Fransa": ["Paris", "Marsel", "Lion", "Nitsa", "Digər"],
+#     "İngiltərə": ["London", "Manchester", "Birmingem", "Liverpul", "Digər"],
+#     "ABŞ": ["Nyu York", "Los Anceles", "Çikaqo", "Mayami", "Digər"]
+# }
+
 COUNTRIES = {
-    "Türkiyə": 300,
-    "Gürcüstan": 250,
-    "Almaniya": 600,
-    "BƏƏ": 500,
-    "Rusiya": 400,
-    "İran": 280,
-    "İtaliya": 550,
-    "Fransa": 580,
-    "İngiltərə": 620,
-    "ABŞ": 650
+    "Türkiyə": {
+        "currency": "TRY",
+        "cities": {
+            "İstanbul": {"allowance": 300, "currency": "TRY"},
+            "Ankara": {"allowance": 280, "currency": "TRY"}
+        }
+    },
+    "Almaniya": {
+        "currency": "EUR",
+        "cities": {
+            "Berlin": {"allowance": 600, "currency": "EUR"},
+            "Frankfurt": {"allowance": 650, "currency": "EUR"}
+        }
+    }
 }
 
-COUNTRY_CITIES = {
-    "Türkiyə": ["İstanbul", "Ankara", "İzmir", "Antalya", "Bursa", "Digər"],
-    "Gürcüstan": ["Tbilisi", "Batumi", "Kutaisi", "Zugdidi", "Digər"],
-    "Almaniya": ["Berlin", "Münhen", "Frankfurt", "Hamburg", "Digər"],
-    "BƏƏ": ["Dubai", "Abu Dabi", "Şarqah", "Əcman", "Digər"],
-    "Rusiya": ["Moskva", "Sankt-Peterburq", "Kazan", "Soçi", "Digər"],
-    "İran": ["Təbriz", "Tehran", "İsfahan", "Məşhəd", "Digər"],
-    "İtaliya": ["Roma", "Milan", "Venesiya", "Florensiya", "Digər"],
-    "Fransa": ["Paris", "Marsel", "Lion", "Nitsa", "Digər"],
-    "İngiltərə": ["London", "Manchester", "Birmingem", "Liverpul", "Digər"],
-    "ABŞ": ["Nyu York", "Los Anceles", "Çikaqo", "Mayami", "Digər"]
-}
 
 DOMESTIC_ROUTES = {
     ("Bakı", "Ağcabədi"): 10.50,
@@ -245,11 +263,16 @@ DOMESTIC_ALLOWANCES = {
     "Digər": 90
 }
 
-PAYMENT_TYPES = {
-    "Ödənişsiz": 0,
-    "10% ödəniş edilməklə": 0.1,
-    "Tam ödəniş edilməklə": 1
+# currency_rates.xlsx faylı üçün nümunə məlumatlar
+CURRENCY_RATES = {
+    "USD": 1.7,
+    "EUR": 1.9,
+    "TRY": 0.2,
+    "RUB": 0.02,
+    "GEL": 0.7
 }
+
+
 
 # ============================== FUNKSİYALAR ==============================
 def load_trip_data():
