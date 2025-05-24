@@ -7,8 +7,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from datetime import datetime, timedelta
 import json
-
-
+import traceback # For detailed error logging
 
 # 1. İLK STREAMLIT ƏMRİ OLMALIDIR!
 st.set_page_config(
@@ -17,6 +16,31 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+
+# --- Logging Function ---
+def write_log(action, details="", user="system"):
+    try:
+        log_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "user": user,
+            "action": action,
+            "details": details,
+        }
+        log_file = "admin_logs.json"
+        logs = []
+        if os.path.exists(log_file):
+            try:
+                with open(log_file, "r", encoding="utf-8") as f:
+                    logs = json.load(f)
+            except json.JSONDecodeError: # Handle corrupted log file
+                logs = []
+        logs.append(log_entry)
+        if len(logs) > 1000: # Keep last 1000 logs
+            logs = logs[-1000:]
+        with open(log_file, "w", encoding="utf-8") as f:
+            json.dump(logs, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"Log yazma xətası: {e}") # Print to console if st.error is not appropriate here
 
 # 2. GİRİŞ MƏNTİQİ
 if 'logged_in' not in st.session_state:
@@ -58,16 +82,19 @@ if not st.session_state.logged_in:
         
         access_code = st.text_input("Giriş kodu", type="password", 
                                   label_visibility="collapsed", 
-                                  placeholder="Giriş kodunu daxil edin...")
+                                  placeholder="Giriş kodunu daxil edin...",
+                                  key="main_login_password")
         
-        cols = st.columns([1,2,1])
-        with cols[1]:
-            if st.button("Daxil ol", use_container_width=True):
-                if access_code == "admin":
+        cols_login_main = st.columns([1,2,1])
+        with cols_login_main[1]:
+            if st.button("Daxil ol", use_container_width=True, key="main_login_button"):
+                if access_code == "admin": # CHANGE THIS FOR PRODUCTION
                     st.session_state.logged_in = True
+                    write_log("Sistemə giriş", user="istifadəçi")
                     st.rerun()
                 else:
                     st.error("Yanlış giriş kodu!")
+                    write_log("Sistemə giriş cəhdi", "Yanlış kod", user="naməlum")
         st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
 
@@ -100,6 +127,7 @@ st.markdown("""
         border-left: none;
     }
     
+    /* Main buttons - keep as is */
     .stButton>button {
         border-radius: 8px!important;
         padding: 0.5rem 1.5rem!important;
@@ -115,6 +143,16 @@ st.markdown("""
         background: var(--primary-color)!important;
     }
     
+    /* Destructive buttons */
+    .stButton button[kind="destructive"] {
+        background-color: #ef4444 !important; /* Tailwind red-500 */
+        border-color: #dc2626 !important; /* Tailwind red-600 */
+    }
+    .stButton button[kind="destructive"]:hover {
+        background-color: #dc2626 !important;
+        border-color: #b91c1c !important; /* Tailwind red-700 */
+    }
+    
     .dataframe {
         border-radius: 12px!important;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05)!important;
@@ -124,102 +162,43 @@ st.markdown("""
 
 # ============================== SABİTLƏR ==============================
 DEPARTMENTS = [
-    "Statistika işlərinin əlaqələndirilməsi və strateji planlaşdırma şöbəsi",
-    "Keyfiyyətin idarə edilməsi və metaməlumatlar şöbəsi",
-    "Milli hesablar və makroiqtisadi göstəricilər statistikası şöbəsi",
-    "Kənd təsərrüfatı statistikası şöbəsi",
-    "Sənaye və tikinti statistikası şöbəsi",
-    "Energetika və ətraf mühit statistikası şöbəsi",
-    "Ticarət statistikası şöbəsi",
-    "Sosial statistika şöbəsi",
-    "Xidmət statistikası şöbəsi",
-    "Əmək statistikası şöbəsi",
-    "Qiymət statistikası şöbəsi",
-    "Əhali statistikası şöbəsi",
-    "Həyat keyfiyyətinin statistikası şöbəsi",
-    "Dayanıqlı inkişaf statistikası şöbəsi",
-    "İnformasiya texnologiyaları şöbəsi",
-    "İnformasiya və ictimaiyyətlə əlaqələr şöbəsi",
-    "Beynəlxalq əlaqələr şöbəsi",
-    "İnsan resursları və hüquq şöbəsi",
-    "Maliyyə və təsərrüfat şöbəsi",
-    "Ümumi şöbə",
-    "Rejim və məxfi kargüzarlıq şöbəsi",
-    "Elmi - Tədqiqat və Statistik İnnovasiyalar Mərkəzi",
-    "Yerli statistika orqanları"
+    "Statistika işlərinin əlaqələndirilməsi və strateji planlaşdırma şöbəsi", "Keyfiyyətin idarə edilməsi və metaməlumatlar şöbəsi",
+    "Milli hesablar və makroiqtisadi göstəricilər statistikası şöbəsi", "Kənd təsərrüfatı statistikası şöbəsi",
+    "Sənaye və tikinti statistikası şöbəsi", "Energetika və ətraf mühit statistikası şöbəsi", "Ticarət statistikası şöbəsi",
+    "Sosial statistika şöbəsi", "Xidmət statistikası şöbəsi", "Əmək statistikası şöbəsi", "Qiymət statistikası şöbəsi",
+    "Əhali statistikası şöbəsi", "Həyat keyfiyyətinin statistikası şöbəsi", "Dayanıqlı inkişaf statistikası şöbəsi",
+    "İnformasiya texnologiyaları şöbəsi", "İnformasiya və ictimaiyyətlə əlaqələr şöbəsi", "Beynəlxalq əlaqələr şöbəsi",
+    "İnsan resursları və hüquq şöbəsi", "Maliyyə və təsərrüfat şöbəsi", "Ümumi şöbə", "Rejim və məxfi kargüzarlıq şöbəsi",
+    "Elmi - Tədqiqat və Statistik İnnovasiyalar Mərkəzi", "Yerli statistika orqanları", "Digər"
 ]
 
 CITIES = [
-    "Abşeron", "Ağcabədi", "Ağdam", "Ağdaş", "Ağdərə", "Ağstafa", "Ağsu", "Astara", "Bakı",
-    "Babək (Naxçıvan MR)", "Balakən", "Bərdə", "Beyləqan", "Biləsuvar", "Cəbrayıl", "Cəlilabad",
-    "Culfa (Naxçıvan MR)", "Daşkəsən", "Füzuli", "Gədəbəy", "Gəncə", "Goranboy", "Göyçay",
-    "Göygöl", "Hacıqabul", "Xaçmaz", "Xankəndi", "Xızı", "Xocalı", "Xocavənd", "İmişli",
-    "İsmayıllı", "Kəlbəcər", "Kəngərli (Naxçıvan MR)", "Kürdəmir", "Laçın", "Lənkəran",
-    "Lerik", "Masallı", "Mingəçevir", "Naftalan", "Neftçala", "Naxçıvan", "Oğuz", "Siyəzən",
-    "Ordubad (Naxçıvan MR)", "Qəbələ", "Qax", "Qazax", "Qobustan", "Quba", "Qubadlı",
-    "Qusar", "Saatlı", "Sabirabad", "Sədərək (Naxçıvan MR)", "Salyan", "Samux", "Şabran",
-    "Şahbuz (Naxçıvan MR)", "Şamaxı", "Şəki", "Şəmkir", "Şərur (Naxçıvan MR)", "Şirvan",
-    "Şuşa", "Sumqayıt", "Tərtər", "Tovuz", "Ucar", "Yardımlı", "Yevlax", "Zaqatala",
-    "Zəngilan", "Zərdab", "Nabran", "Xudat"
+    "Abşeron", "Ağcabədi", "Ağdam", "Ağdaş", "Ağdərə", "Ağstafa", "Ağsu", "Astara", "Bakı", "Babək (Naxçıvan MR)", "Balakən", "Bərdə",
+    "Beyləqan", "Biləsuvar", "Cəbrayıl", "Cəlilabad", "Culfa (Naxçıvan MR)", "Daşkəsən", "Füzuli", "Gədəbəy", "Gəncə", "Goranboy",
+    "Göyçay", "Göygöl", "Hacıqabul", "Xaçmaz", "Xankəndi", "Xızı", "Xocalı", "Xocavənd", "İmişli", "İsmayıllı", "Kəlbəcər",
+    "Kəngərli (Naxçıvan MR)", "Kürdəmir", "Laçın", "Lənkəran", "Lerik", "Masallı", "Mingəçevir", "Naftalan", "Neftçala", "Naxçıvan",
+    "Oğuz", "Siyəzən", "Ordubad (Naxçıvan MR)", "Qəbələ", "Qax", "Qazax", "Qobustan", "Quba", "Qubadlı", "Qusar", "Saatlı", "Sabirabad",
+    "Sədərək (Naxçıvan MR)", "Salyan", "Samux", "Şabran", "Şahbuz (Naxçıvan MR)", "Şamaxı", "Şəki", "Şəmkir", "Şərur (Naxçıvan MR)",
+    "Şirvan", "Şuşa", "Sumqayıt", "Tərtər", "Tovuz", "Ucar", "Yardımlı", "Yevlax", "Zaqatala", "Zəngilan", "Zərdab", "Nabran", "Xudat"
 ]
 
 COUNTRIES = {
-    "Türkiyə": 300,
-    "Gürcüstan": 250,
-    "Almaniya": 600,
-    "BƏƏ": 500,
-    "Rusiya": 400,
-    "İran": 280,
-    "İtaliya": 550,
-    "Fransa": 580,
-    "İngiltərə": 620,
-    "ABŞ": 650
+    "Türkiyə": 300, "Gürcüstan": 250, "Almaniya": 600, "BƏƏ": 500, "Rusiya": 400, "İran": 280, "İtaliya": 550, "Fransa": 580,
+    "İngiltərə": 620, "ABŞ": 650, "Qazaxıstan": 350, "Özbəkistan": 320, "Ukrayna": 380, "Belarus": 360, "Digər": 450
 }
 
 DOMESTIC_ROUTES = {
-    ("Bakı", "Ağcabədi"): 10.50,
-    ("Bakı", "Ağdam"): 13.50,
-    ("Bakı", "Ağdaş"): 10.30,
-    ("Bakı", "Astara"): 10.40,
-    ("Bakı", "Şuşa"): 28.90,
-    ("Bakı", "Balakən"): 17.30,
-    ("Bakı", "Beyləqan"): 10.00,
-    ("Bakı", "Bərdə"): 11.60,
-    ("Bakı", "Biləsuvar"): 6.50,
-    ("Bakı", "Cəlilabad"): 7.10,
-    ("Bakı", "Füzuli"): 10.80,
-    ("Bakı", "Gədəbəy"): 16.50,
-    ("Bakı", "Gəncə"): 13.10,
-    ("Bakı", "Goranboy"): 9.40,
-    ("Bakı", "Göyçay"): 9.20,
-    ("Bakı", "Göygöl"): 13.50,
-    ("Bakı", "İmişli"): 8.10,
-    ("Bakı", "İsmayıllı"): 7.00,
-    ("Bakı", "Kürdəmir"): 7.10,
-    ("Bakı", "Lənkəran"): 8.80,
-    ("Bakı", "Masallı"): 7.90,
-    ("Bakı", "Mingəçevir"): 11.40,
-    ("Bakı", "Naftalan"): 12.20,
-    ("Bakı", "Oğuz"): 13.10,
-    ("Bakı", "Qax"): 14.60,
-    ("Bakı", "Qazax"): 17.60,
-    ("Bakı", "Qəbələ"): 11.50,
-    ("Bakı", "Quba"): 5.90,
-    ("Bakı", "Qusar"): 6.40,
-    ("Bakı", "Saatlı"): 7.10,
-    ("Bakı", "Sabirabad"): 6.10,
-    ("Bakı", "Şəki"): 13.20,
-    ("Bakı", "Şəmkir"): 15.00,
-    ("Bakı", "Siyəzən"): 3.60,
-    ("Bakı", "Tərtər"): 12.20,
-    ("Bakı", "Tovuz"): 16.40,
-    ("Bakı", "Ucar"): 8.90,
-    ("Bakı", "Xaçmaz"): 5.50,
-    ("Bakı", "Nabran"): 7.20,
-    ("Bakı", "Xudat"): 6.30,
-    ("Bakı", "Zaqatala"): 15.60,
-    ("Bakı", "Zərdab"): 9.30
+    ("Bakı", "Ağcabədi"): 10.50, ("Bakı", "Ağdam"): 13.50, ("Bakı", "Ağdaş"): 10.30, ("Bakı", "Astara"): 10.40, ("Bakı", "Şuşa"): 28.90,
+    ("Bakı", "Balakən"): 17.30, ("Bakı", "Beyləqan"): 10.00, ("Bakı", "Bərdə"): 11.60, ("Bakı", "Biləsuvar"): 6.50, ("Bakı", "Cəlilabad"): 7.10,
+    ("Bakı", "Füzuli"): 10.80, ("Bakı", "Gədəbəy"): 16.50, ("Bakı", "Gəncə"): 13.10, ("Bakı", "Goranboy"): 9.40, ("Bakı", "Göyçay"): 9.20,
+    ("Bakı", "Göygöl"): 13.50, ("Bakı", "İmişli"): 8.10, ("Bakı", "İsmayıllı"): 7.00, ("Bakı", "Kürdəmir"): 7.10, ("Bakı", "Lənkəran"): 8.80,
+    ("Bakı", "Masallı"): 7.90, ("Bakı", "Mingəçevir"): 11.40, ("Bakı", "Naftalan"): 12.20, ("Bakı", "Oğuz"): 13.10, ("Bakı", "Qax"): 14.60,
+    ("Bakı", "Qazax"): 17.60, ("Bakı", "Qəbələ"): 11.50, ("Bakı", "Quba"): 5.90, ("Bakı", "Qusar"): 6.40, ("Bakı", "Saatlı"): 7.10,
+    ("Bakı", "Sabirabad"): 6.10, ("Bakı", "Şəki"): 13.20, ("Bakı", "Şəmkir"): 15.00, ("Bakı", "Siyəzən"): 3.60, ("Bakı", "Tərtər"): 12.20,
+    ("Bakı", "Tovuz"): 16.40, ("Bakı", "Ucar"): 8.90, ("Bakı", "Xaçmaz"): 5.50, ("Bakı", "Nabran"): 7.20, ("Bakı", "Xudat"): 6.30,
+    ("Bakı", "Zaqatala"): 15.60, ("Bakı", "Zərdab"): 9.30
 }
+DOMESTIC_DEFAULT_PRICE = 7.00 # Default price if route not in DOMESTIC_ROUTES
 
 PAYMENT_TYPES = {
     "Ödənişsiz": 0,
@@ -228,22 +207,19 @@ PAYMENT_TYPES = {
 }
 
 # ============================== FUNKSİYALAR ==============================
+@st.cache_data(ttl=600) # Cache data for 10 minutes
 def load_trip_data():
     """Ezamiyyət məlumatlarını yükləyir"""
     try:
         if os.path.exists("ezamiyyet_melumatlari.xlsx"):
-            # Explicitly parse date columns
             df = pd.read_excel(
                 "ezamiyyet_melumatlari.xlsx",
                 parse_dates=['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']
             )
-            
-            # Ensure proper datetime conversion for all date columns
             date_columns = ['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']
             for col in date_columns:
                 if col in df.columns:
                     df[col] = pd.to_datetime(df[col], errors='coerce')
-            
             return df
         else:
             return pd.DataFrame()
@@ -251,1420 +227,903 @@ def load_trip_data():
         st.error(f"Məlumat yükləmə xətası: {str(e)}")
         return pd.DataFrame()
 
-def check_admin_session():
-    if 'admin_session_time' in st.session_state:
-        if datetime.now() - st.session_state.admin_session_time > timedelta(minutes=30):
-            st.session_state.admin_logged = False
-            return False
-    return True
-
+@st.cache_data(ttl=3600) # Cache config for 1 hour
 def load_system_config():
     try:
         if os.path.exists("system_config.json"):
             with open("system_config.json", "r", encoding="utf-8") as f:
                 return json.load(f)
-    except:
+    except Exception:
         pass
     return {}
 
-def write_log(action, details=""):
-    try:
-        log_entry = {
-            "timestamp": datetime.now().isoformat(),
-            "action": action,
-            "details": details,
-            "user": "admin"
-        }
-        
-        log_file = "admin_logs.json"
-        logs = []
-        
-        if os.path.exists(log_file):
-            with open(log_file, "r", encoding="utf-8") as f:
-                logs = json.load(f)
-        
-        logs.append(log_entry)
-        
-        if len(logs) > 1000:
-            logs = logs[-1000:]
-        
-        with open(log_file, "w", encoding="utf-8") as f:
-            json.dump(logs, f, ensure_ascii=False, indent=2)
-            
-    except Exception as e:
-        pass
-
-def load_trip_data():
-    """Ezamiyyət məlumatlarını yükləyir"""
-    try:
-        if os.path.exists("ezamiyyet_melumatlari.xlsx"):
-            df = pd.read_excel("ezamiyyet_melumatlari.xlsx")
-            return df
-        else:
-            return pd.DataFrame()
-    except Exception as e:
-        st.error(f"Məlumat yükləmə xətası: {str(e)}")
-        return pd.DataFrame()
-
 def calculate_domestic_amount(from_city, to_city):
-    """Daxili marşrut üçün bilet qiymətini hesablayır"""
-    return DOMESTIC_ROUTES.get((from_city, to_city), 70)
+    return DOMESTIC_ROUTES.get((from_city, to_city), DOMESTIC_DEFAULT_PRICE)
 
 def calculate_days(start_date, end_date):
-    """İki tarix arasındakı günləri hesablayır"""
+    if isinstance(start_date, datetime): start_date = start_date.date()
+    if isinstance(end_date, datetime): end_date = end_date.date()
     return (end_date - start_date).days + 1
 
 def calculate_total_amount(daily_allowance, days, payment_type, ticket_price=0):
-    """Ümumi məbləği hesablayır"""
-    return (daily_allowance * days + ticket_price) * PAYMENT_TYPES[payment_type]
+    return (daily_allowance * days + ticket_price) * PAYMENT_TYPES.get(payment_type, 1) # Default to full payment if type unknown
 
-def save_trip_data(data):
-    """Ezamiyyət məlumatlarını saxlayır"""
+def save_trip_data(data_dict):
     try:
-        df_new = pd.DataFrame([data])
-        try:
-            df_existing = pd.read_excel("ezamiyyet_melumatlari.xlsx")
-            df_combined = pd.concat([df_existing, df_new], ignore_index=True)
-        except FileNotFoundError:
+        df_new = pd.DataFrame([data_dict])
+        df_existing = load_trip_data() # Use the cached function
+        
+        # Ensure new data columns match existing or are handled
+        if not df_existing.empty:
+            # Align columns - important if new_df has different columns
+            for col in df_existing.columns:
+                if col not in df_new.columns:
+                    df_new[col] = pd.NA # Or appropriate default
+            for col in df_new.columns:
+                if col not in df_existing.columns:
+                    df_existing[col] = pd.NA
+
+
+            df_combined = pd.concat([df_existing, df_new[df_existing.columns]], ignore_index=True)
+        else:
             df_combined = df_new
+        
         df_combined.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+        st.cache_data.clear() # Clear cache for load_trip_data
         return True
     except Exception as e:
         st.error(f"Yadda saxlama xətası: {str(e)}")
         return False
 
-# ƏSAS İNTERFEYS
+# --- Initialize session state for confirmations ---
+if "show_duplicate_deletion_confirmation" not in st.session_state:
+    st.session_state.show_duplicate_deletion_confirmation = False
+if "confirm_delete_all_prompt" not in st.session_state:
+    st.session_state.confirm_delete_all_prompt = False
+if "confirm_reset_system_prompt" not in st.session_state:
+    st.session_state.confirm_reset_system_prompt = False
+
+# ============================== ƏSAS İNTERFEYS ==============================
 st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
 tab1, tab2 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli"])
 
-# YENİ EZAMİYYƏT HISSESI
+# ============================== YENİ EZAMİYYƏT HISSESI ==============================
 with tab1:
     with st.container():
-        col1, col2 = st.columns([2, 1], gap="large")
+        col1_form, col2_form = st.columns([2, 1], gap="large")
         
-        # Sol Sütun
-        with col1:
-            with st.expander("👤 Şəxsi Məlumatlar", expanded=True):
-                cols = st.columns(2)
-                with cols[0]:
-                    first_name = st.text_input("Ad")
-                    father_name = st.text_input("Ata adı")
-                with cols[1]:
-                    last_name = st.text_input("Soyad")
-                    position = st.text_input("Vəzifə")
+        with col1_form: # Sol Sütun - Məlumat Girişi
+            with st.form(key="new_trip_form"):
+                with st.expander("👤 Şəxsi Məlumatlar", expanded=True):
+                    f_cols = st.columns(2)
+                    first_name = f_cols[0].text_input("Ad*", key="fn")
+                    father_name = f_cols[0].text_input("Ata adı", key="fan")
+                    last_name = f_cols[1].text_input("Soyad*", key="ln")
+                    position = f_cols[1].text_input("Vəzifə*", key="pos")
 
-            with st.expander("🏢 Təşkilat Məlumatları"):
-                department = st.selectbox("Şöbə", DEPARTMENTS)
+                with st.expander("🏢 Təşkilat Məlumatları"):
+                    department = st.selectbox("Şöbə*", DEPARTMENTS, key="dept")
 
-            with st.expander("🧳 Ezamiyyət Detalları"):
-                trip_type = st.radio("Növ", ["Ölkə daxili", "Ölkə xarici"])
-                payment_type = st.selectbox("Ödəniş növü", list(PAYMENT_TYPES.keys()))
-                
-                if trip_type == "Ölkə daxili":
-                    cols = st.columns(2)
-                    with cols[0]:
-                        from_city = st.selectbox("Haradan", CITIES, index=CITIES.index("Bakı"))
-                    with cols[1]:
-                        to_city = st.selectbox("Haraya", [c for c in CITIES if c != from_city])
-                    ticket_price = calculate_domestic_amount(from_city, to_city)
-                    daily_allowance = 70
-                    accommodation = "Tətbiq edilmir"
-                else:
-                    country = st.selectbox("Ölkə", list(COUNTRIES.keys()))
-                    payment_mode = st.selectbox(
-                        "Ödəniş rejimi",
-                        options=["Adi rejim", "Günlük Normaya 50% əlavə", "Günlük Normaya 30% əlavə"]
-                    )
-                    accommodation = st.selectbox(
-                        "Qonaqlama xərcləri",
-                        options=["Adi rejim", "Yalnız yaşayış yeri ilə təmin edir", "Yalnız gündəlik xərcləri təmin edir"]
-                    )
-                    base_allowance = COUNTRIES[country]
-                    if payment_mode == "Adi rejim":
-                        daily_allowance = base_allowance
-                    elif payment_mode == "Günlük Normaya 50% əlavə":
-                        daily_allowance = base_allowance * 1.5
-                    else:
-                        daily_allowance = base_allowance * 1.3
-                    ticket_price = 0
-                    from_city = "Bakı"
-                    to_city = country
-
-                cols = st.columns(2)
-                with cols[0]:
-                    start_date = st.date_input("Başlanğıc tarixi")
-                with cols[1]:
-                    end_date = st.date_input("Bitmə tarixi")
-                
-                purpose = st.text_area("Ezamiyyət məqsədi")
-
-        # Sağ Sütun (Hesablama)
-        with col2:
-            with st.container():
-                st.markdown('<div class="section-header">💰 Hesablama</div>', unsafe_allow_html=True)
-                
-                if start_date and end_date and end_date >= start_date:
-                    trip_days = calculate_days(start_date, end_date)
-                    total_amount = calculate_total_amount(daily_allowance, trip_days, payment_type, ticket_price)
+                with st.expander("🧳 Ezamiyyət Detalları"):
+                    trip_type = st.radio("Növ*", ["Ölkə daxili", "Ölkə xarici"], key="tt", horizontal=True)
+                    payment_type = st.selectbox("Ödəniş növü*", list(PAYMENT_TYPES.keys()), key="pt")
                     
-                    # Qonaqlama əmsalı
-                    if trip_type == "Ölkə xarici":
-                        if accommodation == "Yalnız yaşayış yeri ilə təmin edir":
-                            total_amount *= 1.4
-                            delta_label = "40% artım (Yaşayış)"
-                        elif accommodation == "Yalnız gündəlik xərcləri təmin edir":
-                            total_amount *= 1.6
-                            delta_label = "60% artım (Gündəlik)"
-                        else:
-                            delta_label = None
-                    else:
-                        delta_label = None
-                    
-                    st.metric("📅 Günlük müavinət", f"{daily_allowance} AZN")
+                    ticket_price_form = 0.0
+                    daily_allowance_form = 0.0
+                    accommodation_form = "Tətbiq edilmir"
+                    from_city_form = "Bakı"
+                    to_city_form = ""
+
                     if trip_type == "Ölkə daxili":
-                        st.metric("🚌 Nəqliyyat xərci", f"{ticket_price} AZN")
-                    st.metric("⏳ Müddət", f"{trip_days} gün")
-                    st.metric(
-                        "💳 Ümumi məbləğ", 
-                        f"{total_amount:.2f} AZN", 
-                        delta=delta_label,
-                        delta_color="normal" if delta_label else "off"
-                    )
+                        loc_cols = st.columns(2)
+                        from_city_form = loc_cols[0].selectbox("Haradan*", CITIES, index=CITIES.index("Bakı") if "Bakı" in CITIES else 0, key="fc_dom")
+                        available_to_cities = [c for c in CITIES if c != from_city_form] if CITIES else []
+                        if not available_to_cities and CITIES : available_to_cities = [CITIES[0]] if CITIES[0]!= from_city_form else ([CITIES[1]] if len(CITIES)>1 else ["Digər"])
 
-            if st.button("✅ Yadda Saxla", use_container_width=True):
-                if all([first_name, last_name, start_date, end_date]):
-                    trip_data = {
-                        "Tarix": datetime.now(),  # Store as datetime object
-                        "Ad": first_name,
-                        "Soyad": last_name,
-                        "Ata adı": father_name,
-                        "Vəzifə": position,
-                        "Şöbə": department,
-                        "Ezamiyyət növü": trip_type,
-                        "Ödəniş növü": payment_type,
-                        "Qonaqlama növü": accommodation,
-                        "Marşrut": f"{from_city} → {to_city}",
-                        "Bilet qiyməti": ticket_price,
-                        "Günlük müavinət": daily_allowance,
-                        "Başlanğıc tarixi": start_date,  # datetime.date object
-                        "Bitmə tarixi": end_date,        # datetime.date object
-                        "Günlər": trip_days,
-                        "Ümumi məbləğ": total_amount,
-                        "Məqsəd": purpose
-                    }
-                   
-                    if save_trip_data(trip_data):
-                        st.success("Məlumatlar yadda saxlandı!")
-                        st.balloons()
+                        to_city_form = loc_cols[1].selectbox("Haraya*", available_to_cities if available_to_cities else ["Şəhər seçin"], key="tc_dom")
+                        
+                        ticket_price_form = calculate_domestic_amount(from_city_form, to_city_form)
+                        daily_allowance_form = 70.0 # Default for domestic
+                    else: # Ölkə xarici
+                        country_form = st.selectbox("Ölkə*", list(COUNTRIES.keys()), key="country_int")
+                        payment_mode_form = st.selectbox("Ödəniş rejimi", ["Adi rejim", "Günlük Normaya 50% əlavə", "Günlük Normaya 30% əlavə"], key="pm_int")
+                        accommodation_form = st.selectbox("Qonaqlama xərcləri", ["Adi rejim", "Yalnız yaşayış yeri ilə təmin edir", "Yalnız gündəlik xərcləri təmin edir"], key="acc_int")
+                        
+                        base_allowance_form = COUNTRIES.get(country_form, 0)
+                        if payment_mode_form == "Günlük Normaya 50% əlavə": daily_allowance_form = base_allowance_form * 1.5
+                        elif payment_mode_form == "Günlük Normaya 30% əlavə": daily_allowance_form = base_allowance_form * 1.3
+                        else: daily_allowance_form = base_allowance_form
+                        
+                        from_city_form = "Bakı"
+                        to_city_form = country_form
+                        # Ticket price for international is often handled separately or set to 0 here.
+                        ticket_price_form = st.number_input("Beynəlxalq Bilet Qiyməti (AZN, əgər varsa)", min_value=0.0, value=0.0, step=10.0, key="tp_int")
+
+
+                    date_cols = st.columns(2)
+                    start_date_form = date_cols[0].date_input("Başlanğıc tarixi*", value=datetime.today(), key="sd")
+                    end_date_form = date_cols[1].date_input("Bitmə tarixi*", value=datetime.today() + timedelta(days=1), min_value=start_date_form, key="ed")
+                    
+                    purpose_form = st.text_area("Ezamiyyət məqsədi*", key="purp")
+                
+                submitted_form = st.form_submit_button("✅ Yadda Saxla", use_container_width=True)
+
+        with col2_form: # Sağ Sütun - Hesablama
+            with st.container(border=True): # Use border for visual separation
+                st.markdown('<div class="section-header" style="margin-top:0;">💰 Hesablama</div>', unsafe_allow_html=True)
+                
+                trip_days_form = 0
+                total_amount_form = 0.0
+                delta_label_form = None
+
+                if start_date_form and end_date_form:
+                    if end_date_form >= start_date_form:
+                        trip_days_form = calculate_days(start_date_form, end_date_form)
+                        total_amount_form = calculate_total_amount(daily_allowance_form, trip_days_form, payment_type, ticket_price_form)
+
+                        if trip_type == "Ölkə xarici":
+                            if accommodation_form == "Yalnız yaşayış yeri ilə təmin edir":
+                                total_amount_form *= 1.4 
+                                delta_label_form = "40% artım (Yaşayış)"
+                            elif accommodation_form == "Yalnız gündəlik xərcləri təmin edir":
+                                total_amount_form *= 1.6
+                                delta_label_form = "60% artım (Gündəlik)"
+                        
+                        st.metric("📅 Günlük müavinət", f"{daily_allowance_form:.2f} AZN")
+                        if trip_type == "Ölkə daxili" or (trip_type == "Ölkə xarici" and ticket_price_form > 0):
+                            st.metric("✈️/🚌 Nəqliyyat xərci", f"{ticket_price_form:.2f} AZN")
+                        st.metric("⏳ Müddət", f"{trip_days_form} gün")
+                        st.metric(
+                            "💳 Ümumi məbləğ", f"{total_amount_form:.2f} AZN",
+                            delta=delta_label_form,
+                            delta_color="normal" if delta_label_form else "off"
+                        )
+                    else:
+                        st.error("Bitmə tarixi başlanğıc tarixindən əvvəl ola bilməz.")
                 else:
-                    st.error("Zəhmət olmasa bütün məcburi sahələri doldurun!")
-
-# admin paneli 
-
-# Admin Panel hissəsi - Təkmil versiya
-with tab2:
-    # Admin sessiya idarəetməsi
-    if 'admin_logged' not in st.session_state:
-        st.session_state.admin_logged = False
-    
-    if 'admin_session_time' not in st.session_state:
-        st.session_state.admin_session_time = datetime.now()
-
-    # Sessiya müddəti yoxlanışı (30 dəqiqə)
-    if st.session_state.admin_logged:
-        if datetime.now() - st.session_state.admin_session_time > timedelta(minutes=30):
-            st.session_state.admin_logged = False
-            st.warning("Sessiya müddəti bitdi. Yenidən giriş edin.")
-
-    # Admin giriş forması
-    if not st.session_state.admin_logged:
-        st.markdown("""
-        <div style="
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 3rem;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            margin: 2rem auto;
-            max-width: 500px;
-            text-align: center;
-        ">
-            <h2 style="color: white; margin-bottom: 2rem;">🔐 Admin Panel Giriş</h2>
-        </div>
-        """, unsafe_allow_html=True)
+                    st.info("Hesablama üçün tarixləri daxil edin.")
         
-        with st.container():
-            col1, col2, col3 = st.columns([1, 2, 1])
-            with col2:
-                with st.form("admin_login_form"):
-                    admin_user = st.text_input("👤 İstifadəçi adı", placeholder="admin")
-                    admin_pass = st.text_input("🔒 Şifrə", type="password", placeholder="••••••••")
-                    remember_me = st.checkbox("🔄 Məni xatırla")
-                    
-                    submitted = st.form_submit_button("🚀 Giriş Et", use_container_width=True)
-                    
-                    if submitted:
-                        if admin_user == "admin" and admin_pass == "admin123":
-                            st.session_state.admin_logged = True
-                            st.session_state.admin_session_time = datetime.now()
-                            st.success("✅ Uğurlu giriş!")
-                            st.rerun()
-                        else:
-                            st.error("❌ Yanlış giriş məlumatları!")
+        if submitted_form:
+            # Validation
+            required_fields = {
+                "Ad": first_name, "Soyad": last_name, "Vəzifə": position, 
+                "Şöbə": department, "Haraya": to_city_form, "Ezamiyyət məqsədi": purpose_form
+            }
+            missing = [name for name, val in required_fields.items() if not val]
+
+            if missing:
+                st.error(f"Zəhmət olmasa bütün məcburi sahələri ({', '.join(missing)}) doldurun!")
+            elif end_date_form < start_date_form:
+                 st.error("Bitmə tarixi başlanğıc tarixindən əvvəl ola bilməz.")
+            else:
+                trip_data_to_save = {
+                    "Tarix": pd.Timestamp(datetime.now()), "Ad": first_name, "Soyad": last_name, "Ata adı": father_name,
+                    "Vəzifə": position, "Şöbə": department, "Ezamiyyət növü": trip_type, "Ödəniş növü": payment_type,
+                    "Qonaqlama növü": accommodation_form, "Marşrut": f"{from_city_form} → {to_city_form}",
+                    "Bilet qiyməti": ticket_price_form, "Günlük müavinət": daily_allowance_form,
+                    "Başlanğıc tarixi": pd.Timestamp(start_date_form), "Bitmə tarixi": pd.Timestamp(end_date_form),
+                    "Günlər": trip_days_form, "Ümumi məbləğ": total_amount_form, "Məqsəd": purpose_form
+                }
+                if save_trip_data(trip_data_to_save):
+                    st.success("Məlumatlar yadda saxlandı!")
+                    write_log("Yeni ezamiyyət", f"İşçi: {first_name} {last_name}, Məbləğ: {total_amount_form:.2f}", user="istifadəçi")
+                    st.balloons()
+                # else: save_trip_data shows its own error
+
+# ============================== ADMIN PANELİ ==============================
+with tab2:
+    if 'admin_logged' not in st.session_state: st.session_state.admin_logged = False
+    if 'admin_session_time' not in st.session_state: st.session_state.admin_session_time = datetime.now()
+
+    if st.session_state.admin_logged:
+        if datetime.now() - st.session_state.admin_session_time > timedelta(minutes=30): # 30 min session
+            st.session_state.admin_logged = False
+            write_log("Admin sessiyası", "Sessiya müddəti bitdi", user="admin")
+            st.warning("Sessiya müddəti bitdi. Yenidən giriş edin.")
+            st.rerun()
+
+    if not st.session_state.admin_logged:
+        st.markdown("""<div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding:3rem; border-radius:20px; box-shadow:0 20px 40px rgba(0,0,0,0.1); margin:2rem auto; max-width:500px; text-align:center;"><h2 style="color:white; margin-bottom:2rem;">🔐 Admin Panel Giriş</h2></div>""", unsafe_allow_html=True)
+        login_cols = st.columns([1,2,1])
+        with login_cols[1]:
+            with st.form("admin_login_form_panel"):
+                admin_user = st.text_input("👤 İstifadəçi adı", placeholder="admin", key="admin_user_login_panel")
+                admin_pass = st.text_input("🔒 Şifrə", type="password", placeholder="••••••••", key="admin_pass_login_panel")
+                if st.form_submit_button("🚀 Giriş Et", use_container_width=True):
+                    if admin_user == "admin" and admin_pass == "admin123": # CHANGE FOR PRODUCTION
+                        st.session_state.admin_logged = True
+                        st.session_state.admin_session_time = datetime.now()
+                        write_log("Admin panel girişi", user="admin")
+                        st.success("✅ Uğurlu giriş!")
+                        st.rerun()
+                    else:
+                        write_log("Admin panel giriş cəhdi", f"Yanlış məlumatlar: user='{admin_user}'", user="naməlum")
+                        st.error("❌ Yanlış giriş məlumatları!")
         st.stop()
 
-    # Admin Panel Ana Səhifə
     if st.session_state.admin_logged:
-        # Header və Navigation
-        st.markdown("""
-        <div style="
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 2rem;
-            border-radius: 15px;
-            margin-bottom: 2rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        ">
-            <h1 style="color: white; text-align: center; margin: 0;">
-                ⚙️ Admin İdarəetmə Paneli
-            </h1>
-            <p style="color: rgba(255,255,255,0.8); text-align: center; margin: 0.5rem 0 0 0;">
-                Ezamiyyət sisteminin tam idarəetməsi
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("""<div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding:2rem; border-radius:15px; margin-bottom:2rem; box-shadow:0 10px 30px rgba(0,0,0,0.1);"><h1 style="color:white; text-align:center; margin:0;">⚙️ Admin İdarəetmə Paneli</h1><p style="color:rgba(255,255,255,0.8); text-align:center; margin:0.5rem 0 0 0;">Ezamiyyət sisteminin tam idarəetməsi</p></div>""", unsafe_allow_html=True)
         
-        # Session info və çıxış
-        col1, col2, col3 = st.columns([2, 1, 1])
-        with col1:
-            st.info(f"👋 Xoş gəlmisiniz, Admin! Sessiya: {st.session_state.admin_session_time.strftime('%H:%M')}")
-        with col2:
-            if st.button("🔄 Sessiya Yenilə"):
-                st.session_state.admin_session_time = datetime.now()
-                st.success("Sessiya yeniləndi!")
-        with col3:
-            if st.button("🚪 Çıxış Et", type="secondary"):
-                st.session_state.admin_logged = False
-                st.rerun()
+        head_cols = st.columns([2,1,1])
+        head_cols[0].info(f"👋 Xoş gəlmisiniz, Admin! Sessiya başlama: {st.session_state.admin_session_time.strftime('%d.%m.%Y %H:%M')}")
+        if head_cols[1].button("🔄 Sessiya Yenilə", key="refresh_session_admin"):
+            st.session_state.admin_session_time = datetime.now()
+            st.success("Sessiya yeniləndi!")
+            write_log("Admin sessiyası yeniləndi", user="admin")
+        if head_cols[2].button("🚪 Çıxış Et", type="secondary", key="logout_admin"): # Changed to secondary for less emphasis
+            st.session_state.admin_logged = False
+            write_log("Admin panel çıxışı", user="admin")
+            st.rerun()
 
-        # Ana tab bölməsi
-        admin_tabs = st.tabs([
-            "📊 Dashboard", 
-            "🗂️ Məlumat İdarəetməsi", 
-            "📈 Analitika", 
-            "📥 İdxal/İxrac", 
-            "⚙️ Sistem Parametrləri",
-            "👥 İstifadəçi İdarəetməsi",
-            "🔧 Sistem Alətləri"
-        ])
+        admin_tab_names = ["📊 Dashboard", "🗂️ Məlumat İdarəetməsi", "📈 Analitika", "📥 İdxal/İxrac", "⚙️ Sistem Parametrləri", "👥 İstifadəçi Aktivliyi", "🔧 Sistem Alətləri"]
+        admin_tabs_obj = st.tabs(admin_tab_names)
 
-# 1. DASHBOARD TAB
-        with admin_tabs[0]:
+        # 1. DASHBOARD TAB
+        with admin_tabs_obj[0]:
+            st.markdown("### "+ admin_tab_names[0])
             try:
-                df = load_trip_data()
-                
-                if not df.empty:
-                    # Tarixi sütunları düzəlt - Xəta həlli
-                    date_columns = ['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']
-                    for col in date_columns:
-                        if col in df.columns:
-                            df[col] = pd.to_datetime(df[col], errors='coerce')
+                df_dashboard = load_trip_data()
+                if not df_dashboard.empty:
+                    # Data prep (ensure columns exist and are correct type)
+                    date_cols_dash = ['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']
+                    for col in date_cols_dash:
+                        if col in df_dashboard.columns: df_dashboard[col] = pd.to_datetime(df_dashboard[col], errors='coerce')
                     
-                    # Rəqəmsal sütunları düzəlt - Xəta həlli
-                    numeric_cols = ['Ümumi məbləğ', 'Günlük müavinət', 'Bilet qiyməti', 'Günlər']
-                    for col in numeric_cols:
-                        if col in df.columns:
-                            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
-                    
-                    # Əsas metrikalar
-                    col1, col2, col3, col4, col5 = st.columns(5)
-                    
-                    with col1:
-                        recent_count = 0
-                        if 'Tarix' in df.columns:
-                            recent_mask = df['Tarix'] >= (datetime.now() - timedelta(days=30))
-                            recent_count = recent_mask.sum()
-                        
-                        st.metric(
-                            "📋 Ümumi Ezamiyyət",
-                            len(df),
-                            delta=f"+{recent_count}" if recent_count > 0 else None
-                        )
-                    
-                    with col2:
-                        total_amount = df['Ümumi məbləğ'].sum() if 'Ümumi məbləğ' in df.columns else 0
-                        avg_amount = total_amount / len(df) if len(df) > 0 and total_amount > 0 else 0
-                        
-                        st.metric(
-                            "💰 Ümumi Xərclər",
-                            f"{total_amount:,.2f} AZN",
-                            delta=f"{avg_amount:.2f} AZN orta"
-                        )
-                    
-                    with col3:
-                        if 'Günlər' in df.columns and df['Günlər'].notna().any():
-                            avg_days = df['Günlər'].mean()
-                            st.metric("⏱️ Orta Müddət", f"{avg_days:.1f} gün")
-                        else:
-                            st.metric("⏱️ Orta Müddət", "N/A")
-                    
-                    with col4:
-                        active_users = 0
-                        if 'Ad' in df.columns:
-                            active_users = df['Ad'].nunique()
-                        st.metric("👥 Aktiv İstifadəçilər", active_users)
-                    
-                    with col5:
-                        international_pct = 0
-                        if 'Ezamiyyət növü' in df.columns:
-                            international_pct = (df['Ezamiyyət növü'] == 'Ölkə xarici').mean() * 100
-                        st.metric("🌍 Beynəlxalq %", f"{international_pct:.1f}%")
+                    num_cols_dash = ['Ümumi məbləğ', 'Günlük müavinət', 'Bilet qiyməti', 'Günlər']
+                    for col in num_cols_dash:
+                        if col in df_dashboard.columns: df_dashboard[col] = pd.to_numeric(df_dashboard[col], errors='coerce').fillna(0)
 
-                    # Son fəaliyyətlər - Xəta həlli
-                    st.markdown("### 📅 Son Ezamiyyətlər")
+                    # Metrics
+                    m_cols = st.columns(5)
+                    total_trips = len(df_dashboard)
+                    recent_trips_count = 0
+                    if 'Tarix' in df_dashboard.columns and not df_dashboard['Tarix'].isnull().all():
+                        recent_trips_count = (df_dashboard['Tarix'] >= (pd.Timestamp.now() - timedelta(days=30))).sum()
+                    m_cols[0].metric("📋 Ümumi Ezamiyyət", total_trips, delta=f"+{recent_trips_count} son 30 gün" if recent_trips_count > 0 else None)
                     
-                    # Sıralama üçün təhlükəsiz yanaşma
-                    display_df = df.copy()
-                    if 'Tarix' in display_df.columns:
-                        display_df = display_df.sort_values('Tarix', ascending=False, na_position='last')
+                    total_expense = df_dashboard['Ümumi məbləğ'].sum() if 'Ümumi məbləğ' in df_dashboard.columns else 0
+                    avg_expense = (total_expense / total_trips) if total_trips > 0 else 0
+                    m_cols[1].metric("💰 Ümumi Xərclər", f"{total_expense:,.2f} AZN", delta=f"{avg_expense:,.2f} AZN orta" if avg_expense > 0 else None)
                     
-                    recent_trips = display_df.head(10)
-                    
-                    if len(recent_trips) > 0:
-                        for idx, row in recent_trips.iterrows():
-                            with st.container():
-                                col1, col2, col3, col4 = st.columns([2, 2, 1, 1])
-                                
-                                with col1:
-                                    ad = row.get('Ad', 'N/A') if pd.notna(row.get('Ad')) else 'N/A'
-                                    soyad = row.get('Soyad', 'N/A') if pd.notna(row.get('Soyad')) else 'N/A'
-                                    st.write(f"**{ad} {soyad}**")
-                                    
-                                    sobe = row.get('Şöbə', 'N/A') if pd.notna(row.get('Şöbə')) else 'N/A'
-                                    sobe_short = sobe[:50] + "..." if len(str(sobe)) > 50 else sobe
-                                    st.caption(sobe_short)
-                                
-                                with col2:
-                                    marsrut = row.get('Marşrut', 'N/A') if pd.notna(row.get('Marşrut')) else 'N/A'
-                                    st.write(f"📍 {marsrut}")
-                                    
-                                    bas_tarix = row.get('Başlanğıc tarixi', 'N/A')
-                                    if pd.notna(bas_tarix) and bas_tarix != 'N/A':
-                                        try:
-                                            formatted_date = pd.to_datetime(bas_tarix).strftime('%d.%m.%Y')
-                                            st.caption(f"🗓️ {formatted_date}")
-                                        except:
-                                            st.caption(f"🗓️ {bas_tarix}")
-                                    else:
-                                        st.caption("🗓️ N/A")
-                                
-                                with col3:
-                                    mebleg = row.get('Ümumi məbləğ', 0)
-                                    mebleg = float(mebleg) if pd.notna(mebleg) else 0
-                                    st.write(f"💰 {mebleg:.2f} AZN")
-                                
-                                with col4:
-                                    odenis = row.get('Ödəniş növü', 'N/A') if pd.notna(row.get('Ödəniş növü')) else 'N/A'
-                                    status_color = "🟢" if odenis == "Ödənişsiz" else "🟡"
-                                    st.write(f"{status_color} {odenis}")
-                                
-                                st.divider()
-                    else:
-                        st.info("📝 Göstəriləcək ezamiyyət yoxdur")
+                    avg_duration = df_dashboard['Günlər'].mean() if 'Günlər' in df_dashboard.columns and df_dashboard['Günlər'].notna().any() else 0
+                    m_cols[2].metric("⏱️ Orta Müddət", f"{avg_duration:.1f} gün" if avg_duration > 0 else "N/A")
 
-                    # Qrafiklər - Xəta həlli
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        if 'Ezamiyyət növü' in df.columns and df['Ezamiyyət növü'].notna().any():
-                            ezamiyyet_stats = df['Ezamiyyət növü'].value_counts()
-                            if len(ezamiyyet_stats) > 0:
-                                fig = px.pie(
-                                    values=ezamiyyet_stats.values,
-                                    names=ezamiyyet_stats.index,
-                                    title='🌍 Ezamiyyət Növləri Payı',
-                                    color_discrete_sequence=['#667eea', '#764ba2'],
-                                    hole=0.4
-                                )
-                                fig.update_traces(textposition='inside', textinfo='percent+label')
-                                st.plotly_chart(fig, use_container_width=True)
-                            else:
-                                st.info("📊 Ezamiyyət növü məlumatı yoxdur")
-                        else:
-                            st.info("📊 Ezamiyyət növü sütunu yoxdur")
-                    
-                    with col2:
-                        if 'Ödəniş növü' in df.columns and df['Ödəniş növü'].notna().any():
-                            payment_stats = df['Ödəniş növü'].value_counts()
-                            if len(payment_stats) > 0:
-                                fig = px.bar(
-                                    x=payment_stats.index,
-                                    y=payment_stats.values,
-                                    title='💳 Ödəniş Növləri',
-                                    color=payment_stats.values,
-                                    color_continuous_scale='Blues'
-                                )
-                                fig.update_layout(showlegend=False)
-                                st.plotly_chart(fig, use_container_width=True)
-                            else:
-                                st.info("📊 Ödəniş növü məlumatı yoxdur")
-                        else:
-                            st.info("📊 Ödəniş növü sütunu yoxdur")
+                    active_users = 0
+                    if 'Ad' in df_dashboard.columns and 'Soyad' in df_dashboard.columns:
+                        active_users = df_dashboard.groupby(['Ad', 'Soyad']).ngroups
+                    elif 'Ad' in df_dashboard.columns:
+                        active_users = df_dashboard['Ad'].nunique()
+                    m_cols[3].metric("👥 Aktiv İstifadəçilər", active_users)
 
+                    international_pct = 0.0
+                    if 'Ezamiyyət növü' in df_dashboard.columns and total_trips > 0:
+                        international_pct = (df_dashboard['Ezamiyyət növü'] == 'Ölkə xarici').sum() / total_trips * 100
+                    m_cols[4].metric("🌍 Beynəlxalq %", f"{international_pct:.1f}%")
+
+                    # Son Ezamiyyətlər
+                    st.markdown("#### 📅 Son Ezamiyyətlər (Top 5)")
+                    df_recent_display = df_dashboard.copy()
+                    if 'Tarix' in df_recent_display.columns: df_recent_display = df_recent_display.sort_values('Tarix', ascending=False)
+                    
+                    for _, row in df_recent_display.head(5).iterrows():
+                        r_cols = st.columns([2,2,1,1])
+                        r_cols[0].write(f"**{row.get('Ad','N/A')} {row.get('Soyad','N/A')}**")
+                        r_cols[0].caption(str(row.get('Şöbə','N/A'))[:30]+"...")
+                        r_cols[1].write(f"📍 {row.get('Marşrut','N/A')}")
+                        r_cols[1].caption(f"🗓️ {pd.to_datetime(row.get('Başlanğıc tarixi')).strftime('%d.%m.%Y') if pd.notna(row.get('Başlanğıc tarixi')) else 'N/A'}")
+                        r_cols[2].write(f"💰 {row.get('Ümumi məbləğ',0):.2f} AZN")
+                        odenis_status = row.get('Ödəniş növü', 'N/A')
+                        status_color = "🟢" if "Tam" in odenis_status else ("🟡" if "10%" in odenis_status else "🔴")
+                        r_cols[3].write(f"{status_color} {odenis_status}")
+                        st.divider()
+
+                    # Charts
+                    chart_cols = st.columns(2)
+                    if 'Ezamiyyət növü' in df_dashboard.columns and df_dashboard['Ezamiyyət növü'].notna().any():
+                        trip_type_counts = df_dashboard['Ezamiyyət növü'].value_counts()
+                        if not trip_type_counts.empty:
+                            fig_pie = px.pie(trip_type_counts, values=trip_type_counts.values, names=trip_type_counts.index, title='🌍 Ezamiyyət Növləri', hole=0.4)
+                            chart_cols[0].plotly_chart(fig_pie, use_container_width=True)
+                    
+                    if 'Ödəniş növü' in df_dashboard.columns and df_dashboard['Ödəniş növü'].notna().any():
+                        payment_type_counts = df_dashboard['Ödəniş növü'].value_counts()
+                        if not payment_type_counts.empty:
+                            fig_bar = px.bar(payment_type_counts, x=payment_type_counts.index, y=payment_type_counts.values, title='💳 Ödəniş Növləri', labels={'x':'Ödəniş Növü', 'y':'Sayı'}, color=payment_type_counts.values, color_continuous_scale='Blues')
+                            chart_cols[1].plotly_chart(fig_bar, use_container_width=True)
                 else:
-                    st.warning("📭 Hələ heç bir ezamiyyət qeydiyyatı yoxdur")
-                    st.info("🚀 Sistemə ilk ezamiyyəti əlavə etmək üçün 'Yeni Ezamiyyət' bölməsinə keçin")
-                    
+                    st.warning("📭 Hələ heç bir ezamiyyət qeydiyyatı yoxdur.")
             except Exception as e:
-                st.error(f"❌ Dashboard yüklənərkən xəta: {str(e)}")
-                import traceback
+                st.error(f"❌ Dashboard yüklənərkən xəta: {e}")
                 st.code(traceback.format_exc())
 
         # 2. MƏLUMAT İDARƏETMƏSİ TAB
-        with admin_tabs[1]:
-            st.markdown("### 🗂️ Məlumatların İdarə Edilməsi")
-            
+        with admin_tabs_obj[1]:
+            st.markdown("### "+ admin_tab_names[1])
             try:
-                df = load_trip_data()
-                
-                if not df.empty:
-                    # Məlumat təmizliyi
-                    df = df.copy()
-                    
-                    # Tarixi sütunları təhlükəsiz düzəlt
-                    date_columns = ['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']
-                    for col in date_columns:
-                        if col in df.columns:
-                            df[col] = pd.to_datetime(df[col], errors='coerce')
-                    
-                    # Dublikat analizi
+                df_manage = load_trip_data()
+                if not df_manage.empty:
+                    df_editable = df_manage.copy() # Work with a copy for edits
+                    for col in ['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']:
+                        if col in df_editable.columns: df_editable[col] = pd.to_datetime(df_editable[col], errors='coerce')
+
+                    # Dublikat Təhlili
                     st.markdown("#### 🔍 Dublikat Təhlili")
-                    duplicate_columns = st.multiselect(
-                        "Dublikat axtarışı üçün sütunları seçin",
-                        options=df.columns.tolist(),
-                        default=['Ad', 'Soyad', 'Başlanğıc tarixi', 'Marşrut'] if all(col in df.columns for col in ['Ad', 'Soyad', 'Başlanğıc tarixi', 'Marşrut']) else df.columns.tolist()[:4],
-                        help="Bu sütunlarda eyni dəyərlər olan qeydlər dublikat hesab ediləcək"
-                    )
+                    dup_cols_default = [c for c in ['Ad', 'Soyad', 'Başlanğıc tarixi', 'Marşrut'] if c in df_editable.columns]
+                    if not dup_cols_default and len(df_editable.columns) > 0: dup_cols_default = df_editable.columns.tolist()[:min(4, len(df_editable.columns))]
                     
-                    if duplicate_columns:
-                        duplicates_mask = df.duplicated(subset=duplicate_columns, keep=False)
-                        duplicates_df = df[duplicates_mask].copy()
+                    duplicate_columns_selected = st.multiselect("Dublikat axtarışı üçün sütunlar", df_editable.columns.tolist(), default=dup_cols_default, key="dup_cols_select_manage")
+
+                    if duplicate_columns_selected:
+                        duplicates_mask = df_editable.duplicated(subset=duplicate_columns_selected, keep=False)
+                        duplicates_df_view = df_editable[duplicates_mask]
                         
-                        if len(duplicates_df) > 0:
-                            st.warning(f"⚠️ {len(duplicates_df)} dublikat qeyd tapıldı!")
+                        if not duplicates_df_view.empty:
+                            st.warning(f"⚠️ {duplicates_df_view.duplicated(subset=duplicate_columns_selected, keep='first').sum()} qrupda {len(duplicates_df_view)} potensial dublikat qeyd tapıldı!")
+                            with st.expander("Dublikat Qeydlər (klikləyin)", expanded=False):
+                                st.dataframe(duplicates_df_view, use_container_width=True)
                             
-                            with st.expander(f"🔍 Dublikat Qeydlər ({len(duplicates_df)} qrup)", expanded=False):
-                                for group_key, group in duplicates_df.groupby(duplicate_columns, dropna=False):
-                                    if len(group) > 1:
-                                        st.markdown(f"**Qrup:** {', '.join([f'{col}: {val}' for col, val in zip(duplicate_columns, group_key) if pd.notna(val)])}")
-                                        display_cols = [col for col in ['Ad', 'Soyad', 'Şöbə', 'Marşrut', 'Başlanğıc tarixi', 'Ümumi məbləğ'] if col in group.columns]
-                                        st.dataframe(group[display_cols[:6]], use_container_width=True)
-                                        st.markdown("---")
-                            
-                            col1, col2 = st.columns(2)
-                            with col1:
-                                duplicate_strategy = st.selectbox(
-                                    "Dublikat silmə strategiyası",
-                                    ["İlk qeydi saxla", "Son qeydi saxla", "Ən yüksək məbləği saxla", "Ən aşağı məbləği saxla"]
-                                )
-                            
-                            with col2:
-                                if st.button("🧹 Dublikatları Təmizlə", type="primary"):
-                                    try:
-                                        if duplicate_strategy == "İlk qeydi saxla":
-                                            cleaned_df = df.drop_duplicates(subset=duplicate_columns, keep='first')
-                                        elif duplicate_strategy == "Son qeydi saxla":
-                                            cleaned_df = df.drop_duplicates(subset=duplicate_columns, keep='last')
-                                        elif duplicate_strategy == "Ən yüksək məbləği saxla":
-                                            idx_to_keep = df.groupby(duplicate_columns)['Ümumi məbləğ'].idxmax()
-                                            cleaned_df = df.loc[idx_to_keep]
-                                        elif duplicate_strategy == "Ən aşağı məbləği saxla":
-                                            idx_to_keep = df.groupby(duplicate_columns)['Ümumi məbləğ'].idxmin()
-                                            cleaned_df = df.loc[idx_to_keep]
-                                        
-                                        removed_count = len(df) - len(cleaned_df)
-                                        if st.checkbox(f"⚠️ {removed_count} dublikat qeydin silinməsini təsdiq edirəm"):
-                                            cleaned_df.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
-                                            st.success(f"✅ {removed_count} qeyd silindi! Səhifə yenilənir...")
-                                            time.sleep(2)
-                                            st.rerun()
-                                            
-                                    except Exception as e:
-                                        st.error(f"❌ Xəta: {str(e)}")
-                                        st.code(traceback.format_exc())
+                            dup_strat_cols = st.columns(2)
+                            dup_strategy = dup_strat_cols[0].selectbox("Dublikat silmə strategiyası", ["İlk qeydi saxla", "Son qeydi saxla", "Ən yüksək 'Ümumi məbləğ' olanı saxla", "Ən aşağı 'Ümumi məbləğ' olanı saxla"], key="dup_strategy_select")
+                            if dup_strat_cols[1].button("🧹 Seçilmiş Strategiya ilə Dublikatları Təmizlə", key="clean_dup_btn_manage"):
+                                cleaned_df_temp = df_editable.copy()
+                                if "İlk" in dup_strategy: cleaned_df_temp = cleaned_df_temp.drop_duplicates(subset=duplicate_columns_selected, keep='first')
+                                elif "Son" in dup_strategy: cleaned_df_temp = cleaned_df_temp.drop_duplicates(subset=duplicate_columns_selected, keep='last')
+                                elif "'Ümumi məbləğ'" in dup_strategy and 'Ümumi məbləğ' in cleaned_df_temp.columns:
+                                    cleaned_df_temp['Ümumi məbləğ'] = pd.to_numeric(cleaned_df_temp['Ümumi məbləğ'], errors='coerce')
+                                    keep_option = 'last' if "yüksək" in dup_strategy else 'first'
+                                    cleaned_df_temp = cleaned_df_temp.sort_values('Ümumi məbləğ', ascending=("yüksək" not in dup_strategy))
+                                    cleaned_df_temp = cleaned_df_temp.drop_duplicates(subset=duplicate_columns_selected, keep=keep_option)
+                                else:
+                                    st.error("'Ümumi məbləğ' sütunu tələb olunur və ya strategiya uyğun deyil.")
+                                
+                                removed_count = len(df_editable) - len(cleaned_df_temp)
+                                if removed_count > 0:
+                                    st.session_state.df_to_clean_duplicates = cleaned_df_temp
+                                    st.session_state.removed_duplicates_count = removed_count
+                                    st.session_state.show_duplicate_deletion_confirmation = True
+                                    st.rerun()
+                                else:
+                                    st.info("Silinəcək dublikat tapılmadı (seçilmiş strategiyaya görə).")
                         else:
-                            st.success("✅ Dublikat qeyd tapılmadı!")
+                            st.success("✅ Seçilmiş sütunlara görə dublikat qeyd tapılmadı.")
                     
-                    # Filtr və axtarış
-                    st.markdown("#### 🔍 Filtr və Axtarış")
-                    col1, col2, col3 = st.columns(3)
-                    
-                    with col1:
-                        date_filter = st.selectbox("📅 Tarix filtri", ["Hamısı", "Son 7 gün", "Son 30 gün", "Son 3 ay", "Bu il", "Seçilmiş aralıq"])
-                        start_date, end_date = None, None
-                        if date_filter == "Seçilmiş aralıq":
-                            start_date = st.date_input("Başlanğıc tarixi")
-                            end_date = st.date_input("Bitmə tarixi")
-                    
-                    with col2:
-                        department_filter = st.selectbox("🏢 Şöbə", ["Hamısı"] + df['Şöbə'].dropna().unique().tolist()) if 'Şöbə' in df.columns else st.empty()
-                    
-                    with col3:
-                        trip_type_filter = st.selectbox("✈️ Növ", ["Hamısı"] + df['Ezamiyyət növü'].dropna().unique().tolist()) if 'Ezamiyyət növü' in df.columns else st.empty()
-                    
-                    search_term = st.text_input("🔎 Ad/Soyad axtarışı")
-                    
-                    # Filtrlərin tətbiqi
-                    filtered_df = df.copy()
-                    if date_filter != "Hamısı" and 'Tarix' in df.columns:
-                        date_condition = {
-                            "Son 7 gün": (datetime.now() - timedelta(days=7)),
-                            "Son 30 gün": (datetime.now() - timedelta(days=30)),
-                            "Son 3 ay": (datetime.now() - timedelta(days=90)),
-                            "Bu il": datetime(datetime.now().year, 1, 1)
-                        }.get(date_filter, None)
-                        
-                        if date_filter == "Seçilmiş aralıq" and start_date and end_date:
-                            filtered_df = filtered_df[(filtered_df['Tarix'] >= pd.to_datetime(start_date)) & (filtered_df['Tarix'] <= pd.to_datetime(end_date))]
-                        elif date_condition:
-                            filtered_df = filtered_df[filtered_df['Tarix'] >= date_condition]
-                    
-                    if department_filter != "Hamısı" and 'Şöbə' in df.columns:
-                        filtered_df = filtered_df[filtered_df['Şöbə'] == department_filter]
-                    
-                    if trip_type_filter != "Hamısı" and 'Ezamiyyət növü' in df.columns:
-                        filtered_df = filtered_df[filtered_df['Ezamiyyət növü'] == trip_type_filter]
-                    
-                    if search_term:
-                        search_mask = filtered_df.apply(lambda row: any(search_term.lower() in str(row[col]).lower() for col in ['Ad', 'Soyad']), axis=1)
-                        filtered_df = filtered_df[search_mask]
-                    
-                    # Nəticələrin göstərilməsi
-                    st.markdown(f"#### 📊 Nəticələr ({len(filtered_df)} qeyd)")
-                    
-                    if not filtered_df.empty:
-                        selected_columns = st.multiselect("Sütunlar", filtered_df.columns.tolist(), default=['Ad', 'Soyad', 'Şöbə', 'Marşrut', 'Ümumi məbləğ'])
-                        
-                        edited_df = st.data_editor(
-                            filtered_df[selected_columns],
-                            column_config={
-                                "Tarix": st.column_config.DateColumn(format="DD.MM.YYYY"),
-                                "Ümumi məbləğ": st.column_config.NumberColumn(format="%.2f AZN")
-                            },
-                            use_container_width=True,
-                            height=400
-                        )
-                        
-                        if st.button("💾 Dəyişiklikləri Saxla"):
+                    # Confirmation Dialog for Duplicate Deletion (if triggered)
+                    if st.session_state.get("show_duplicate_deletion_confirmation", False):
+                        st.error(f"⚠️ {st.session_state.removed_duplicates_count} dublikat qeydin silinməsi planlaşdırılır. Davam etmək istəyirsiniz?")
+                        confirm_cols = st.columns(2)
+                        if confirm_cols[0].button("Bəli, Dublikatları Sil", type="destructive", key="confirm_delete_duplicates_final_btn"):
                             try:
-                                df.update(edited_df)
-                                df.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
-                                st.success("✅ Məlumatlar yeniləndi!")
-                            except Exception as e:
-                                st.error(f"❌ Xəta: {str(e)}")
-                        
-                        # Kütləvi əməliyyatlar
-                        st.markdown("#### ⚡ Kütləvi Əməliyyatlar")
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            if st.button("📤 CSV İxrac"):
-                                csv = filtered_df[selected_columns].to_csv(index=False).encode('utf-8')
-                                st.download_button("⬇️ Yüklə", data=csv, file_name="ezamiyyetler.csv", mime="text/csv")
-                        
-                        with col2:
-                            selected_indices = st.multiselect("Silmək üçün seçin", filtered_df.index.tolist())
-                            if selected_indices and st.button("🗑️ Seçilmişləri sil"):
-                                df = df.drop(selected_indices)
-                                df.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
-                                st.success(f"✅ {len(selected_indices)} qeyd silindi!")
+                                df_to_save_cleaned = st.session_state.df_to_clean_duplicates
+                                df_to_save_cleaned.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+                                st.success(f"✅ {st.session_state.removed_duplicates_count} qeyd silindi! Səhifə yenilənir...")
+                                write_log("Məlumat təmizləmə", f"{st.session_state.removed_duplicates_count} dublikat silindi", user="admin")
+                                st.cache_data.clear()
+                                # Clean up session state
+                                for key in ["show_duplicate_deletion_confirmation", "df_to_clean_duplicates", "removed_duplicates_count"]:
+                                    if key in st.session_state: del st.session_state[key]
                                 st.rerun()
+                            except Exception as e_clean_save:
+                                st.error(f"Dublikatları silmə zamanı xəta: {e_clean_save}")
+                        if confirm_cols[1].button("Xeyr, Ləğv Et", key="cancel_delete_duplicates_final_btn"):
+                            for key in ["show_duplicate_deletion_confirmation", "df_to_clean_duplicates", "removed_duplicates_count"]:
+                                if key in st.session_state: del st.session_state[key]
+                            st.info("Dublikat silmə əməliyyatı ləğv edildi.")
+                            st.rerun()
+                        st.stop() # Stop further execution until confirmation is handled
+
+
+                    # Filtr və Axtarış
+                    st.markdown("#### 🔍 Filtr və Axtarış")
+                    filter_cols = st.columns(3)
+                    df_filtered_manage = df_editable.copy()
+
+                    date_filter = filter_cols[0].selectbox("📅 Tarix filtri ('Tarix' sütununa görə)", ["Hamısı", "Son 7 gün", "Son 30 gün", "Son 3 ay", "Bu il", "Seçilmiş aralıq"], key="date_f_mng")
+                    if date_filter != "Hamısı" and 'Tarix' in df_filtered_manage.columns and not df_filtered_manage['Tarix'].isnull().all():
+                        now = pd.Timestamp.now()
+                        if date_filter == "Son 7 gün": df_filtered_manage = df_filtered_manage[df_filtered_manage['Tarix'] >= (now - timedelta(days=7))]
+                        elif date_filter == "Son 30 gün": df_filtered_manage = df_filtered_manage[df_filtered_manage['Tarix'] >= (now - timedelta(days=30))]
+                        elif date_filter == "Son 3 ay": df_filtered_manage = df_filtered_manage[df_filtered_manage['Tarix'] >= (now - timedelta(days=90))]
+                        elif date_filter == "Bu il": df_filtered_manage = df_filtered_manage[df_filtered_manage['Tarix'].dt.year == now.year]
+                        elif date_filter == "Seçilmiş aralıq":
+                            sf_cols = st.columns(2)
+                            start_f = sf_cols[0].date_input("Başlanğıc", datetime.today() - timedelta(days=30), key="sf_mng")
+                            end_f = sf_cols[1].date_input("Bitmə", datetime.today(), key="ef_mng", min_value=start_f)
+                            df_filtered_manage = df_filtered_manage[(df_filtered_manage['Tarix'].dt.date >= start_f) & (df_filtered_manage['Tarix'].dt.date <= end_f)]
+                    
+                    dept_options = ["Hamısı"] + (df_editable['Şöbə'].dropna().unique().tolist() if 'Şöbə' in df_editable.columns else [])
+                    dept_filter = filter_cols[1].selectbox("🏢 Şöbə", dept_options, key="dept_f_mng")
+                    if dept_filter != "Hamısı": df_filtered_manage = df_filtered_manage[df_filtered_manage['Şöbə'] == dept_filter]
+
+                    type_options = ["Hamısı"] + (df_editable['Ezamiyyət növü'].dropna().unique().tolist() if 'Ezamiyyət növü' in df_editable.columns else [])
+                    type_filter = filter_cols[2].selectbox("✈️ Növ", type_options, key="type_f_mng")
+                    if type_filter != "Hamısı": df_filtered_manage = df_filtered_manage[df_filtered_manage['Ezamiyyət növü'] == type_filter]
+                    
+                    search_term = st.text_input("🔎 Ad/Soyad/Marşrut/Məqsəd axtarışı", key="search_t_mng")
+                    if search_term:
+                        search_cols_list = [c for c in ['Ad', 'Soyad', 'Marşrut', 'Məqsəd'] if c in df_filtered_manage.columns]
+                        if search_cols_list:
+                             df_filtered_manage = df_filtered_manage[df_filtered_manage[search_cols_list].astype(str).apply(lambda x: x.str.contains(search_term, case=False, na=False)).any(axis=1)]
+                    
+                    st.markdown(f"#### 📊 Nəticələr ({len(df_filtered_manage)} qeyd)")
+                    if not df_filtered_manage.empty:
+                        cols_to_display_default = [c for c in ['Ad', 'Soyad', 'Şöbə', 'Marşrut', 'Ümumi məbləğ', 'Başlanğıc tarixi'] if c in df_filtered_manage.columns]
+                        cols_to_display = st.multiselect("Göstəriləcək sütunlar", df_filtered_manage.columns.tolist(), default=cols_to_display_default, key="disp_c_mng")
+                        
+                        if cols_to_display:
+                            # For editing, we need to ensure indices align with the original df_editable
+                            # Pass the filtered DataFrame's relevant columns to data_editor
+                            edited_df_from_editor = st.data_editor(
+                                df_filtered_manage[cols_to_display],
+                                column_config={
+                                    "Tarix": st.column_config.DateColumn("Tarix", format="DD.MM.YYYY"),
+                                    "Başlanğıc tarixi": st.column_config.DateColumn("Baş. tarixi", format="DD.MM.YYYY"),
+                                    "Bitmə tarixi": st.column_config.DateColumn("Bit. tarixi", format="DD.MM.YYYY"),
+                                    "Ümumi məbləğ": st.column_config.NumberColumn("Məbləğ", format="%.2f AZN")
+                                },
+                                use_container_width=True, height=400, key="editor_mng", num_rows="dynamic"
+                            )
+                            if st.button("💾 Data Editordan Dəyişiklikləri Saxla", key="save_editor_mng"):
+                                try:
+                                    # This updates df_editable (the full data copy) where indices match
+                                    # It handles value changes in the displayed filtered set.
+                                    # Deletions from data_editor are harder to map back perfectly without complex index tracking.
+                                    # A simple approach: assume editor only modifies/deletes from the *filtered view*.
+                                    # We can update the original df_editable based on the indices from df_filtered_manage.
+                                    
+                                    # Create a temporary df with original indices of edited rows
+                                    temp_edited_df = edited_df_from_editor.copy()
+                                    temp_edited_df.index = df_filtered_manage.index[edited_df_from_editor.index] # Map editor's default index to original index
+
+                                    df_editable.update(temp_edited_df)
+                                    
+                                    # For rows deleted in editor (num_rows="dynamic"):
+                                    # Identify original indices that were in df_filtered_manage but not in temp_edited_df.index
+                                    original_filtered_indices = set(df_filtered_manage.index)
+                                    edited_view_indices = set(temp_edited_df.index)
+                                    indices_to_delete_from_editable = list(original_filtered_indices - edited_view_indices)
+
+                                    if indices_to_delete_from_editable:
+                                        df_editable.drop(index=indices_to_delete_from_editable, inplace=True)
+
+                                    df_editable.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+                                    st.success("✅ Məlumatlar data editordan yeniləndi!")
+                                    write_log("Məlumat redaktəsi (Data Editor)", f"{len(edited_df_from_editor)} sətir təsirləndi", user="admin")
+                                    st.cache_data.clear()
+                                    st.rerun()
+                                except Exception as e_save_editor:
+                                    st.error(f"❌ Data editor dəyişikliklərini saxlama xətası: {e_save_editor}")
+                        
+                        # Kütləvi əməliyyatlar (filtrlənmiş df_filtered_manage üzərində)
+                        st.markdown("#### ⚡ Kütləvi Əməliyyatlar (Filtrlənmiş məlumatlar üzərində)")
+                        bulk_cols = st.columns(2)
+                        if bulk_cols[0].button("📤 CSV İxrac (Filtrlənmiş)", key="csv_exp_f_mng"):
+                            csv_f = df_filtered_manage[cols_to_display if cols_to_display else df_filtered_manage.columns].to_csv(index=False).encode('utf-8')
+                            st.download_button("⬇️ Yüklə", data=csv_f, file_name="ezamiyyetler_filtred.csv", mime="text/csv")
+                        
+                        indices_for_selection = df_filtered_manage.index.tolist()
+                        selected_indices_to_delete = bulk_cols[1].multiselect("Silmək üçün seçin (Filtrlənmiş siyahıdan)", indices_for_selection, format_func=lambda x: f"ID {x}: {df_filtered_manage.loc[x,'Ad'] if 'Ad' in df_filtered_manage else ''} {df_filtered_manage.loc[x,'Soyad'] if 'Soyad' in df_filtered_manage else ''}", key="sel_del_mng")
+                        if selected_indices_to_delete:
+                            if st.button("🗑️ Seçilmişləri Sil", type="destructive", key="del_sel_mng_btn"): # Use destructive for delete
+                                if st.checkbox("Silməni təsdiq edirəm", key="confirm_del_sel_mng"):
+                                    df_editable.drop(index=selected_indices_to_delete, inplace=True)
+                                    df_editable.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+                                    st.success(f"✅ {len(selected_indices_to_delete)} qeyd silindi!")
+                                    write_log("Kütləvi silmə", f"{len(selected_indices_to_delete)} qeyd silindi", user="admin")
+                                    st.cache_data.clear()
+                                    st.rerun()
                     else:
-                        st.info("🔍 Heç bir nəticə tapılmadı")
-                
+                        st.info("🔍 Filtrlərə uyğun nəticə tapılmadı.")
                 else:
-                    st.warning("📭 Hələ heç bir məlumat yoxdur")
-            
+                    st.warning("📭 Hələ heç bir məlumat yoxdur.")
             except Exception as e:
-                st.error(f"❌ Kritik xəta: {str(e)}")
-                import traceback
+                st.error(f"❌ Məlumat idarəetməsi tabında kritik xəta: {e}")
                 st.code(traceback.format_exc())
 
 
         # 3. ANALİTİKA TAB
-    with admin_tabs[2]:
-        st.markdown("### 📈 Detallı Analitika və Hesabatlar")            
-        try:
-            df = load_trip_data()
-            
-            if not df.empty:
-                # Tarixi məlumatları hazırla
-                if 'Tarix' in df.columns:
-                    df['Tarix'] = pd.to_datetime(df['Tarix'], errors='coerce')
-                    df['Ay'] = df['Tarix'].dt.to_period('M')
-                    df['Həftə'] = df['Tarix'].dt.to_period('W')
-                
-                # Rəqəmsal sütunları hazırla
-                numeric_cols = ['Ümumi məbləğ', 'Günlük müavinət', 'Bilet qiyməti']
-                for col in numeric_cols:
-                    if col in df.columns:
-                        df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+        with admin_tabs_obj[2]:
+            st.markdown("### "+ admin_tab_names[2])
+            try:
+                df_analytics = load_trip_data()
+                if not df_analytics.empty:
+                    df_an = df_analytics.copy() # Work on a copy
+                    for col in ['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']:
+                        if col in df_an.columns: df_an[col] = pd.to_datetime(df_an[col], errors='coerce')
+                    for col in ['Ümumi məbləğ', 'Günlük müavinət', 'Bilet qiyməti', 'Günlər']:
+                        if col in df_an.columns: df_an[col] = pd.to_numeric(df_an[col], errors='coerce').fillna(0)
 
-                # Analitik seçimlər
-                analysis_type = st.selectbox(
-                    "📊 Analiz növü",
-                    ["Zaman Analizi", "Şöbə Analizi", "Coğrafi Analiz", "Maliyyə Analizi", "Məqsəd Analizi"]
-                )
+                    if 'Tarix' in df_an.columns and not df_an['Tarix'].isnull().all():
+                        df_an['Ay'] = df_an['Tarix'].dt.to_period('M')
+                        df_an['İl'] = df_an['Tarix'].dt.year
+                        try:
+                            df_an['Həftənin günü'] = df_an['Tarix'].dt.day_name(locale='az_AZ.UTF-8')
+                        except LocaleError: # Fallback if locale not found
+                            df_an['Həftənin günü'] = df_an['Tarix'].dt.day_name()
 
-                if analysis_type == "Zaman Analizi":
-                    st.markdown("#### 📅 Zamansal Trendlər")
-                    
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        # Aylıq trend
-                        if 'Ay' in df.columns:
-                            monthly_stats = df.groupby('Ay').agg({
-                                'Ümumi məbləğ': 'sum',
-                                'Ad': 'count'
-                            }).rename(columns={'Ad': 'Ezamiyyət sayı'})
-                            
-                            fig = make_subplots(specs=[[{"secondary_y": True}]])
-                            
-                            fig.add_trace(
-                                go.Bar(
-                                    x=[str(x) for x in monthly_stats.index],
-                                    y=monthly_stats['Ümumi məbləğ'],
-                                    name="Xərclər (AZN)",
-                                    marker_color='lightblue'
-                                ),
-                                secondary_y=False,
-                            )
-                            
-                            fig.add_trace(
-                                go.Scatter(
-                                    x=[str(x) for x in monthly_stats.index],
-                                    y=monthly_stats['Ezamiyyət sayı'],
-                                    mode='lines+markers',
-                                    name="Ezamiyyət sayı",
-                                    line=dict(color='red')
-                                ),
-                                secondary_y=True,
-                            )
-                            
-                            fig.update_xaxes(title_text="Ay")
-                            fig.update_yaxes(title_text="Xərclər (AZN)", secondary_y=False)
-                            fig.update_yaxes(title_text="Ezamiyyət sayı", secondary_y=True)
-                            fig.update_layout(title_text="Aylıq Ezamiyyət Trendləri")
-                            
-                            st.plotly_chart(fig, use_container_width=True)
-                    
-                    with col2:
-                        # Həftəlik aktivlik
-                        if 'Tarix' in df.columns:
-                            df['Həftənin günü'] = df['Tarix'].dt.day_name()
-                            weekday_stats = df['Həftənin günü'].value_counts()
-                            
-                            fig = px.bar(
-                                x=weekday_stats.index,
-                                y=weekday_stats.values,
-                                title="Həftəlik Ezamiyyət Paylanması",
-                                color=weekday_stats.values,
-                                color_continuous_scale='Viridis'
-                            )
-                            st.plotly_chart(fig, use_container_width=True)
 
-                elif analysis_type == "Şöbə Analizi":
-                    st.markdown("#### 🏢 Şöbə əsaslı Analiz")
-                    
-                    if 'Şöbə' in df.columns:
-                        dept_stats = df.groupby('Şöbə').agg({
-                            'Ümumi məbləğ': ['sum', 'mean', 'count'],
-                            'Günlər': 'mean'
-                        }).round(2)
+                    analysis_type = st.selectbox("📊 Analiz növü", ["Zaman Analizi", "Şöbə Analizi", "Coğrafi Analiz", "Maliyyə Analizi", "Məqsəd Analizi"], key="an_type")
+
+                    if analysis_type == "Zaman Analizi" and 'Ay' in df_an.columns:
+                        st.markdown("#### 📅 Zamansal Trendlər")
+                        an_cols1 = st.columns(2)
+                        monthly_stats = df_an.groupby('Ay').agg(total_expense=('Ümumi məbləğ', 'sum'), trip_count=('Ad', 'count')).reset_index()
+                        monthly_stats['Ay'] = monthly_stats['Ay'].astype(str)
+                        if not monthly_stats.empty:
+                            fig_t = make_subplots(specs=[[{"secondary_y": True}]])
+                            fig_t.add_trace(go.Bar(x=monthly_stats['Ay'], y=monthly_stats['total_expense'], name="Xərclər (AZN)"), secondary_y=False)
+                            fig_t.add_trace(go.Scatter(x=monthly_stats['Ay'], y=monthly_stats['trip_count'], name="Ezamiyyət sayı", mode="lines+markers"), secondary_y=True)
+                            fig_t.update_layout(title_text="Aylıq Ezamiyyət Trendləri")
+                            an_cols1[0].plotly_chart(fig_t, use_container_width=True)
                         
-                        dept_stats.columns = ['Ümumi Xərc', 'Orta Xərc', 'Ezamiyyət Sayı', 'Orta Müddət']
+                        if 'Həftənin günü' in df_an.columns:
+                            weekday_order = ["Bazar ertəsi", "Çərşənbə axşamı", "Çərşənbə", "Cümə axşamı", "Cümə", "Şənbə", "Bazar"]
+                            weekday_stats = df_an['Həftənin günü'].value_counts().reindex(weekday_order).fillna(0)
+                            if not weekday_stats.empty:
+                                fig_w = px.bar(weekday_stats, x=weekday_stats.index, y=weekday_stats.values, title="Həftəlik Ezamiyyət Paylanması", labels={'index':'Gün', 'y':'Sayı'})
+                                an_cols1[1].plotly_chart(fig_w, use_container_width=True)
+                    
+                    elif analysis_type == "Şöbə Analizi" and 'Şöbə' in df_an.columns:
+                        st.markdown("#### 🏢 Şöbə əsaslı Analiz")
+                        dept_agg_spec = {'Ümumi məbləğ': ['sum', 'mean', 'count']}
+                        if 'Günlər' in df_an.columns: dept_agg_spec['Günlər'] = 'mean'
+                        dept_stats = df_an.groupby('Şöbə').agg(dept_agg_spec).round(2)
+                        col_names = ['Ümumi Xərc', 'Orta Xərc', 'Ezamiyyət Sayı']
+                        if 'Günlər' in df_an.columns: col_names.append('Orta Müddət')
+                        dept_stats.columns = col_names
                         dept_stats = dept_stats.sort_values('Ümumi Xərc', ascending=False)
                         
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            # Top 10 xərc edən şöbə
-                            top_depts = dept_stats.head(10)
-                            fig = px.bar(
-                                x=top_depts['Ümumi Xərc'],
-                                y=top_depts.index,
-                                orientation='h',
-                                title="Top 10 Xərc Edən Şöbə",
-                                color=top_depts['Ümumi Xərc'],
-                                color_continuous_scale='Reds'
-                            )
-                            fig.update_layout(yaxis={'categoryorder':'total ascending'})
-                            st.plotly_chart(fig, use_container_width=True)
-                        
-                        with col2:
-                            # Şöbə effektivliyi (xərc/ezamiyyət)
-                            dept_stats['Effektivlik'] = dept_stats['Ümumi Xərc'] / dept_stats['Ezamiyyət Sayı']
-                            efficiency = dept_stats.sort_values('Effektivlik', ascending=False).head(10)
+                        an_cols2 = st.columns(2)
+                        if not dept_stats.empty:
+                            fig_d_bar = px.bar(dept_stats.head(10), y=dept_stats.head(10).index, x='Ümumi Xərc', orientation='h', title="Top 10 Xərc Edən Şöbə")
+                            an_cols2[0].plotly_chart(fig_d_bar, use_container_width=True)
                             
-                            fig = px.scatter(
-                                x=efficiency['Ezamiyyət Sayı'],
-                                y=efficiency['Orta Xərc'],
-                                size=efficiency['Ümumi Xərc'],
-                                hover_name=efficiency.index,
-                                title="Şöbə Effektivliyi",
-                                labels={'x': 'Ezamiyyət Sayı', 'y': 'Orta Xərc'}
-                            )
-                            st.plotly_chart(fig, use_container_width=True)
-                        
-                        # Detallı cədvəl
-                        st.markdown("#### 📋 Şöbə Statistikaları")
-                        st.dataframe(
-                            dept_stats.style.format({
-                                'Ümumi Xərc': '{:.2f} AZN',
-                                'Orta Xərc': '{:.2f} AZN',
-                                'Orta Müddət': '{:.1f} gün'
-                            }),
-                            use_container_width=True
-                        )
+                            if 'Ezamiyyət Sayı' in dept_stats.columns and (dept_stats['Ezamiyyət Sayı']>0).any():
+                                dept_stats['Xərc/Ezamiyyət'] = (dept_stats['Ümumi Xərc'] / dept_stats['Ezamiyyət Sayı']).fillna(0)
+                                fig_d_scatter = px.scatter(dept_stats[dept_stats['Ezamiyyət Sayı']>0].head(15), x='Ezamiyyət Sayı', y='Orta Xərc', size='Ümumi Xərc', color='Xərc/Ezamiyyət', hover_name=dept_stats[dept_stats['Ezamiyyət Sayı']>0].head(15).index, title="Şöbə Effektivliyi")
+                                an_cols2[1].plotly_chart(fig_d_scatter, use_container_width=True)
+                        st.markdown("##### Detallı Şöbə Statistikaları")
+                        st.dataframe(dept_stats.style.format({'Ümumi Xərc':'{:.2f} AZN', 'Orta Xərc':'{:.2f} AZN', 'Orta Müddət':'{:.1f} gün', 'Xərc/Ezamiyyət':'{:.2f} AZN/ezam.'}), use_container_width=True)
 
-                elif analysis_type == "Coğrafi Analiz":
-                    st.markdown("#### 🌍 Coğrafi Paylanma")
-                    
-                    if 'Marşrut' in df.columns:
-                        # Marşrut statistikaları
-                        routes = df['Marşrut'].value_counts().head(15)
+                    elif analysis_type == "Coğrafi Analiz" and 'Marşrut' in df_an.columns:
+                        st.markdown("#### 🌍 Coğrafi Paylanma")
+                        an_cols3 = st.columns(2)
+                        route_counts = df_an['Marşrut'].value_counts().head(15)
+                        if not route_counts.empty:
+                            fig_r = px.bar(route_counts, y=route_counts.index, x=route_counts.values, orientation='h', title="Top 15 Marşrut")
+                            an_cols3[0].plotly_chart(fig_r, use_container_width=True)
                         
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            fig = px.bar(
-                                x=routes.values,
-                                y=routes.index,
-                                orientation='h',
-                                title="Ən Populyar Marşrutlar",
-                                color=routes.values,
-                                color_continuous_scale='Blues'
-                            )
-                            st.plotly_chart(fig, use_container_width=True)
-                        
-                        with col2:
-                            # Ölkə və şəhər analizi
-                            if 'Ezamiyyət növü' in df.columns:
-                                geo_stats = df.groupby(['Ezamiyyət növü', 'Marşrut'])['Ümumi məbləğ'].sum().reset_index()
-                                
-                                fig = px.treemap(
-                                    geo_stats,
-                                    path=['Ezamiyyət növü', 'Marşrut'],
-                                    values='Ümumi məbləğ',
-                                    title="Coğrafi Xərc Paylanması"
-                                )
-                                st.plotly_chart(fig, use_container_width=True)
-                elif analysis_type == "Maliyyə Analizi":
-                    st.markdown("#### 💰 Maliyyə Performansı")
-                    
-                    col1, col2, col3 = st.columns(3)
-                    
-                    with col1:
-                        # Xərc paylanması
-                        if 'Ödəniş növü' in df.columns:
-                            payment_dist = df.groupby('Ödəniş növü')['Ümumi məbləğ'].sum()
-                            fig = px.pie(
-                                values=payment_dist.values,
-                                names=payment_dist.index,
-                                title="Ödəniş Növləri üzrə Xərc",
-                                hole=0.4
-                            )
-                            st.plotly_chart(fig, use_container_width=True)
-                    
-                    with col2:
-                        # Günlük müavinət vs bilet qiyməti
-                        if 'Günlük müavinət' in df.columns and 'Bilet qiyməti' in df.columns:
-                            fig = px.scatter(
-                                df,
-                                x='Günlük müavinət',
-                                y='Bilet qiyməti',
-                                size='Ümumi məbləğ',
-                                title="Müavinət vs Bilet Qiyməti",
-                                hover_data=['Marşrut'] if 'Marşrut' in df.columns else None
-                            )
-                            st.plotly_chart(fig, use_container_width=True)
-                    
-                    with col3:
-                        # Xərc intervalları
-                        expense_bins = [0, 500, 1000, 2000, 5000, float('inf')]
-                        expense_labels = ['0-500', '500-1000', '1000-2000', '2000-5000', '5000+']
-                        df['Xərc Kateqoriyası'] = pd.cut(df['Ümumi məbləğ'], bins=expense_bins, labels=expense_labels)
-                        
-                        expense_dist = df['Xərc Kateqoriyası'].value_counts()
-                        fig = px.bar(
-                            x=expense_dist.index,
-                            y=expense_dist.values,
-                            title="Xərc Kateqoriya Paylanması",
-                            color=expense_dist.values
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
-                    
-                    # Maliyyə cədvəli
-                    st.markdown("#### 📊 Maliyyə Xülasəsi")
-                    financial_summary = {
-                        "Metrika": [
-                            "Ümumi Xərc",
-                            "Orta Xərc",
-                            "Median Xərc",
-                            "Maksimum Xərc",
-                            "Minimum Xərc",
-                            "Standart Sapma"
-                        ],
-                        "Dəyər": [
-                            f"{df['Ümumi məbləğ'].sum():.2f} AZN",
-                            f"{df['Ümumi məbləğ'].mean():.2f} AZN",
-                            f"{df['Ümumi məbləğ'].median():.2f} AZN",
-                            f"{df['Ümumi məbləğ'].max():.2f} AZN",
-                            f"{df['Ümumi məbləğ'].min():.2f} AZN",
-                            f"{df['Ümumi məbləğ'].std():.2f} AZN"
-                        ]
-                    }
-                    st.table(pd.DataFrame(financial_summary))
+                        if 'Ezamiyyət növü' in df_an.columns and 'Ümumi məbləğ' in df_an.columns:
+                            geo_sum = df_an.groupby(['Ezamiyyət növü', 'Marşrut'])['Ümumi məbləğ'].sum().reset_index()
+                            if not geo_sum[geo_sum['Ümumi məbləğ']>0].empty:
+                                fig_tree = px.treemap(geo_sum[geo_sum['Ümumi məbləğ']>0], path=['Ezamiyyət növü', 'Marşrut'], values='Ümumi məbləğ', title="Coğrafi Xərc Paylanması")
+                                an_cols3[1].plotly_chart(fig_tree, use_container_width=True)
 
-                elif analysis_type == "Məqsəd Analizi":
-                    st.markdown("#### 🎯 Ezamiyyət Məqsədləri")
-                    
-                    if 'Məqsəd' in df.columns:
-                        purpose_stats = df.groupby('Məqsəd').agg({
-                            'Ümumi məbləğ': ['sum', 'mean', 'count'],
-                            'Günlər': 'mean'
-                        }).round(2)
-                        
-                        purpose_stats.columns = ['Ümumi Xərc', 'Orta Xərc', 'Sayı', 'Orta Müddət']
-                        purpose_stats = purpose_stats.sort_values('Ümumi Xərc', ascending=False)
-                        
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            # Məqsəd paylanması
-                            fig = px.bar(
-                                x=purpose_stats.index,
-                                y=purpose_stats['Ümumi Xərc'],
-                                title="Məqsəd üzrə Xərclər",
-                                color=purpose_stats['Ümumi Xərc']
-                            )
-                            fig.update_xaxes(tickangle=45)
-                            st.plotly_chart(fig, use_container_width=True)
-                        
-                        with col2:
-                            # Məqsəd effektivliyi
-                            fig = px.scatter(
-                                x=purpose_stats['Sayı'],
-                                y=purpose_stats['Orta Xərc'],
-                                size=purpose_stats['Ümumi Xərc'],
-                                hover_name=purpose_stats.index,
-                                title="Məqsəd Effektivliyi"
-                            )
-                            st.plotly_chart(fig, use_container_width=True)
+                    # ... (Maliyyə və Məqsəd Analizi could be similarly detailed if needed for "active")
+                    elif analysis_type == "Maliyyə Analizi" and 'Ümumi məbləğ' in df_an.columns:
+                        st.markdown("#### 💰 Maliyyə Performansı")
+                        # Add some basic financial plots or tables here
+                        st.metric("Ümumi Xərclənən Məbləğ", f"{df_an['Ümumi məbləğ'].sum():,.2f} AZN")
+                        st.metric("Ezamiyyət Başına Orta Xərc", f"{df_an['Ümumi məbləğ'].mean():,.2f} AZN")
+                        if 'Ödəniş növü' in df_an.columns:
+                             payment_expense_dist = df_an.groupby('Ödəniş növü')['Ümumi məbləğ'].sum()
+                             if not payment_expense_dist.empty:
+                                 fig_fin_pie = px.pie(payment_expense_dist, values=payment_expense_dist.values, names=payment_expense_dist.index, title="Xərclərin Ödəniş Növünə Görə Payı")
+                                 st.plotly_chart(fig_fin_pie, use_container_width=True)
 
-                # Hesabat ixracı
-                st.markdown("#### 📄 Hesabat İxracı")
-                col1, col2, col3 = st.columns(3)
-                
-                with col1:
-                    if st.button("📊 Excel Hesabatı"):
-                        with pd.ExcelWriter("analitik_hesabat.xlsx", engine='openpyxl') as writer:
-                            df.to_excel(writer, sheet_name='Ham Məlumatlar', index=False)
-                            
-                            if 'Şöbə' in df.columns:
-                                dept_stats = df.groupby('Şöbə').agg({
-                                    'Ümumi məbləğ': ['sum', 'mean', 'count']
-                                }).round(2)
-                                dept_stats.to_excel(writer, sheet_name='Şöbə Statistikaları')
-                            
-                            if 'Marşrut' in df.columns:
-                                route_stats = df['Marşrut'].value_counts()
-                                route_stats.to_excel(writer, sheet_name='Marşrut Statistikaları')
-                        
-                        st.success("✅ Excel hesabatı yaradıldı!")
-                
-                with col2:
-                    if st.button("📈 PDF Hesabatı"):
-                        st.info("📄 PDF hesabat funksionallığı əlavə ediləcək")
-                
-                with col3:
-                    if st.button("📧 Email Göndər"):
-                        st.info("📨 Email göndərmə funksionallığı əlavə ediləcək")
 
-            else:
-                st.warning("📊 Analiz üçün məlumat yoxdur")
-                
-        except Exception as e:
-            st.error(f"❌ Analitika xətası: {str(e)}")
+                    elif analysis_type == "Məqsəd Analizi" and 'Məqsəd' in df_an.columns:
+                        st.markdown("#### 🎯 Ezamiyyət Məqsədləri")
+                        purpose_counts = df_an['Məqsəd'].value_counts().head(10)
+                        if not purpose_counts.empty:
+                            fig_purp = px.bar(purpose_counts, x=purpose_counts.index, y=purpose_counts.values, title="Top 10 Ezamiyyət Məqsədi (Sayına görə)")
+                            st.plotly_chart(fig_purp, use_container_width=True)
+
+
+                    st.markdown("#### 📄 Hesabat İxracı")
+                    exp_cols = st.columns(3)
+                    if exp_cols[0].button("📊 Excel Hesabatı Yarat (Analitika)", key="excel_an_exp"):
+                        buffer_an = BytesIO()
+                        with pd.ExcelWriter(buffer_an, engine='openpyxl') as writer:
+                            df_an.to_excel(writer, sheet_name='Əsas Məlumatlar', index=False)
+                            # Add more sheets based on selected analysis if needed
+                        st.download_button(label="⬇️ Excel Hesabatını Yüklə", data=buffer_an.getvalue(), file_name="analitik_hesabat.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    exp_cols[1].button("📈 PDF Hesabatı (Gələcəkdə)", disabled=True, key="pdf_an_exp")
+                    exp_cols[2].button("📧 Email Göndər (Gələcəkdə)", disabled=True, key="email_an_exp")
+                else:
+                    st.warning("📊 Analiz üçün məlumat yoxdur.")
+            except Exception as e:
+                st.error(f"❌ Analitika tabında kritik xəta: {e}")
+                st.code(traceback.format_exc())
 
         # 4. İDXAL/İXRAC TAB
-        with admin_tabs[3]:
-            st.markdown("### 📥 Məlumat İdxal/İxrac Mərkəzi")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
+        with admin_tabs_obj[3]:
+            st.markdown("### "+ admin_tab_names[3])
+            io_cols = st.columns(2)
+            with io_cols[0]: # İxrac
                 st.markdown("#### 📤 İxrac Seçimləri")
-                
-                try:
-                    df = load_trip_data()
+                df_io_exp = load_trip_data()
+                if not df_io_exp.empty:
+                    exp_format = st.selectbox("Fayl formatı", ["Excel (.xlsx)", "CSV (.csv)", "JSON (.json)"], key="exp_fmt_io")
                     
-                    if not df.empty:
-                        # İxrac formatları
-                        export_format = st.selectbox(
-                            "Fayl formatı",
-                            ["Excel (.xlsx)", "CSV (.csv)", "JSON (.json)"]
-                        )
-                        
-                        # Tarix aralığı
-                        col_a, col_b = st.columns(2)
-                        with col_a:
-                            start_date = st.date_input("Başlanğıc tarixi", value=datetime.now() - timedelta(days=30))
-                        with col_b:
-                            end_date = st.date_input("Bitmə tarixi", value=datetime.now())
-                        
-                        # Sütun seçimi
-                        all_columns = df.columns.tolist()
-                        selected_cols = st.multiselect(
-                            "İxrac ediləcək sütunlar",
-                            all_columns,
-                            default=all_columns
-                        )
-                        
-                        if st.button("📤 İxrac Et", type="primary"):
-                            try:
-                                # Tarix filtri tətbiq et
-                                if 'Tarix' in df.columns:
-                                    df['Tarix'] = pd.to_datetime(df['Tarix'], errors='coerce')
-                                    mask = (df['Tarix'].dt.date >= start_date) & (df['Tarix'].dt.date <= end_date)
-                                    export_df = df[mask][selected_cols]
-                                else:
-                                    export_df = df[selected_cols]
-                                
-                                filename = f"ezamiyyet_ixrac_{datetime.now().strftime('%Y%m%d_%H%M')}"
-                                
-                                if export_format == "Excel (.xlsx)":
+                    exp_date_cols = st.columns(2)
+                    min_dt = df_io_exp['Tarix'].min().date() if 'Tarix' in df_io_exp.columns and not df_io_exp['Tarix'].isnull().all() else datetime.today().date() - timedelta(days=30)
+                    max_dt = df_io_exp['Tarix'].max().date() if 'Tarix' in df_io_exp.columns and not df_io_exp['Tarix'].isnull().all() else datetime.today().date()
+                    start_dt_exp = exp_date_cols[0].date_input("Başlanğıc tarixi (ixrac)", min_dt, key="sd_exp_io")
+                    end_dt_exp = exp_date_cols[1].date_input("Bitmə tarixi (ixrac)", max_dt, min_value=start_dt_exp, key="ed_exp_io")
+
+                    all_cols_exp = df_io_exp.columns.tolist()
+                    sel_cols_exp = st.multiselect("İxrac ediləcək sütunlar", all_cols_exp, default=all_cols_exp, key="sel_c_exp_io")
+
+                    if st.button("📤 İxrac Et", type="primary", key="exp_btn_io"):
+                        if not sel_cols_exp:
+                            st.warning("İxrac üçün sütun seçin.")
+                        else:
+                            df_to_export = df_io_exp.copy()
+                            if 'Tarix' in df_to_export.columns:
+                                df_to_export = df_to_export[(df_to_export['Tarix'].dt.date >= start_dt_exp) & (df_to_export['Tarix'].dt.date <= end_dt_exp)]
+                            df_final_export = df_to_export[sel_cols_exp]
+
+                            if df_final_export.empty:
+                                st.info("Seçilmiş filterlərə uyğun ixrac üçün məlumat yoxdur.")
+                            else:
+                                fname = f"ezamiyyet_ixrac_{datetime.now().strftime('%Y%m%d_%H%M')}"
+                                if "Excel" in exp_format:
                                     buffer = BytesIO()
-                                    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                                        export_df.to_excel(writer, index=False, sheet_name='Ezamiyyətlər')
-                                    
-                                    st.download_button(
-                                        "⬇️ Excel Faylını Yüklə",
-                                        data=buffer.getvalue(),
-                                        file_name=f"{filename}.xlsx",
-                                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                                    )
-                                
-                                elif export_format == "CSV (.csv)":
-                                    csv = export_df.to_csv(index=False).encode('utf-8')
-                                    st.download_button(
-                                        "⬇️ CSV Faylını Yüklə",
-                                        data=csv,
-                                        file_name=f"{filename}.csv",
-                                        mime="text/csv"
-                                    )
-                                
-                                elif export_format == "JSON (.json)":
-                                    json_str = export_df.to_json(orient='records', date_format='iso')
-                                    st.download_button(
-                                        "⬇️ JSON Faylını Yüklə",
-                                        data=json_str,
-                                        file_name=f"{filename}.json",
-                                        mime="application/json"
-                                    )
-                                
-                                st.success(f"✅ {len(export_df)} qeyd ixrac edildi!")
-                                
-                            except Exception as e:
-                                st.error(f"❌ İxrac xətası: {str(e)}")
-                    
-                    else:
-                        st.info("📝 İxrac üçün məlumat yoxdur")
-                
-                except Exception as e:
-                    st.error(f"❌ İxrac xətası: {str(e)}")
-            
-            with col2:
+                                    df_final_export.to_excel(buffer, index=False, engine='openpyxl')
+                                    st.download_button("⬇️ Excel Yüklə", buffer.getvalue(), f"{fname}.xlsx", "application/vnd.ms-excel")
+                                elif "CSV" in exp_format:
+                                    csv = df_final_export.to_csv(index=False).encode('utf-8')
+                                    st.download_button("⬇️ CSV Yüklə", csv, f"{fname}.csv", "text/csv")
+                                elif "JSON" in exp_format:
+                                    js = df_final_export.to_json(orient='records', indent=2, date_format='iso')
+                                    st.download_button("⬇️ JSON Yüklə", js.encode('utf-8'), f"{fname}.json", "application/json")
+                                write_log("Məlumat ixracı", f"{len(df_final_export)} qeyd, Format: {exp_format}", user="admin")
+                else:
+                    st.info("İxrac üçün məlumat yoxdur.")
+
+            with io_cols[1]: # İdxal
                 st.markdown("#### 📥 İdxal Seçimləri")
-                
-                uploaded_file = st.file_uploader(
-                    "Fayl seçin",
-                    type=['xlsx', 'csv', 'json'],
-                    help="Excel, CSV və ya JSON formatında faylları idxal edə bilərsiniz"
-                )
-                
-                if uploaded_file is not None:
+                uploaded_file = st.file_uploader("Fayl seçin (.xlsx, .csv, .json)", type=['xlsx', 'csv', 'json'], key="uploader_io")
+                if uploaded_file:
                     try:
-                        # Fayl növünü müəyyən et
-                        file_extension = uploaded_file.name.split('.')[-1].lower()
+                        ext = uploaded_file.name.split('.')[-1].lower()
+                        df_new_imp = pd.DataFrame()
+                        if ext == 'xlsx': df_new_imp = pd.read_excel(uploaded_file)
+                        elif ext == 'csv': df_new_imp = pd.read_csv(uploaded_file)
+                        elif ext == 'json': df_new_imp = pd.read_json(uploaded_file) # May need orient='records' etc.
                         
-                        if file_extension == 'xlsx':
-                            new_df = pd.read_excel(uploaded_file)
-                        elif file_extension == 'csv':
-                            new_df = pd.read_csv(uploaded_file)
-                        elif file_extension == 'json':
-                            new_df = pd.read_json(uploaded_file)
-                        
-                        st.markdown("#### 👀 İdxal Əvvəli Nəzər")
-                        st.dataframe(new_df.head(), use_container_width=True)
-                        
-                        st.info(f"📊 {len(new_df)} qeyd tapıldı, {len(new_df.columns)} sütun")
-                        
-                        # İdxal seçimləri
-                        import_mode = st.radio(
-                            "İdxal rejimi",
-                            ["Əlavə et", "Əvəzlə", "Birləşdir"]
-                        )
-                        
-                        if st.button("📥 İdxal Et", type="primary"):
-                            try:
-                                existing_df = load_trip_data()
-                                
-                                if import_mode == "Əlavə et":
-                                    if not existing_df.empty:
-                                        combined_df = pd.concat([existing_df, new_df], ignore_index=True)
-                                    else:
-                                        combined_df = new_df
-                                
-                                elif import_mode == "Əvəzlə":
-                                    combined_df = new_df
-                                
-                                elif import_mode == "Birləşdir":
-                                    if not existing_df.empty:
-                                        # Ümumi sütunları tap
-                                        common_cols = list(set(existing_df.columns) & set(new_df.columns))
-                                        if common_cols:
-                                            combined_df = pd.concat([existing_df, new_df], ignore_index=True)
-                                            combined_df = combined_df.drop_duplicates(subset=common_cols, keep='last')
-                                        else:
-                                            combined_df = pd.concat([existing_df, new_df], ignore_index=True)
-                                    else:
-                                        combined_df = new_df
-                                
-                                # Yeni məlumatları saxla
-                                combined_df.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
-                                
-                                st.success(f"✅ {len(new_df)} qeyd uğurla idxal edildi!")
-                                st.info("🔄 Dəyişikliklərin görünməsi üçün səhifəni yeniləyin")
-                                
-                            except Exception as e:
-                                st.error(f"❌ İdxal xətası: {str(e)}")
-                    
-                    except Exception as e:
-                        st.error(f"❌ Fayl oxuma xətası: {str(e)}")
+                        # Basic date parsing for common columns
+                        for col_date in ['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']:
+                            if col_date in df_new_imp.columns:
+                                df_new_imp[col_date] = pd.to_datetime(df_new_imp[col_date], errors='coerce')
+
+
+                        if not df_new_imp.empty:
+                            st.markdown("##### İdxal Əvvəli Nəzər (ilk 5 sətir)")
+                            st.dataframe(df_new_imp.head(), height=200)
+                            st.info(f"Faylda {len(df_new_imp)} qeyd, {len(df_new_imp.columns)} sütun tapıldı.")
+
+                            import_mode = st.radio("İdxal rejimi", ["Əlavə et", "Əvəzlə", "Birləşdir (dublikatları yoxla)"], key="imp_mode_io", horizontal=True)
+                            
+                            pk_cols_imp = []
+                            if import_mode == "Birləşdir (dublikatları yoxla)":
+                                df_existing_cols = load_trip_data().columns.tolist()
+                                common_cols_for_pk = [c for c in df_new_imp.columns if c in df_existing_cols]
+                                default_pk = [c for c in ['Ad', 'Soyad', 'Başlanğıc tarixi'] if c in common_cols_for_pk]
+                                pk_cols_imp = st.multiselect("Birləşdirmə üçün açar sütunlar (dublikat yoxlanışı üçün)", common_cols_for_pk, default=default_pk, key="pk_imp_io")
+
+
+                            if st.button("📥 İdxal Et", type="primary", key="imp_btn_io_confirm"):
+                                if import_mode == "Birləşdir (dublikatları yoxla)" and not pk_cols_imp:
+                                    st.error("Birləşdirmə üçün açar sütun seçilməlidir.")
+                                else:
+                                    df_existing_io = load_trip_data()
+                                    df_final_imp = pd.DataFrame()
+
+                                    if import_mode == "Əlavə et":
+                                        df_final_imp = pd.concat([df_existing_io, df_new_imp], ignore_index=True)
+                                    elif import_mode == "Əvəzlə":
+                                        df_final_imp = df_new_imp
+                                    elif import_mode == "Birləşdir (dublikatları yoxla)":
+                                        # Ensure consistent dtypes for merge keys if possible
+                                        for col_pk in pk_cols_imp:
+                                            if col_pk in df_existing_io.columns and col_pk in df_new_imp.columns:
+                                                try: # Attempt to make types consistent, e.g., for dates or numbers stored as objects
+                                                    if pd.api.types.is_datetime64_any_dtype(df_existing_io[col_pk]) or pd.api.types.is_datetime64_any_dtype(df_new_imp[col_pk]):
+                                                        df_existing_io[col_pk] = pd.to_datetime(df_existing_io[col_pk], errors='coerce')
+                                                        df_new_imp[col_pk] = pd.to_datetime(df_new_imp[col_pk], errors='coerce')
+                                                except Exception: pass # Ignore conversion errors for now
+
+                                        df_combined_merge = pd.concat([df_existing_io, df_new_imp], ignore_index=True)
+                                        df_final_imp = df_combined_merge.drop_duplicates(subset=pk_cols_imp, keep='last') # Keep the one from the new file in case of duplicate
+                                    
+                                    df_final_imp.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+                                    st.success(f"✅ Məlumatlar idxal edildi ({len(df_new_imp)} sətir emal edildi, Nəticədə {len(df_final_imp)} sətir).")
+                                    write_log("Məlumat idxalı", f"Rejim: {import_mode}, {len(df_new_imp)} sətir yükləndi", user="admin")
+                                    st.cache_data.clear()
+                                    st.rerun()
+                        else:
+                            st.warning("Yüklənən fayl boşdur və ya məlumat oxuna bilmədi.")
+                    except Exception as e_imp:
+                        st.error(f"Fayl oxuma və ya idxal xətası: {e_imp}")
+                        st.code(traceback.format_exc())
+
 
         # 5. SİSTEM PARAMETRLƏRİ TAB
-        with admin_tabs[4]:
-            st.markdown("### ⚙️ Sistem Konfiqurasiyası")
+        with admin_tabs_obj[4]:
+            st.markdown("### "+ admin_tab_names[4])
+            config = load_system_config()
             
-            col1, col2 = st.columns(2)
+            set_cols1, set_cols2 = st.columns(2)
+            with set_cols1:
+                st.markdown("#### 🎨 İnterfeys (Gələcəkdə tətbiq üçün)")
+                theme = st.selectbox("Tema rəngi", ["Mavi", "Yaşıl", "Qırmızı"], index=["Mavi", "Yaşıl", "Qırmızı"].index(config.get("theme_color", "Mavi")), key="th_set")
+                lang = st.selectbox("Sistem dili", ["Azərbaycan", "English"], index=["Azərbaycan", "English"].index(config.get("language", "Azərbaycan")), key="lang_set")
+            with set_cols2:
+                st.markdown("#### 📊 Məlumat (Gələcəkdə tətbiq üçün)")
+                rec_page = st.number_input("Səhifə başına qeyd", 10, 100, config.get("records_per_page", 20), 5, key="rec_set")
+                auto_bck = st.checkbox("Avtomatik backup", config.get("auto_backup", True), key="ab_set", help="Bu funksiya serverdə xüsusi quraşdırma tələb edə bilər.")
             
-            with col1:
-                st.markdown("#### 🎨 İnterfeys Parametrləri")
-                
-                # Tema seçimi
-                theme_color = st.selectbox(
-                    "Tema rəngi",
-                    ["Mavi", "Yaşıl", "Qırmızı", "Bənövşəyi"]
-                )
-                
-                # Dil seçimi
-                language = st.selectbox(
-                    "Sistem dili",
-                    ["Azərbaycan", "English", "Русский"]
-                )
-                
-                # Valyuta
-                currency = st.selectbox(
-                    "Valyuta",
-                    ["AZN", "USD", "EUR"]
-                )
-                
-                # Tarix formatı
-                date_format = st.selectbox(
-                    "Tarix formatı",
-                    ["DD.MM.YYYY", "MM/DD/YYYY", "YYYY-MM-DD"]
-                )
-            
-            with col2:
-                st.markdown("#### 📊 Məlumat Parametrləri")
-                
-                # Səhifə başına qeyd sayı
-                records_per_page = st.number_input(
-                    "Səhifə başına qeyd sayı",
-                    min_value=10,
-                    max_value=100,
-                    value=20
-                )
-                
-                # Avtomatik backup
-                auto_backup = st.checkbox("Avtomatik backup", value=True)
-                
-                if auto_backup:
-                    backup_frequency = st.selectbox(
-                        "Backup tezliyi",
-                        ["Gündəlik", "Həftəlik", "Aylıq"]
-                    )
-                
-                # Məlumat saxlama müddəti
-                data_retention = st.number_input(
-                    "Məlumat saxlama müddəti (ay)",
-                    min_value=6,
-                    max_value=120,
-                    value=24
-                )
-            
-            st.markdown("#### 🔔 Bildiriş Parametrləri")
-            
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                email_notifications = st.checkbox("Email bildirişləri", value=True)
-                if email_notifications:
-                    admin_email = st.text_input("Admin email", value="admin@company.com")
-            
-            with col2:
-                sms_notifications = st.checkbox("SMS bildirişləri")
-                if sms_notifications:
-                    admin_phone = st.text_input("Admin telefon", value="+994xxxxxxxxx")
-            
-            with col3:
-                system_notifications = st.checkbox("Sistem bildirişləri", value=True)
-            
-            # Parametrləri saxla
-            if st.button("💾 Parametrləri Saxla", type="primary"):
-                try:
-                    config = {
-                        "theme_color": theme_color,
-                        "language": language,
-                        "currency": currency,
-                        "date_format": date_format,
-                        "records_per_page": records_per_page,
-                        "auto_backup": auto_backup,
-                        "backup_frequency": backup_frequency if auto_backup else None,
-                        "data_retention": data_retention,
-                        "email_notifications": email_notifications,
-                        "admin_email": admin_email if email_notifications else None,
-                        "sms_notifications": sms_notifications,
-                        "admin_phone": admin_phone if sms_notifications else None,
-                        "system_notifications": system_notifications,
-                        "last_updated": datetime.now().isoformat()
-                    }
-                    
-                    with open("system_config.json", "w", encoding="utf-8") as f:
-                        json.dump(config, f, ensure_ascii=False, indent=2)
-                    
-                    st.success("✅ Sistem parametrləri saxlanıldı!")
-                    
-                except Exception as e:
-                    st.error(f"❌ Parametr saxlama xətası: {str(e)}")
+            if st.button("💾 Parametrləri Saxla", type="primary", key="save_cfg_btn"):
+                new_cfg = {
+                    "theme_color": theme, "language": lang, "records_per_page": rec_page, "auto_backup": auto_bck,
+                    "last_updated": datetime.now().isoformat()
+                }
+                with open("system_config.json", "w", encoding="utf-8") as f:
+                    json.dump(new_cfg, f, indent=2, ensure_ascii=False)
+                st.success("✅ Sistem parametrləri saxlanıldı!")
+                write_log("Sistem parametrləri yeniləndi", user="admin")
+                st.cache_data.clear() # Clear config cache
+
 
         # 6. İSTİFADƏÇİ İDARƏETMƏSİ TAB
-        with admin_tabs[5]:
-            st.markdown("### 👥 İstifadəçi İdarəetməsi")
-            
-            # Mevcut istifadəçi statistikaları
-            try:
-                df = load_trip_data()
+        with admin_tabs_obj[5]:
+            st.markdown("### "+ admin_tab_names[5])
+            df_users_view = load_trip_data()
+            if not df_users_view.empty and 'Ad' in df_users_view.columns and 'Soyad' in df_users_view.columns:
+                user_agg_spec_view = {'Ümumi məbləğ': ['sum', 'count', 'mean']}
+                if 'Tarix' in df_users_view.columns: user_agg_spec_view['Tarix'] = 'max'
                 
-                if not df.empty and 'Ad' in df.columns:
-                    user_stats = df.groupby(['Ad', 'Soyad']).agg({
-                        'Ümumi məbləğ': ['sum', 'count', 'mean'],
-                        'Tarix': 'max'
-                    }).round(2) if 'Tarix' in df.columns else df.groupby(['Ad', 'Soyad']).agg({
-                        'Ümumi məbləğ': ['sum', 'count', 'mean']
-                    }).round(2)
-                    
-                    user_stats.columns = ['Ümumi Xərc', 'Ezamiyyət Sayı', 'Orta Xərc'] + (['Son Ezamiyyət'] if 'Tarix' in df.columns else [])
-                    user_stats = user_stats.sort_values('Ümumi Xərc', ascending=False)
-                    
-                    col1, col2 = st.columns([2, 1])
-                    
-                    with col1:
-                        st.markdown("#### 📊 İstifadəçi Statistikaları")
-                        st.dataframe(
-                            user_stats.style.format({
-                                'Ümumi Xərc': '{:.2f} AZN',
-                                'Orta Xərc': '{:.2f} AZN'
-                            }),
-                            use_container_width=True
-                        )
-                    
-                    with col2:
-                        st.markdown("#### 📈 Top İstifadəçilər")
-                        top_users = user_stats.head(10)
-                        fig = px.bar(
-                            x=top_users['Ümumi Xərc'],
-                            y=[f"{idx[0]} {idx[1]}" for idx in top_users.index],
-                            orientation='h',
-                            title="Ən Çox Xərc Edən İstifadəçilər"
-                        )
-                        fig.update_layout(height=400)
-                        st.plotly_chart(fig, use_container_width=True)
-                
-                else:
-                    st.info("👤 Hələ qeydiyyatlı istifadəçi yoxdur")
-                    
-            except Exception as e:
-                st.error(f"❌ İstifadəçi statistikaları xətası: {str(e)}")
-            
-            # İstifadəçi idarəetmə alətləri
-            st.markdown("#### 🔧 İstifadəçi Alətləri")
-            
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                if st.button("📧 Bildiriş Göndər"):
-                    st.info("📨 Kütləvi bildiriş funksionallığı əlavə ediləcək")
-            
-            with col2:
-                if st.button("📊 Həftəlik Hesabat"):
-                    st.info("📈 Avtomatik hesabat funksionallığı əlavə ediləcək")
-            
-            with col3:
-                if st.button("🔄 Məlumat Sinxronizasiyası"):
-                    st.info("🔗 Xarici sistemlərlə sinxronizasiya əlavə ediləcək")
+                user_stats_view = df_users_view.groupby(['Ad', 'Soyad']).agg(user_agg_spec_view).round(2)
+                user_cols = ['Cəmi Xərc', 'Ezamiyyət Sayı', 'Orta Xərc']
+                if 'Tarix' in df_users_view.columns: user_cols.append('Son Ezamiyyət')
+                user_stats_view.columns = user_cols
+                user_stats_view = user_stats_view.sort_values('Cəmi Xərc', ascending=False)
 
-# 7. SİSTEM ALƏTLƏRİ TAB
-        with admin_tabs[6]:
-            st.markdown("### 🔧 Sistem Təmizlik və Bərpa Alətləri")
+                user_v_cols = st.columns([3,2])
+                with user_v_cols[0]:
+                    st.markdown("#### 📊 İstifadəçi Statistikaları")
+                    style_user = {'Cəmi Xərc':'{:.2f} AZN', 'Orta Xərc':'{:.2f} AZN'}
+                    if 'Son Ezamiyyət' in user_stats_view.columns:
+                        user_stats_view['Son Ezamiyyət'] = pd.to_datetime(user_stats_view['Son Ezamiyyət'])
+                        style_user['Son Ezamiyyət'] = lambda x: x.strftime('%d.%m.%Y') if pd.notnull(x) else 'N/A'
+                    st.dataframe(user_stats_view.style.format(style_user), height=400)
+                
+                with user_v_cols[1]:
+                    st.markdown("#### 📈 Top İstifadəçilər (Xərcə görə)")
+                    top10 = user_stats_view.head(10)
+                    if not top10.empty:
+                        y_labels = [f"{idx[0]} {idx[1]}" for idx in top10.index]
+                        fig_top_u = px.bar(top10, y=y_labels, x='Cəmi Xərc', orientation='h', title="Top 10 Xərc Edən")
+                        fig_top_u.update_layout(yaxis_title="İstifadəçi", xaxis_title="Cəmi Xərc (AZN)")
+                        st.plotly_chart(fig_top_u, use_container_width=True)
+            else:
+                st.info("İstifadəçi aktivliyi göstərmək üçün məlumat yoxdur.")
             
-            col1, col2 = st.columns(2)
-            
-            with col1:
+            st.markdown("--- \n #### 🔧 İstifadəçi Alətləri (Gələcəkdə)")
+            tool_u_cols = st.columns(3)
+            tool_u_cols[0].button("📧 Kütləvi Bildiriş", disabled=True, key="mass_notify_u")
+            tool_u_cols[1].button("📊 Fərdi Hesabatlar", disabled=True, key="user_reports_u")
+            tool_u_cols[2].button("🔑 Giriş İdarəetməsi", disabled=True, key="access_mgmt_u")
+
+
+        # 7. SİSTEM ALƏTLƏRİ TAB
+        with admin_tabs_obj[6]:
+            st.markdown("### "+ admin_tab_names[6])
+            tool_sys_cols = st.columns(2)
+            with tool_sys_cols[0]:
                 st.markdown("#### 🧹 Məlumat Təmizliyi")
+                if st.button("🔍 Bütün Tam Dublikatları Tap", key="find_full_dup_tool"):
+                    df_tool = load_trip_data()
+                    if not df_tool.empty:
+                        full_dups = df_tool[df_tool.duplicated(keep=False)]
+                        st.info(f"{len(full_dups)} tam dublikat qeyd tapıldı.")
+                        if not full_dups.empty: st.dataframe(full_dups.head())
                 
-                # Dublikat təmizliyi
-                if st.button("🔍 Dublikatları Tap"):
-                    try:
-                        df = load_trip_data()
-                        if not df.empty:
-                            duplicates = df.duplicated().sum()
-                            st.info(f"📊 {duplicates} dublikat qeyd tapıldı")
-                            
-                            if duplicates > 0:
-                                if st.button("🗑️ Dublikatları Sil"):
-                                    df_clean = df.drop_duplicates()
-                                    df_clean.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
-                                    st.success(f"✅ {duplicates} dublikat qeyd silindi!")
-                        else:
-                            st.info("📝 Təmizləmək üçün məlumat yoxdur")
-                    except Exception as e:
-                        st.error(f"❌ Dublikat axtarışı xətası: {str(e)}")
-                
-                # Boş sahə təmizliyi
-                if st.button("🔍 Boş Sahələri Tap"):
-                    try:
-                        df = load_trip_data()
-                        if not df.empty:
-                            null_counts = df.isnull().sum()
-                            null_counts = null_counts[null_counts > 0]
-                            
-                            if len(null_counts) > 0:
-                                st.write("📊 Boş sahələr:")
-                                for col, count in null_counts.items():
-                                    st.write(f"- {col}: {count} boş qeyd")
-                            else:
-                                st.success("✅ Boş sahə tapılmadı")
-                        else:
-                            st.info("📝 Yoxlamaq üçün məlumat yoxdur")
-                    except Exception as e:
-                        st.error(f"❌ Boş sahə yoxlama xətası: {str(e)}")
+                if st.button("🔍 Boş Sahələri Analiz Et", key="analyze_empty_tool"):
+                    df_tool2 = load_trip_data()
+                    if not df_tool2.empty:
+                        nulls = df_tool2.isnull().sum()
+                        nulls = nulls[nulls > 0]
+                        if not nulls.empty: st.warning(f"Boş sahələr:\n{nulls.to_string()}")
+                        else: st.success("Boş sahə tapılmadı.")
             
-            with col2:
-                st.markdown("#### 💾 Backup və Bərpa")
+            with tool_sys_cols[1]:
+                st.markdown("#### 💾 Backup və Sistem Məlumatları")
+                if st.button("📥 Manuel Backup Yarat (Excel)", key="man_backup_tool"):
+                    df_tool3 = load_trip_data()
+                    if not df_tool3.empty:
+                        buffer_bck = BytesIO()
+                        df_tool3.to_excel(buffer_bck, index=False, engine='openpyxl')
+                        st.download_button("⬇️ Backup Faylını Yüklə", buffer_bck.getvalue(), f"backup_ezamiyyet_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx", "application/vnd.ms-excel")
+                        write_log("Manuel backup yaradıldı", user="admin")
+                    else: st.warning("Backup üçün məlumat yoxdur.")
                 
-                # Manuel backup
-                if st.button("💾 Manuel Backup Yarat"):
-                    try:
-                        df = load_trip_data()
-                        if not df.empty:
-                            backup_filename = f"backup_ezamiyyet_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-                            df.to_excel(backup_filename, index=False)
-                            st.success(f"✅ Backup yaradıldı: {backup_filename}")
-                        else:
-                            st.warning("📝 Backup üçün məlumat yoxdur")
-                    except Exception as e:
-                        st.error(f"❌ Backup xətası: {str(e)}")
-                
-                # Sistem məlumatları
-                if st.button("ℹ️ Sistem Məlumatları"):
-                    try:
-                        df = load_trip_data()
-                        file_size = os.path.getsize("ezamiyyet_melumatlari.xlsx") if os.path.exists("ezamiyyet_melumatlari.xlsx") else 0
-                        
-                        system_info = {
-                            "Cədvəl ölçüsü": f"{file_size / 1024:.2f} KB",
-                            "Qeyd sayı": len(df) if not df.empty else 0,
-                            "Sütun sayı": len(df.columns) if not df.empty else 0,
-                            "Son yeniləmə": datetime.now().strftime("%d.%m.%Y %H:%M")
-                        }
-                        
-                        for key, value in system_info.items():
-                            st.metric(key, value)
-                            
-                    except Exception as e:
-                        st.error(f"❌ Sistem məlumatları xətası: {str(e)}")
+                if st.button("ℹ️ Sistem Məlumatları", key="sys_info_tool"):
+                    df_tool4 = load_trip_data()
+                    fsize = (os.path.getsize("ezamiyyet_melumatlari.xlsx")/1024) if os.path.exists("ezamiyyet_melumatlari.xlsx") else 0
+                    st.metric("Excel Fayl Ölçüsü", f"{fsize:.2f} KB")
+                    st.metric("Qeyd Sayı", len(df_tool4))
             
-            # Sistem logları
             st.markdown("#### 📜 Sistem Logları")
-            
-            # Bu hissə gələcəkdə log sisteminin əlavə edilməsi üçün hazırdır
-            if st.checkbox("Debug rejimi"):
-                st.code("""
-                Sistem Debug Məlumatları:
-                - Session State: OK
-                - Fayl Əlçatanlığı: OK  
-                - Admin Sessiyası: Aktiv
-                - Son Aktivlik: """ + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + """
-                """)
-            
-            # Kritik əməliyyatlar
-            st.markdown("#### ⚠️ Kritik Əməliyyatlar")
+            if st.checkbox("Son 10 Logu Göstər", key="show_logs_tool"):
+                if os.path.exists("admin_logs.json"):
+                    try:
+                        with open("admin_logs.json", "r", encoding="utf-8") as f_log:
+                            logs_data = json.load(f_log)
+                        st.json(logs_data[-10:]) # Show last 10 logs
+                    except Exception as e_log_read:
+                        st.error(f"Log faylını oxuma xətası: {e_log_read}")
+                else:
+                    st.info("Log faylı tapılmadı.")
+
+
+            st.markdown("#### ⚠️ Kritik Əməliyyatlar (Diqqətli Olun!)")
             st.warning("🚨 Bu əməliyyatlar geri qaytarıla bilməz!")
             
-            col1, col2 = st.columns(2)
+            crit_cols = st.columns(2)
+            with crit_cols[0]:
+                if st.button("🗑️ BÜTÜN Ezamiyyət Məlumatlarını Sil", type="destructive", key="del_all_data_tool_btn"):
+                    st.session_state.confirm_delete_all_prompt = True
             
-            with col1:
-                if st.button("🗑️ Bütün Məlumatları Sil", type="secondary"):
-                    if st.checkbox("⚠️ Bütün məlumatların silinəcəyini başa düşürəm"):
-                        if st.text_input("Təsdiq üçün 'SİL' yazın") == "SİL":
-                            try:
-                                empty_df = pd.DataFrame()
-                                empty_df.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
-                                st.success("✅ Bütün məlumatlar silindi!")
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"❌ Silinmə xətası: {str(e)}")
-            
-            with col2:
-                if st.button("🔄 Sistemi Sıfırla", type="secondary"):
-                    if st.checkbox("⚠️ Sistem sıfırlanacağını başa düşürəm"):
-                        if st.text_input("Təsdiq üçün 'RESET' yazın") == "RESET":
-                            try:
-                                # Session state-i təmizlə
-                                for key in list(st.session_state.keys()):
-                                    del st.session_state[key]
-                                st.success("✅ Sistem sıfırlandı!")
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"❌ Sıfırlama xətası: {str(e)}")
+            if st.session_state.get('confirm_delete_all_prompt'):
+                st.error("Bütün ezamiyyət məlumatlarını silmək istədiyinizə əminsinizmi?")
+                confirm_text_del = st.text_input("Təsdiq üçün 'HAMISINI SİL' yazın", key="confirm_del_all_text_tool").strip()
+                del_confirm_cols = st.columns(2)
+                if del_confirm_cols[0].button("Bəli, Silinsin", type="destructive", key="confirm_del_all_final_tool"):
+                    if confirm_text_del == "HAMISINI SİL":
+                        if os.path.exists("ezamiyyet_melumatlari.xlsx"): os.remove("ezamiyyet_melumatlari.xlsx")
+                        st.success("✅ Bütün məlumatlar silindi!")
+                        write_log("KRİTİK: Bütün məlumatlar silindi", user="admin")
+                        st.session_state.confirm_delete_all_prompt = False
+                        st.cache_data.clear()
+                        st.rerun()
+                    else: st.warning("Təsdiq mətni yanlışdır.")
+                if del_confirm_cols[1].button("Xeyr, Ləğv Et (Silmə)", key="cancel_del_all_tool"):
+                    st.session_state.confirm_delete_all_prompt = False
+                    st.rerun()
+                st.stop()
 
-        # Footer məlumatları
+
+            with crit_cols[1]:
+                if st.button("🔄 Sistemi Sıfırla (Sessiya, Konfiq, Loglar)", type="destructive", key="reset_sys_tool_btn"):
+                     st.session_state.confirm_reset_system_prompt = True
+
+            if st.session_state.get('confirm_reset_system_prompt'):
+                st.error("Sistemi sıfırlamaq istədiyinizə əminsinizmi? (Sessiya, Konfiq, Loglar silinəcək, əsas məlumat faylına toxunulmayacaq)")
+                confirm_text_reset = st.text_input("Təsdiq üçün 'SİSTEMİ SIFIRLA' yazın", key="confirm_reset_sys_text_tool").strip()
+                reset_confirm_cols = st.columns(2)
+                if reset_confirm_cols[0].button("Bəli, Sıfırlansın", type="destructive", key="confirm_reset_final_tool"):
+                    if confirm_text_reset == "SİSTEMİ SIFIRLA":
+                        keys_to_clear = [k for k in st.session_state.keys()] # Get all keys
+                        for key in keys_to_clear: del st.session_state[key]
+                        if os.path.exists("system_config.json"): os.remove("system_config.json")
+                        if os.path.exists("admin_logs.json"): os.remove("admin_logs.json")
+                        st.success("✅ Sistem sıfırlandı! Yenidən giriş edin.")
+                        write_log("KRİTİK: Sistem sıfırlandı (sessiya, konfiq, loglar)", user="admin")
+                        st.session_state.confirm_reset_system_prompt = False
+                        st.rerun()
+                    else: st.warning("Təsdiq mətni yanlışdır.")
+                if reset_confirm_cols[1].button("Xeyr, Ləğv Et (Sıfırlama)", key="cancel_reset_sys_tool"):
+                    st.session_state.confirm_reset_system_prompt = False
+                    st.rerun()
+                st.stop()
+
+        # Footer
         st.markdown("---")
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.caption(f"🔐 Admin Sessiyası: {st.session_state.admin_session_time.strftime('%H:%M:%S')}")
-        
-        with col2:
-            try:
-                df = load_trip_data()
-                st.caption(f"📊 Cəmi məlumat: {len(df)} qeyd")
-            except:
-                st.caption("📊 Cəmi məlumat: 0 qeyd")
-        
-        with col3:
-            st.caption(f"📅 Son yeniləmə: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
-    
-else:
-    st.warning("🔐 Admin paneli üçün giriş tələb olunur")
+        foot_cols = st.columns(3)
+        if 'admin_session_time' in st.session_state and isinstance(st.session_state.admin_session_time, datetime):
+            foot_cols[0].caption(f"🔐 Admin Sessiyası: {st.session_state.admin_session_time.strftime('%H:%M:%S')}")
+        try: foot_cols[1].caption(f"📊 Cəmi məlumat: {len(load_trip_data())} qeyd")
+        except: foot_cols[1].caption("📊 Cəmi məlumat: N/A")
+        foot_cols[2].caption(f"📅 Panel Yüklənmə: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
