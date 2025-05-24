@@ -1098,311 +1098,311 @@ with tab2:
 
 
         # 3. ANALİTİKA TAB
-        with admin_tabs[2]:
-            st.markdown("### 📈 Detallı Analitika və Hesabatlar")            
-            try:
-                df = load_trip_data()
+    with admin_tabs[2]:
+        st.markdown("### 📈 Detallı Analitika və Hesabatlar")            
+        try:
+            df = load_trip_data()
+            
+            if not df.empty:
+                # Tarixi məlumatları hazırla
+                if 'Tarix' in df.columns:
+                    df['Tarix'] = pd.to_datetime(df['Tarix'], errors='coerce')
+                    df['Ay'] = df['Tarix'].dt.to_period('M')
+                    df['Həftə'] = df['Tarix'].dt.to_period('W')
                 
-                if not df.empty:
-                    # Tarixi məlumatları hazırla
-                    if 'Tarix' in df.columns:
-                        df['Tarix'] = pd.to_datetime(df['Tarix'], errors='coerce')
-                        df['Ay'] = df['Tarix'].dt.to_period('M')
-                        df['Həftə'] = df['Tarix'].dt.to_period('W')
+                # Rəqəmsal sütunları hazırla
+                numeric_cols = ['Ümumi məbləğ', 'Günlük müavinət', 'Bilet qiyməti']
+                for col in numeric_cols:
+                    if col in df.columns:
+                        df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+
+                # Analitik seçimlər
+                analysis_type = st.selectbox(
+                    "📊 Analiz növü",
+                    ["Zaman Analizi", "Şöbə Analizi", "Coğrafi Analiz", "Maliyyə Analizi", "Məqsəd Analizi"]
+                )
+
+                if analysis_type == "Zaman Analizi":
+                    st.markdown("#### 📅 Zamansal Trendlər")
                     
-                    # Rəqəmsal sütunları hazırla
-                    numeric_cols = ['Ümumi məbləğ', 'Günlük müavinət', 'Bilet qiyməti']
-                    for col in numeric_cols:
-                        if col in df.columns:
-                            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        # Aylıq trend
+                        if 'Ay' in df.columns:
+                            monthly_stats = df.groupby('Ay').agg({
+                                'Ümumi məbləğ': 'sum',
+                                'Ad': 'count'
+                            }).rename(columns={'Ad': 'Ezamiyyət sayı'})
+                            
+                            fig = make_subplots(specs=[[{"secondary_y": True}]])
+                            
+                            fig.add_trace(
+                                go.Bar(
+                                    x=[str(x) for x in monthly_stats.index],
+                                    y=monthly_stats['Ümumi məbləğ'],
+                                    name="Xərclər (AZN)",
+                                    marker_color='lightblue'
+                                ),
+                                secondary_y=False,
+                            )
+                            
+                            fig.add_trace(
+                                go.Scatter(
+                                    x=[str(x) for x in monthly_stats.index],
+                                    y=monthly_stats['Ezamiyyət sayı'],
+                                    mode='lines+markers',
+                                    name="Ezamiyyət sayı",
+                                    line=dict(color='red')
+                                ),
+                                secondary_y=True,
+                            )
+                            
+                            fig.update_xaxes(title_text="Ay")
+                            fig.update_yaxes(title_text="Xərclər (AZN)", secondary_y=False)
+                            fig.update_yaxes(title_text="Ezamiyyət sayı", secondary_y=True)
+                            fig.update_layout(title_text="Aylıq Ezamiyyət Trendləri")
+                            
+                            st.plotly_chart(fig, use_container_width=True)
+                    
+                    with col2:
+                        # Həftəlik aktivlik
+                        if 'Tarix' in df.columns:
+                            df['Həftənin günü'] = df['Tarix'].dt.day_name()
+                            weekday_stats = df['Həftənin günü'].value_counts()
+                            
+                            fig = px.bar(
+                                x=weekday_stats.index,
+                                y=weekday_stats.values,
+                                title="Həftəlik Ezamiyyət Paylanması",
+                                color=weekday_stats.values,
+                                color_continuous_scale='Viridis'
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
 
-                    # Analitik seçimlər
-                    analysis_type = st.selectbox(
-                        "📊 Analiz növü",
-                        ["Zaman Analizi", "Şöbə Analizi", "Coğrafi Analiz", "Maliyyə Analizi", "Məqsəd Analizi"]
-                    )
-
-                    if analysis_type == "Zaman Analizi":
-                        st.markdown("#### 📅 Zamansal Trendlər")
+                elif analysis_type == "Şöbə Analizi":
+                    st.markdown("#### 🏢 Şöbə əsaslı Analiz")
+                    
+                    if 'Şöbə' in df.columns:
+                        dept_stats = df.groupby('Şöbə').agg({
+                            'Ümumi məbləğ': ['sum', 'mean', 'count'],
+                            'Günlər': 'mean'
+                        }).round(2)
+                        
+                        dept_stats.columns = ['Ümumi Xərc', 'Orta Xərc', 'Ezamiyyət Sayı', 'Orta Müddət']
+                        dept_stats = dept_stats.sort_values('Ümumi Xərc', ascending=False)
                         
                         col1, col2 = st.columns(2)
                         
                         with col1:
-                            # Aylıq trend
-                            if 'Ay' in df.columns:
-                                monthly_stats = df.groupby('Ay').agg({
-                                    'Ümumi məbləğ': 'sum',
-                                    'Ad': 'count'
-                                }).rename(columns={'Ad': 'Ezamiyyət sayı'})
-                                
-                                fig = make_subplots(specs=[[{"secondary_y": True}]])
-                                
-                                fig.add_trace(
-                                    go.Bar(
-                                        x=[str(x) for x in monthly_stats.index],
-                                        y=monthly_stats['Ümumi məbləğ'],
-                                        name="Xərclər (AZN)",
-                                        marker_color='lightblue'
-                                    ),
-                                    secondary_y=False,
-                                )
-                                
-                                fig.add_trace(
-                                    go.Scatter(
-                                        x=[str(x) for x in monthly_stats.index],
-                                        y=monthly_stats['Ezamiyyət sayı'],
-                                        mode='lines+markers',
-                                        name="Ezamiyyət sayı",
-                                        line=dict(color='red')
-                                    ),
-                                    secondary_y=True,
-                                )
-                                
-                                fig.update_xaxes(title_text="Ay")
-                                fig.update_yaxes(title_text="Xərclər (AZN)", secondary_y=False)
-                                fig.update_yaxes(title_text="Ezamiyyət sayı", secondary_y=True)
-                                fig.update_layout(title_text="Aylıq Ezamiyyət Trendləri")
-                                
-                                st.plotly_chart(fig, use_container_width=True)
-                        
-                        with col2:
-                            # Həftəlik aktivlik
-                            if 'Tarix' in df.columns:
-                                df['Həftənin günü'] = df['Tarix'].dt.day_name()
-                                weekday_stats = df['Həftənin günü'].value_counts()
-                                
-                                fig = px.bar(
-                                    x=weekday_stats.index,
-                                    y=weekday_stats.values,
-                                    title="Həftəlik Ezamiyyət Paylanması",
-                                    color=weekday_stats.values,
-                                    color_continuous_scale='Viridis'
-                                )
-                                st.plotly_chart(fig, use_container_width=True)
-
-                    elif analysis_type == "Şöbə Analizi":
-                        st.markdown("#### 🏢 Şöbə əsaslı Analiz")
-                        
-                        if 'Şöbə' in df.columns:
-                            dept_stats = df.groupby('Şöbə').agg({
-                                'Ümumi məbləğ': ['sum', 'mean', 'count'],
-                                'Günlər': 'mean'
-                            }).round(2)
-                            
-                            dept_stats.columns = ['Ümumi Xərc', 'Orta Xərc', 'Ezamiyyət Sayı', 'Orta Müddət']
-                            dept_stats = dept_stats.sort_values('Ümumi Xərc', ascending=False)
-                            
-                            col1, col2 = st.columns(2)
-                            
-                            with col1:
-                                # Top 10 xərc edən şöbə
-                                top_depts = dept_stats.head(10)
-                                fig = px.bar(
-                                    x=top_depts['Ümumi Xərc'],
-                                    y=top_depts.index,
-                                    orientation='h',
-                                    title="Top 10 Xərc Edən Şöbə",
-                                    color=top_depts['Ümumi Xərc'],
-                                    color_continuous_scale='Reds'
-                                )
-                                fig.update_layout(yaxis={'categoryorder':'total ascending'})
-                                st.plotly_chart(fig, use_container_width=True)
-                            
-                            with col2:
-                                # Şöbə effektivliyi (xərc/ezamiyyət)
-                                dept_stats['Effektivlik'] = dept_stats['Ümumi Xərc'] / dept_stats['Ezamiyyət Sayı']
-                                efficiency = dept_stats.sort_values('Effektivlik', ascending=False).head(10)
-                                
-                                fig = px.scatter(
-                                    x=efficiency['Ezamiyyət Sayı'],
-                                    y=efficiency['Orta Xərc'],
-                                    size=efficiency['Ümumi Xərc'],
-                                    hover_name=efficiency.index,
-                                    title="Şöbə Effektivliyi",
-                                    labels={'x': 'Ezamiyyət Sayı', 'y': 'Orta Xərc'}
-                                )
-                                st.plotly_chart(fig, use_container_width=True)
-                            
-                            # Detallı cədvəl
-                            st.markdown("#### 📋 Şöbə Statistikaları")
-                            st.dataframe(
-                                dept_stats.style.format({
-                                    'Ümumi Xərc': '{:.2f} AZN',
-                                    'Orta Xərc': '{:.2f} AZN',
-                                    'Orta Müddət': '{:.1f} gün'
-                                }),
-                                use_container_width=True
-                            )
-
-                    elif analysis_type == "Coğrafi Analiz":
-                        st.markdown("#### 🌍 Coğrafi Paylanma")
-                        
-                        if 'Marşrut' in df.columns:
-                            # Marşrut statistikaları
-                            routes = df['Marşrut'].value_counts().head(15)
-                            
-                            col1, col2 = st.columns(2)
-                            
-                            with col1:
-                                fig = px.bar(
-                                    x=routes.values,
-                                    y=routes.index,
-                                    orientation='h',
-                                    title="Ən Populyar Marşrutlar",
-                                    color=routes.values,
-                                    color_continuous_scale='Blues'
-                                )
-                                st.plotly_chart(fig, use_container_width=True)
-                            
-                            with col2:
-                                # Ölkə və şəhər analizi
-                                if 'Ezamiyyət növü' in df.columns:
-                                    geo_stats = df.groupby(['Ezamiyyət növü', 'Marşrut'])['Ümumi məbləğ'].sum().reset_index()
-                                    
-                                    fig = px.treemap(
-                                        geo_stats,
-                                        path=['Ezamiyyət növü', 'Marşrut'],
-                                        values='Ümumi məbləğ',
-                                        title="Coğrafi Xərc Paylanması"
-                                    )
-                                    st.plotly_chart(fig, use_container_width=True)
-                    elif analysis_type == "Maliyyə Analizi":
-                        st.markdown("#### 💰 Maliyyə Performansı")
-                        
-                        col1, col2, col3 = st.columns(3)
-                        
-                        with col1:
-                            # Xərc paylanması
-                            if 'Ödəniş növü' in df.columns:
-                                payment_dist = df.groupby('Ödəniş növü')['Ümumi məbləğ'].sum()
-                                fig = px.pie(
-                                    values=payment_dist.values,
-                                    names=payment_dist.index,
-                                    title="Ödəniş Növləri üzrə Xərc",
-                                    hole=0.4
-                                )
-                                st.plotly_chart(fig, use_container_width=True)
-                        
-                        with col2:
-                            # Günlük müavinət vs bilet qiyməti
-                            if 'Günlük müavinət' in df.columns and 'Bilet qiyməti' in df.columns:
-                                fig = px.scatter(
-                                    df,
-                                    x='Günlük müavinət',
-                                    y='Bilet qiyməti',
-                                    size='Ümumi məbləğ',
-                                    title="Müavinət vs Bilet Qiyməti",
-                                    hover_data=['Marşrut'] if 'Marşrut' in df.columns else None
-                                )
-                                st.plotly_chart(fig, use_container_width=True)
-                        
-                        with col3:
-                            # Xərc intervalları
-                            expense_bins = [0, 500, 1000, 2000, 5000, float('inf')]
-                            expense_labels = ['0-500', '500-1000', '1000-2000', '2000-5000', '5000+']
-                            df['Xərc Kateqoriyası'] = pd.cut(df['Ümumi məbləğ'], bins=expense_bins, labels=expense_labels)
-                            
-                            expense_dist = df['Xərc Kateqoriyası'].value_counts()
+                            # Top 10 xərc edən şöbə
+                            top_depts = dept_stats.head(10)
                             fig = px.bar(
-                                x=expense_dist.index,
-                                y=expense_dist.values,
-                                title="Xərc Kateqoriya Paylanması",
-                                color=expense_dist.values
+                                x=top_depts['Ümumi Xərc'],
+                                y=top_depts.index,
+                                orientation='h',
+                                title="Top 10 Xərc Edən Şöbə",
+                                color=top_depts['Ümumi Xərc'],
+                                color_continuous_scale='Reds'
+                            )
+                            fig.update_layout(yaxis={'categoryorder':'total ascending'})
+                            st.plotly_chart(fig, use_container_width=True)
+                        
+                        with col2:
+                            # Şöbə effektivliyi (xərc/ezamiyyət)
+                            dept_stats['Effektivlik'] = dept_stats['Ümumi Xərc'] / dept_stats['Ezamiyyət Sayı']
+                            efficiency = dept_stats.sort_values('Effektivlik', ascending=False).head(10)
+                            
+                            fig = px.scatter(
+                                x=efficiency['Ezamiyyət Sayı'],
+                                y=efficiency['Orta Xərc'],
+                                size=efficiency['Ümumi Xərc'],
+                                hover_name=efficiency.index,
+                                title="Şöbə Effektivliyi",
+                                labels={'x': 'Ezamiyyət Sayı', 'y': 'Orta Xərc'}
                             )
                             st.plotly_chart(fig, use_container_width=True)
                         
-                        # Maliyyə cədvəli
-                        st.markdown("#### 📊 Maliyyə Xülasəsi")
-                        financial_summary = {
-                            "Metrika": [
-                                "Ümumi Xərc",
-                                "Orta Xərc",
-                                "Median Xərc",
-                                "Maksimum Xərc",
-                                "Minimum Xərc",
-                                "Standart Sapma"
-                            ],
-                            "Dəyər": [
-                                f"{df['Ümumi məbləğ'].sum():.2f} AZN",
-                                f"{df['Ümumi məbləğ'].mean():.2f} AZN",
-                                f"{df['Ümumi məbləğ'].median():.2f} AZN",
-                                f"{df['Ümumi məbləğ'].max():.2f} AZN",
-                                f"{df['Ümumi məbləğ'].min():.2f} AZN",
-                                f"{df['Ümumi məbləğ'].std():.2f} AZN"
-                            ]
-                        }
-                        st.table(pd.DataFrame(financial_summary))
+                        # Detallı cədvəl
+                        st.markdown("#### 📋 Şöbə Statistikaları")
+                        st.dataframe(
+                            dept_stats.style.format({
+                                'Ümumi Xərc': '{:.2f} AZN',
+                                'Orta Xərc': '{:.2f} AZN',
+                                'Orta Müddət': '{:.1f} gün'
+                            }),
+                            use_container_width=True
+                        )
 
-                    elif analysis_type == "Məqsəd Analizi":
-                        st.markdown("#### 🎯 Ezamiyyət Məqsədləri")
+                elif analysis_type == "Coğrafi Analiz":
+                    st.markdown("#### 🌍 Coğrafi Paylanma")
+                    
+                    if 'Marşrut' in df.columns:
+                        # Marşrut statistikaları
+                        routes = df['Marşrut'].value_counts().head(15)
                         
-                        if 'Məqsəd' in df.columns:
-                            purpose_stats = df.groupby('Məqsəd').agg({
-                                'Ümumi məbləğ': ['sum', 'mean', 'count'],
-                                'Günlər': 'mean'
-                            }).round(2)
-                            
-                            purpose_stats.columns = ['Ümumi Xərc', 'Orta Xərc', 'Sayı', 'Orta Müddət']
-                            purpose_stats = purpose_stats.sort_values('Ümumi Xərc', ascending=False)
-                            
-                            col1, col2 = st.columns(2)
-                            
-                            with col1:
-                                # Məqsəd paylanması
-                                fig = px.bar(
-                                    x=purpose_stats.index,
-                                    y=purpose_stats['Ümumi Xərc'],
-                                    title="Məqsəd üzrə Xərclər",
-                                    color=purpose_stats['Ümumi Xərc']
-                                )
-                                fig.update_xaxes(tickangle=45)
-                                st.plotly_chart(fig, use_container_width=True)
-                            
-                            with col2:
-                                # Məqsəd effektivliyi
-                                fig = px.scatter(
-                                    x=purpose_stats['Sayı'],
-                                    y=purpose_stats['Orta Xərc'],
-                                    size=purpose_stats['Ümumi Xərc'],
-                                    hover_name=purpose_stats.index,
-                                    title="Məqsəd Effektivliyi"
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            fig = px.bar(
+                                x=routes.values,
+                                y=routes.index,
+                                orientation='h',
+                                title="Ən Populyar Marşrutlar",
+                                color=routes.values,
+                                color_continuous_scale='Blues'
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+                        
+                        with col2:
+                            # Ölkə və şəhər analizi
+                            if 'Ezamiyyət növü' in df.columns:
+                                geo_stats = df.groupby(['Ezamiyyət növü', 'Marşrut'])['Ümumi məbləğ'].sum().reset_index()
+                                
+                                fig = px.treemap(
+                                    geo_stats,
+                                    path=['Ezamiyyət növü', 'Marşrut'],
+                                    values='Ümumi məbləğ',
+                                    title="Coğrafi Xərc Paylanması"
                                 )
                                 st.plotly_chart(fig, use_container_width=True)
-
-                    # Hesabat ixracı
-                    st.markdown("#### 📄 Hesabat İxracı")
+                elif analysis_type == "Maliyyə Analizi":
+                    st.markdown("#### 💰 Maliyyə Performansı")
+                    
                     col1, col2, col3 = st.columns(3)
                     
                     with col1:
-                        if st.button("📊 Excel Hesabatı"):
-                            with pd.ExcelWriter("analitik_hesabat.xlsx", engine='openpyxl') as writer:
-                                df.to_excel(writer, sheet_name='Ham Məlumatlar', index=False)
-                                
-                                if 'Şöbə' in df.columns:
-                                    dept_stats = df.groupby('Şöbə').agg({
-                                        'Ümumi məbləğ': ['sum', 'mean', 'count']
-                                    }).round(2)
-                                    dept_stats.to_excel(writer, sheet_name='Şöbə Statistikaları')
-                                
-                                if 'Marşrut' in df.columns:
-                                    route_stats = df['Marşrut'].value_counts()
-                                    route_stats.to_excel(writer, sheet_name='Marşrut Statistikaları')
-                            
-                            st.success("✅ Excel hesabatı yaradıldı!")
+                        # Xərc paylanması
+                        if 'Ödəniş növü' in df.columns:
+                            payment_dist = df.groupby('Ödəniş növü')['Ümumi məbləğ'].sum()
+                            fig = px.pie(
+                                values=payment_dist.values,
+                                names=payment_dist.index,
+                                title="Ödəniş Növləri üzrə Xərc",
+                                hole=0.4
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
                     
                     with col2:
-                        if st.button("📈 PDF Hesabatı"):
-                            st.info("📄 PDF hesabat funksionallığı əlavə ediləcək")
+                        # Günlük müavinət vs bilet qiyməti
+                        if 'Günlük müavinət' in df.columns and 'Bilet qiyməti' in df.columns:
+                            fig = px.scatter(
+                                df,
+                                x='Günlük müavinət',
+                                y='Bilet qiyməti',
+                                size='Ümumi məbləğ',
+                                title="Müavinət vs Bilet Qiyməti",
+                                hover_data=['Marşrut'] if 'Marşrut' in df.columns else None
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
                     
                     with col3:
-                        if st.button("📧 Email Göndər"):
-                            st.info("📨 Email göndərmə funksionallığı əlavə ediləcək")
-
-                else:
-                    st.warning("📊 Analiz üçün məlumat yoxdur")
+                        # Xərc intervalları
+                        expense_bins = [0, 500, 1000, 2000, 5000, float('inf')]
+                        expense_labels = ['0-500', '500-1000', '1000-2000', '2000-5000', '5000+']
+                        df['Xərc Kateqoriyası'] = pd.cut(df['Ümumi məbləğ'], bins=expense_bins, labels=expense_labels)
+                        
+                        expense_dist = df['Xərc Kateqoriyası'].value_counts()
+                        fig = px.bar(
+                            x=expense_dist.index,
+                            y=expense_dist.values,
+                            title="Xərc Kateqoriya Paylanması",
+                            color=expense_dist.values
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
                     
-            except Exception as e:
-                st.error(f"❌ Analitika xətası: {str(e)}")
+                    # Maliyyə cədvəli
+                    st.markdown("#### 📊 Maliyyə Xülasəsi")
+                    financial_summary = {
+                        "Metrika": [
+                            "Ümumi Xərc",
+                            "Orta Xərc",
+                            "Median Xərc",
+                            "Maksimum Xərc",
+                            "Minimum Xərc",
+                            "Standart Sapma"
+                        ],
+                        "Dəyər": [
+                            f"{df['Ümumi məbləğ'].sum():.2f} AZN",
+                            f"{df['Ümumi məbləğ'].mean():.2f} AZN",
+                            f"{df['Ümumi məbləğ'].median():.2f} AZN",
+                            f"{df['Ümumi məbləğ'].max():.2f} AZN",
+                            f"{df['Ümumi məbləğ'].min():.2f} AZN",
+                            f"{df['Ümumi məbləğ'].std():.2f} AZN"
+                        ]
+                    }
+                    st.table(pd.DataFrame(financial_summary))
+
+                elif analysis_type == "Məqsəd Analizi":
+                    st.markdown("#### 🎯 Ezamiyyət Məqsədləri")
+                    
+                    if 'Məqsəd' in df.columns:
+                        purpose_stats = df.groupby('Məqsəd').agg({
+                            'Ümumi məbləğ': ['sum', 'mean', 'count'],
+                            'Günlər': 'mean'
+                        }).round(2)
+                        
+                        purpose_stats.columns = ['Ümumi Xərc', 'Orta Xərc', 'Sayı', 'Orta Müddət']
+                        purpose_stats = purpose_stats.sort_values('Ümumi Xərc', ascending=False)
+                        
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            # Məqsəd paylanması
+                            fig = px.bar(
+                                x=purpose_stats.index,
+                                y=purpose_stats['Ümumi Xərc'],
+                                title="Məqsəd üzrə Xərclər",
+                                color=purpose_stats['Ümumi Xərc']
+                            )
+                            fig.update_xaxes(tickangle=45)
+                            st.plotly_chart(fig, use_container_width=True)
+                        
+                        with col2:
+                            # Məqsəd effektivliyi
+                            fig = px.scatter(
+                                x=purpose_stats['Sayı'],
+                                y=purpose_stats['Orta Xərc'],
+                                size=purpose_stats['Ümumi Xərc'],
+                                hover_name=purpose_stats.index,
+                                title="Məqsəd Effektivliyi"
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+
+                # Hesabat ixracı
+                st.markdown("#### 📄 Hesabat İxracı")
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    if st.button("📊 Excel Hesabatı"):
+                        with pd.ExcelWriter("analitik_hesabat.xlsx", engine='openpyxl') as writer:
+                            df.to_excel(writer, sheet_name='Ham Məlumatlar', index=False)
+                            
+                            if 'Şöbə' in df.columns:
+                                dept_stats = df.groupby('Şöbə').agg({
+                                    'Ümumi məbləğ': ['sum', 'mean', 'count']
+                                }).round(2)
+                                dept_stats.to_excel(writer, sheet_name='Şöbə Statistikaları')
+                            
+                            if 'Marşrut' in df.columns:
+                                route_stats = df['Marşrut'].value_counts()
+                                route_stats.to_excel(writer, sheet_name='Marşrut Statistikaları')
+                        
+                        st.success("✅ Excel hesabatı yaradıldı!")
+                
+                with col2:
+                    if st.button("📈 PDF Hesabatı"):
+                        st.info("📄 PDF hesabat funksionallığı əlavə ediləcək")
+                
+                with col3:
+                    if st.button("📧 Email Göndər"):
+                        st.info("📨 Email göndərmə funksionallığı əlavə ediləcək")
+
+            else:
+                st.warning("📊 Analiz üçün məlumat yoxdur")
+                
+        except Exception as e:
+            st.error(f"❌ Analitika xətası: {str(e)}")
 
         # 4. İDXAL/İXRAC TAB
         with admin_tabs[3]:
