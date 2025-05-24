@@ -276,35 +276,32 @@ def save_trip_data(data):
 
 @st.cache_data(ttl=3600)
 def get_currency_rates(date):
-    """CBAR veb səhifəsindən valyuta məzənnələrini çəkərək DataFrame qaytarır"""
     try:
-        formatted_date = date.strftime("%Y-%m-%d")
-        url = f"https://www.cbar.az/currency/rates/{formatted_date}"
+        formatted_date = date.strftime("%Y%m%d")
+        url = f"https://www.cbar.az/currencies/{formatted_date}.xml"
         response = requests.get(url, timeout=10)
         response.raise_for_status()
         
-        soup = BeautifulSoup(response.content, 'html.parser')
-        table = soup.find('div', class_='table_wrap').find('table')
+        root = ET.fromstring(response.content)
         
         currencies = []
-        for row in table.find_all('tr')[1:]:  # Başlıq sətrini atlayırıq
-            cols = row.find_all('td')
-            if len(cols) >= 4:
+        for val_type in root.findall('.//ValType'):
+            for valute in val_type.findall('Valute'):
                 currency_data = {
-                    'Valyuta': cols[0].text.strip(),
-                    'Kod': cols[1].text.strip(),
-                    'Miqdar': int(cols[2].text.strip()),
-                    'Kurs (AZN)': float(cols[3].text.strip().replace(',', '.'))
+                    'Kod': valute.get('Code'),
+                    'Valyuta': valute.find('Name').text,
+                    'Miqdar': float(valute.find('Nominal').text),
+                    'Kurs (AZN)': float(valute.find('Value').text.replace(',', '.'))
                 }
                 currency_data['1 vahid üçün'] = currency_data['Kurs (AZN)'] / currency_data['Miqdar']
                 currencies.append(currency_data)
-                
-        return pd.DataFrame(currencies) if currencies else pd.DataFrame()
+        
+        return pd.DataFrame(currencies)
     
     except Exception as e:
-        st.error(f"Məzənnələr alınarkən xəta: {str(e)}")
+        st.error(f"API xətası: {str(e)}")
         return pd.DataFrame()
-
+        
 def get_historical_rates(currency, start_date, end_date):
     """Seçilmiş tarix aralığı üçün tarixçə məlumatları"""
     dates = pd.date_range(start=start_date, end=end_date)
