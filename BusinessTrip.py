@@ -277,31 +277,44 @@ def save_trip_data(data):
 @st.cache_data(ttl=3600)
 def get_currency_rates(date):
     try:
-        formatted_date = date.strftime("%Y%m%d")
+        formatted_date = date.strftime("%d.%m.%Y")
         url = f"https://www.cbar.az/currencies/{formatted_date}.xml"
+        
         response = requests.get(url, timeout=10)
         response.raise_for_status()
         
+        # XML struktur validasiyası
+        if b"<Error>" in response.content:
+            st.error("Serverdə daxili xəta")
+            return pd.DataFrame()
+            
+        # Namespace ilə parsing
+        namespaces = {'ns': 'http://www.cbar.az/'}
         root = ET.fromstring(response.content)
         
         currencies = []
-        for val_type in root.findall('.//ValType'):
-            for valute in val_type.findall('Valute'):
+        for val_type in root.findall('.//ns:ValType', namespaces):
+            for valute in val_type.findall('ns:Valute', namespaces):
                 currency_data = {
                     'Kod': valute.get('Code'),
-                    'Valyuta': valute.find('Name').text,
-                    'Miqdar': float(valute.find('Nominal').text),
-                    'Kurs (AZN)': float(valute.find('Value').text.replace(',', '.'))
+                    'Valyuta': valute.find('ns:Name', namespaces).text,
+                    'Miqdar': float(valute.find('ns:Nominal', namespaces).text),
+                    'Kurs (AZN)': float(valute.find('ns:Value', namespaces).text.replace(',', '.'))
                 }
                 currency_data['1 vahid üçün'] = currency_data['Kurs (AZN)'] / currency_data['Miqdar']
                 currencies.append(currency_data)
         
         return pd.DataFrame(currencies)
     
-    except Exception as e:
-        st.error(f"API xətası: {str(e)}")
+    except requests.exceptions.RequestException as e:
+        st.error(f"API əlaqə xətası: {str(e)}")
         return pd.DataFrame()
-        
+    except ET.ParseError as e:
+        st.error(f"XML parse xətası: {str(e)}")
+        return pd.DataFrame()
+    except Exception as e:
+        st.error(f"Gözlənilməz xəta: {str(e)}")
+        return pd.DataFrame()        
 def get_historical_rates(currency, start_date, end_date):
     """Seçilmiş tarix aralığı üçün tarixçə məlumatları"""
     dates = pd.date_range(start=start_date, end=end_date)
