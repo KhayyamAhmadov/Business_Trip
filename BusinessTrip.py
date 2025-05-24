@@ -361,6 +361,15 @@ with tab1:
                     daily_allowance = domestic_allowances.get(to_city, domestic_allowances['Digər'])
                 else:  # Ölkə xarici ezamiyyət
                     country = st.selectbox("Ölkə", list(COUNTRIES.keys()))
+                        accommodation = st.radio(
+                            "Qonaqlama növü",
+                            options=[
+                                "Tam təminat",
+                                "Yalnız yaşayış yeri ilə təmin edir", 
+                                "Yalnız gündəlik xərcləri təmin edir"
+                            ]
+                        )
+
                     
                     if country in COUNTRIES:
                         city_options = list(COUNTRIES[country]['cities'].keys()) + ["Digər"]
