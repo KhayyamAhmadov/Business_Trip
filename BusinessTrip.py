@@ -476,7 +476,7 @@ with tab2:
                         'Ümumi məbləğ': st.column_config.NumberColumn(format="%.2f AZN"),
                         'Günlük müavinət': st.column_config.NumberColumn(format="%.2f AZN"),
                         'Bilet qiyməti': st.column_config.NumberColumn(format="%.2f AZN"),
-                        'Günlər': st.column_config.NumberColumn(format="%d")
+                        'Günlər': st.column_config.NumberColumn(format="%.0f")
                     }
                     
                     edited_df = st.data_editor(
