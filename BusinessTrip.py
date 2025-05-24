@@ -317,6 +317,23 @@ def get_currency_rates(date):
         return pd.DataFrame()  
 
 
+def get_historical_rates(currency_name, start_date, end_date):
+    dates = pd.date_range(start=start_date, end=end_date)
+    all_rates = []
+    
+    for date in dates:
+        df = get_currency_rates(date)
+        if not df.empty:
+            rate = df[df['Valyuta'] == currency_name]
+            if not rate.empty:
+                all_rates.append({
+                    'Tarix': date.date(),
+                    'Kurs': rate.iloc[0]['1 vahid üçün']
+                })
+    return pd.DataFrame(all_rates)
+
+
+
 # ƏSAS İNTERFEYS
 st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
 tab1, tab2 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli"])
@@ -699,8 +716,9 @@ with tab2:
             if 'currency_data' in st.session_state:
                 if not st.session_state.currency_data.empty:
                     df = st.session_state.currency_data
+                    # Valyuta adlarını təmizləmək üçün
+                    df['Valyuta'] = df['Valyuta'].str.split().str[0]
                     
-                    # Formatlanmış cədvəl
                     st.dataframe(
                         df[['Valyuta', 'Kod', 'Miqdar', '1 vahid üçün']],
                         column_config={
@@ -709,13 +727,12 @@ with tab2:
                             "Miqdar": "Vahid",
                             "1 vahid üçün": st.column_config.NumberColumn(
                                 "Məzənnə",
-                                help="1 vahid üçün AZN ekvivalenti",
                                 format="%.4f AZN"
                             )
                         },
-                        use_container_width=True,
                         height=400
                     )
+
                     
                     # Tarixçə analizi
                     st.markdown("---")
