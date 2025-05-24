@@ -302,7 +302,6 @@ def save_domestic_allowances(data):
 
 
 
-# ƏSAS İNTERFEYS
 st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
 tab1, tab2 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli"])
 
@@ -327,7 +326,6 @@ with tab1:
 
             with st.expander("🧳 Ezamiyyət Detalları"):
                 trip_type = st.radio("Növ", ["Ölkə daxili", "Ölkə xarici"])
-                payment_type = st.selectbox("Ödəniş növü", list(PAYMENT_TYPES.keys()))
                 
                 if trip_type == "Ölkə daxili":
                     cols = st.columns(2)
@@ -336,11 +334,10 @@ with tab1:
                     with cols[1]:
                         to_city = st.selectbox("Haraya", [c for c in CITIES if c != from_city])
                     ticket_price = calculate_domestic_amount(from_city, to_city)
-                    domestic_allowances = load_domestic_allowances()  # Yeni funksiya
-                    daily_allowance = domestic_allowances.get(to_city, domestic_allowances['Digər'])  # Dinamik yükləmə
+                    domestic_allowances = load_domestic_allowances()
+                    daily_allowance = domestic_allowances.get(to_city, domestic_allowances['Digər'])
                 else:
                     country = st.selectbox("Ölkə", list(COUNTRIES.keys()))
-                    # Yeni əlavə edilən şəhər seçimi
                     city_options = COUNTRY_CITIES.get(country, ["Digər"])
                     selected_city = st.selectbox("Şəhər", city_options)
                     
@@ -376,7 +373,7 @@ with tab1:
                 
                 if start_date and end_date and end_date >= start_date:
                     trip_days = calculate_days(start_date, end_date)
-                    total_amount = calculate_total_amount(daily_allowance, trip_days, payment_type, ticket_price)
+                    total_amount = (daily_allowance * trip_days) + ticket_price
                     
                     # Qonaqlama əmsalı
                     if trip_type == "Ölkə xarici":
@@ -412,9 +409,7 @@ with tab1:
                         "Vəzifə": position,
                         "Şöbə": department,
                         "Ezamiyyət növü": trip_type,
-                        "Ödəniş növü": payment_type,
                         "Qonaqlama növü": accommodation if trip_type == "Ölkə xarici" else "Tətbiq edilmir",
-                        # Şəhər məlumatı əlavə edildi
                         "Marşrut": f"{from_city} → {to_city}" if trip_type == "Ölkə daxili" else f"{country} - {selected_city}",
                         "Bilet qiyməti": ticket_price,
                         "Günlük müavinət": daily_allowance,
@@ -428,7 +423,6 @@ with tab1:
                         st.success("Məlumatlar yadda saxlandı!")
                 else:
                     st.error("Zəhmət olmasa bütün məcburi sahələri doldurun!")
-
 
 # ============================== ADMIN PANELİ ==============================
 with tab2:
