@@ -272,7 +272,7 @@ def save_trip_data(data):
         st.error(f"Xəta: {str(e)}")
         return False
 
-@st.cache_data(ttl=3600) # 1 saatlıq keş
+@st.cache_data(ttl=3600)
 def get_currency_rates(date):
     """
     Cbar.az-dan valyuta məzənnələrini çəkərək DataFrame qaytarır
@@ -281,22 +281,37 @@ def get_currency_rates(date):
         formatted_date = date.strftime("%Y%m%d")
         url = f"https://www.cbar.az/currencies/{formatted_date}.xml"
         response = requests.get(url)
-        root = ET.fromstring(response.content)
+        response.raise_for_status()  # HTTP xətalarını yoxlayır
         
+        # XML strukturunu yoxlayırıq
+        try:
+            root = ET.fromstring(response.content)
+        except ET.ParseError as e:
+            st.error(f"XML parsing xətası: {str(e)}")
+            return pd.DataFrame()
+            
         currencies = []
         for valute in root.findall('Valute'):
-            currency_data = {
-                'Kod': valute.get('Code'),
-                'Valyuta': valute.find('Name').text,
-                'Miqdar': float(valute.find('Nominal').text),
-                'Kurs (AZN)': float(valute.find('Value').text.replace(',', '.'))
-            }
-            currency_data['1 vahid üçün'] = currency_data['Kurs (AZN)'] / currency_data['Miqdar']
-            currencies.append(currency_data)
-            
-        return pd.DataFrame(currencies)
+            try:
+                currency_data = {
+                    'Kod': valute.get('Code'),
+                    'Valyuta': valute.find('Name').text,
+                    'Miqdar': float(valute.find('Nominal').text),
+                    'Kurs (AZN)': float(valute.find('Value').text.replace(',', '.'))
+                }
+                currency_data['1 vahid üçün'] = currency_data['Kurs (AZN)'] / currency_data['Miqdar']
+                currencies.append(currency_data)
+            except (AttributeError, ValueError) as e:
+                st.warning(f"Valyuta məlumatları oxunarkən xəta: {str(e)}")
+                continue
+                
+        return pd.DataFrame(currencies) if currencies else pd.DataFrame()
+        
+    except requests.exceptions.HTTPError as e:
+        st.error(f"HTTP xətası: {str(e)}")
+        return pd.DataFrame()
     except Exception as e:
-        st.error(f"Məzənnələr alınarkən xəta: {str(e)}")
+        st.error(f"Ümumi xəta: {str(e)}")
         return pd.DataFrame()
 
 
