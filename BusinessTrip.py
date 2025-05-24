@@ -817,17 +817,27 @@ with tab2:
                         st.success("Marşrut məlumatları yeniləndi!")
 
             # Sistem məlumatları
+            # In the "Sistem Məlumatları" section under tab_settings:
             with st.expander("📊 Sistem Məlumatları"):
                 st.markdown("#### Ümumi Statistikalar")
                 
                 try:
                     df = pd.read_excel("ezamiyyet_melumatlari.xlsx")
                     
+                    # Convert Tarix column to datetime
+                    if not df.empty:
+                        df['Tarix'] = pd.to_datetime(df['Tarix'], errors='coerce')
+                    
                     col1, col2, col3 = st.columns(3)
                     with col1:
                         st.metric("Toplam Qeydlər", len(df))
                     with col2:
-                        st.metric("Ən Son Qeyd", df['Tarix'].max() if not df.empty else "Yoxdur")
+                        if not df.empty and 'Tarix' in df.columns:
+                            last_date = df['Tarix'].max()
+                            display_date = last_date.strftime("%Y-%m-%d") if not pd.isnull(last_date) else "Yoxdur"
+                        else:
+                            display_date = "Yoxdur"
+                        st.metric("Ən Son Qeyd", display_date)
                     with col3:
                         st.metric("Fayl Ölçüsü", f"{len(df) * 0.5:.1f} KB" if not df.empty else "0 KB")
                     
