@@ -273,6 +273,53 @@ def save_trip_data(data):
         return False
 
 
+@st.cache_data(ttl=3600)
+def get_currency_rates(date):
+    """
+    Cbar.az-dan valyuta məzənnələrini çəkərək DataFrame qaytarır (HTML parsing)
+    """
+    try:
+        formatted_date = date.strftime("%Y-%m-%d")
+        url = f"https://www.cbar.az/currency/rates/{formatted_date}"
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        
+        soup = BeautifulSoup(response.content, 'html.parser')
+        table = soup.find('div', class_='table_wrap').find('table')
+        
+        currencies = []
+        for row in table.find_all('tr')[1:]:  # Başlıq sətrini atlayırıq
+            cols = row.find_all('td')
+            if len(cols) >= 3:
+                currency_data = {
+                    'Valyuta': cols[0].text.strip(),
+                    'Kod': cols[1].text.strip(),
+                    'Miqdar': int(cols[2].text.strip()),
+                    'Kurs (AZN)': float(cols[3].text.strip())
+                }
+                currency_data['1 vahid üçün'] = currency_data['Kurs (AZN)'] / currency_data['Miqdar']
+                currencies.append(currency_data)
+                
+        return pd.DataFrame(currencies) if currencies else pd.DataFrame()
+    
+    except Exception as e:
+        st.error(f"Məzənnələr alınarkən xəta: {str(e)}")
+        return pd.DataFrame()
+
+def get_historical_rates(currency, start_date, end_date):
+    """Seçilmiş tarix aralığı üçün tarixçə məlumatları"""
+    dates = pd.date_range(start=start_date, end=end_date)
+    rates = []
+    
+    for date in dates:
+        df = get_currency_rates(date)
+        if not df.empty and currency in df['Valyuta'].values:
+            rate = df[df['Valyuta'] == currency]['1 vahid üçün'].values[0]
+            rates.append({"Tarix": date.date(), "Kurs": rate})
+    
+    return pd.DataFrame(rates)
+
+
 # ƏSAS İNTERFEYS
 st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
 tab1, tab2 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli"])
@@ -437,8 +484,117 @@ with tab2:
             st.rerun()
         
         # Sekmələrin yaradılması
-        tab_manage, tab_import, tab_settings = st.tabs(["📊 Məlumatlar", "📥 İdxal", "⚙️ Parametrlər"])
+        tab_manage, tab_import, tab_settings, tab_currency = st.tabs(
+            ["📊 Məlumatlar", "📥 İdxal", "⚙️ Parametrlər", "💱 Valyuta Məzənnələri"]
+        )
 
+                # Yeni Valyuta Məzənnələri sekmesi
+        with tab_currency:
+            st.markdown("## Valyuta Məzənnələrinin İdarə Edilməsi")
+            
+            # Tarix seçimi və əsas məlumatlar
+            cols = st.columns([2,1,1])
+            with cols[0]:
+                selected_date = st.date_input(
+                    "Məzənnə tarixi",
+                    datetime.today(),
+                    key="currency_date"
+                )
+                
+            with cols[1]:
+                if st.button("📅 Məzənnələri yüklə", help="Seçilmiş tarix üçün məzənnələri yüklə"):
+                    st.session_state.currency_data = get_currency_rates(selected_date)
+            
+            with cols[2]:
+                if st.button("🔄 Cari məzənnələri yenilə"):
+                    st.session_state.currency_data = get_currency_rates(datetime.today())
+                    st.rerun()
+            
+            # Məzənnə cədvəli
+            if 'currency_data' in st.session_state:
+                if not st.session_state.currency_data.empty:
+                    df = st.session_state.currency_data
+                    
+                    # Formatlanmış cədvəl
+                    display_df = df[['Valyuta', 'Kod', 'Miqdar', '1 vahid üçün']].copy()
+                    display_df['Məzənnə'] = display_df['1 vahid üçün'].apply(lambda x: f"{x:.4f} AZN")
+                    
+                    st.dataframe(
+                        display_df[['Valyuta', 'Kod', 'Miqdar', 'Məzənnə']],
+                        column_config={
+                            "Valyuta": "Valyuta",
+                            "Kod": "ISO Kod",
+                            "Miqdar": "Vahid",
+                            "Məzənnə": st.column_config.NumberColumn(
+                                "Məzənnə",
+                                help="1 vahid üçün AZN ekvivalenti",
+                                format="%.4f AZN"
+                            )
+                        },
+                        use_container_width=True,
+                        height=400
+                    )
+                    
+                    # Tarixçə analizi üçün bölmə
+                    st.markdown("---")
+                    st.markdown("### Tarixçə Analizi")
+                    
+                    cols_hist = st.columns(3)
+                    with cols_hist[0]:
+                        currency = st.selectbox(
+                            "Valyuta seçin",
+                            options=df['Valyuta'].unique(),
+                            index=0
+                        )
+                    with cols_hist[1]:
+                        start_date_hist = st.date_input(
+                            "Başlanğıc tarixi",
+                            datetime.today() - timedelta(days=30)
+                    with cols_hist[2]:
+                        end_date_hist = st.date_input(
+                            "Bitmə tarixi",
+                            datetime.today())
+                    
+                    if st.button("📈 Tarixçəni göstər"):
+                        progress_bar = st.progress(0)
+                        historical_data = get_historical_rates(currency, start_date_hist, end_date_hist)
+                        
+                        if not historical_data.empty:
+                            # Qrafik
+                            fig = px.line(
+                                historical_data,
+                                x='Tarix',
+                                y='Kurs',
+                                title=f"{currency} üçün məzənnə dəyişikliyi",
+                                markers=True,
+                                line_shape="spline"
+                            )
+                            fig.update_layout(
+                                xaxis_title='Tarix',
+                                yaxis_title='Məzənnə (AZN)',
+                                hovermode="x unified"
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+                            
+                            # Statistik məlumatlar
+                            stats = historical_data['Kurs'].describe()
+                            cols_stats = st.columns(3)
+                            with cols_stats[0]:
+                                st.metric("Maksimum", f"{stats['max']:.4f} AZN")
+                            with cols_stats[1]:
+                                st.metric("Minimum", f"{stats['min']:.4f} AZN")
+                            with cols_stats[2]:
+                                st.metric("Ortalama", f"{stats['mean']:.4f} AZN")
+                        else:
+                            st.warning("Seçilmiş aralıqda məlumat tapılmadı!")
+                        progress_bar.empty()
+                else:
+                    st.warning("Seçilmiş tarix üçün məzənnə məlumatı tapılmadı!")
+            else:
+                st.info("Məzənnələri görmək üçün tarix seçib 'Yüklə' düyməsini basın")
+
+    
+        
         # Məlumatlar sekmesi
         with tab_manage:
             try:
