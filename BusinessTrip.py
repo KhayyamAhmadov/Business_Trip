@@ -362,13 +362,13 @@ with tab1:
                 else:  # Ölkə xarici ezamiyyət
                     country = st.selectbox("Ölkə", list(COUNTRIES.keys()))
                         accommodation = st.radio(
-                                "Qonaqlama növü",
-                                options=[
-                                    "Tam təminat",
-                                    "Yalnız yaşayış yeri ilə təmin edir", 
-                                    "Yalnız gündəlik xərcləri təmin edir"
-                                ]
-                            )
+                            "Qonaqlama növü",
+                            options=[
+                                "Tam təminat",
+                                "Yalnız yaşayış yeri ilə təmin edir", 
+                                "Yalnız gündəlik xərcləri təmin edir"
+                            ]
+                        )
     
                     
                     if country in COUNTRIES:
