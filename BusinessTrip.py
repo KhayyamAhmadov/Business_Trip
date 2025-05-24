@@ -230,7 +230,12 @@ PAYMENT_TYPES = {
 }
 
 # ============================== FUNKSİYALAR ==============================
-# FUNKSİYALAR
+def load_trip_data():
+    try:
+        return pd.read_excel("ezamiyyet_melumatlari.xlsx")
+    except FileNotFoundError:
+        return pd.DataFrame()
+
 def calculate_domestic_amount(from_city, to_city):
     return DOMESTIC_ROUTES.get((from_city, to_city), 70)
 
