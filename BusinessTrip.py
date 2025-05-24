@@ -724,12 +724,12 @@ with tab2:
                 # Yeni ölkə əlavə etmə
                 cols = st.columns([3, 2, 1])
                 with cols[0]:
-                    new_country = st.text_input("Yeni ölkə adı")
+                    new_country = st.text_input("Yeni ölkə adı", key="new_country_name")
                 with cols[1]:
                     new_currency = st.selectbox("Valyuta", list(CURRENCY_RATES.keys()), key="new_country_currency")
                 with cols[2]:
-                    if st.button("➕ Ölkə əlavə et"):
-                        if new_country and new_country not in COUNTRIES:
+                    if st.button("➕ Ölkə əlavə et", key="add_new_country"):
+                        if new_country.strip() and new_country not in COUNTRIES:
                             COUNTRIES[new_country] = {
                                 "currency": new_currency,
                                 "cities": {}
@@ -741,16 +741,16 @@ with tab2:
                     with st.expander(f"**{country}**", expanded=False):
                         cols = st.columns([3, 2, 2, 1])
                         with cols[0]:
-                            new_city = st.text_input("Yeni şəhər", key=f"new_city_{country}")
+                            new_city = st.text_input("Yeni şəhər", key=f"new_city_{country}_unique")
                         with cols[1]:
-                            city_allowance = st.number_input("Müavinət", min_value=0, key=f"city_allowance_{country}")
-                        with cols[2]:
-                            city_currency = st.selectbox(
-                                "Valyuta",
-                                options=list(CURRENCY_RATES.keys()),
-                                index=list(CURRENCY_RATES.keys()).index(COUNTRIES[country]['currency']),
-                                key=f"city_currency_{country}"
+                            city_allowance = st.number_input(
+                                "Müavinət", 
+                                min_value=0, 
+                                value=0,  # Əlavə et
+                                key=f"city_allowance_{country}_unique"
                             )
+
+                            
                         with cols[3]:
                             if st.button("Əlavə et", key=f"add_city_{country}"):
                                 if new_city:
@@ -959,10 +959,8 @@ with tab2:
         with tab_currency:
             st.markdown("### Valyuta Məzənnələrinin İdarə Edilməsi")
             
-            # Valyuta məzənnələrinin yüklənməsi
             try:
                 currency_df = pd.read_excel("currency_rates.xlsx")
-                CURRENCY_RATES = currency_df.set_index('Valyuta')['Məzənnə'].to_dict()
             except FileNotFoundError:
                 currency_df = pd.DataFrame({
                     'Valyuta': list(CURRENCY_RATES.keys()),
@@ -972,15 +970,16 @@ with tab2:
             edited_currency = st.data_editor(
                 currency_df,
                 num_rows="dynamic",
-                use_container_width=True,
                 column_config={
                     "Məzənnə": st.column_config.NumberColumn(
                         "AZN qarşılığı",
                         format="%.4f",
-                        min_value=0.0001
+                        min_value=0.0001,
+                        default=1.0  # Əlavə et
                     )
                 }
             )
+
             
             if st.button("💾 Valyuta məzənnələrini saxla"):
                 edited_currency.to_excel("currency_rates.xlsx", index=False)
