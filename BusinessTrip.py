@@ -359,27 +359,38 @@ with tab1:
                     ticket_price = calculate_domestic_amount(from_city, to_city)
                     domestic_allowances = load_domestic_allowances()
                     daily_allowance = domestic_allowances.get(to_city, domestic_allowances['Digər'])
-                else:
+                else:  # Ölkə xarici ezamiyyət
                     country = st.selectbox("Ölkə", list(COUNTRIES.keys()))
-                    city_options = COUNTRY_CITIES.get(country, ["Digər"])
-                    selected_city = st.selectbox("Şəhər", city_options)
                     
-                    payment_mode = st.selectbox(
-                        "Ödəniş rejimi",
-                        options=["Adi rejim", "Günlük Normaya 50% əlavə", "Günlük Normaya 30% əlavə"]
-                    )
-                    accommodation = st.selectbox(
-                        "Qonaqlama xərcləri",
-                        options=["Adi rejim", "Yalnız yaşayış yeri ilə təmin edir", "Yalnız gündəlik xərcləri təmin edir"]
-                    )
-                    base_allowance = COUNTRIES[country]
-                    if payment_mode == "Adi rejim":
-                        daily_allowance = base_allowance
-                    elif payment_mode == "Günlük Normaya 50% əlavə":
-                        daily_allowance = base_allowance * 1.5
-                    else:
-                        daily_allowance = base_allowance * 1.3
-                    ticket_price = 0
+                    if country in COUNTRIES:
+                        city_options = list(COUNTRIES[country]['cities'].keys()) + ["Digər"]
+                        selected_city = st.selectbox("Şəhər", city_options)
+                        
+                        if selected_city == "Digər":
+                            base_allowance = 500  # Default value
+                            currency = COUNTRIES[country]['currency']
+                        else:
+                            base_allowance = COUNTRIES[country]['cities'][selected_city]['allowance']
+                            currency = COUNTRIES[country]['cities'][selected_city]['currency']
+                        
+                        # Valyuta konvertasiyası
+                        exchange_rate = CURRENCY_RATES.get(currency, 1)
+                        base_allowance_azn = base_allowance * exchange_rate
+                        
+                        # Ödəniş rejimi seçimi
+                        payment_mode = st.selectbox(
+                            "Ödəniş rejimi",
+                            options=["Adi rejim", "Günlük Normaya 50% əlavə", "Günlük Normaya 30% əlavə"]
+                        )
+                        
+                        # Hesablamalar
+                        if payment_mode == "Adi rejim":
+                            daily_allowance = base_allowance_azn
+                        elif payment_mode == "Günlük Normaya 50% əlavə":
+                            daily_allowance = base_allowance_azn * 1.5
+                        else:
+                            daily_allowance = base_allowance_azn * 1.3
+
 
                 cols = st.columns(2)
                 with cols[0]:
@@ -708,35 +719,77 @@ with tab2:
             
             # Ölkə və məbləğlərin redaktə edilməsi
             with st.expander("🌍 Beynəlxalq Ezamiyyət Parametrləri", expanded=True):
-                st.markdown("#### Mövcud Ölkələr və Günlük Müavinətlər")
+                st.markdown("### Ölkə və Şəhər İdarəetməsi")
                 
                 # Yeni ölkə əlavə etmə
-                cols = st.columns([2, 1, 1])
+                cols = st.columns([3, 2, 1])
                 with cols[0]:
                     new_country = st.text_input("Yeni ölkə adı")
                 with cols[1]:
-                    new_allowance = st.number_input("Günlük müavinət (AZN)", min_value=0, value=300)
+                    new_currency = st.selectbox("Valyuta", list(CURRENCY_RATES.keys()), key="new_country_currency")
                 with cols[2]:
-                    if st.button("➕ Əlavə et"):
+                    if st.button("➕ Ölkə əlavə et"):
                         if new_country and new_country not in COUNTRIES:
-                            COUNTRIES[new_country] = new_allowance
-                            st.success(f"{new_country} əlavə edildi!")
+                            COUNTRIES[new_country] = {
+                                "currency": new_currency,
+                                "cities": {}
+                            }
                             st.rerun()
-                
-                # Mövcud ölkələri göstər və redaktə et
-                for country, allowance in COUNTRIES.items():
-                    cols = st.columns([2, 1, 1])
-                    with cols[0]:
-                        st.write(f"🌍 {country}")
-                    with cols[1]:
-                        new_val = st.number_input(f"Müavinət", value=allowance, key=f"country_{country}")
-                        if new_val != allowance:
-                            COUNTRIES[country] = new_val
-                    with cols[2]:
-                        if st.button("🗑️", key=f"del_{country}"):
-                            del COUNTRIES[country]
-                            st.rerun()
-
+            
+                # Mövcud ölkələr üzrə düzəlişlər
+                for country in list(COUNTRIES.keys()):
+                    with st.expander(f"**{country}**", expanded=False):
+                        cols = st.columns([3, 2, 2, 1])
+                        with cols[0]:
+                            new_city = st.text_input("Yeni şəhər", key=f"new_city_{country}")
+                        with cols[1]:
+                            city_allowance = st.number_input("Müavinət", min_value=0, key=f"city_allowance_{country}")
+                        with cols[2]:
+                            city_currency = st.selectbox(
+                                "Valyuta",
+                                options=list(CURRENCY_RATES.keys()),
+                                index=list(CURRENCY_RATES.keys()).index(COUNTRIES[country]['currency']),
+                                key=f"city_currency_{country}"
+                            )
+                        with cols[3]:
+                            if st.button("Əlavə et", key=f"add_city_{country}"):
+                                if new_city:
+                                    COUNTRIES[country]['cities'][new_city] = {
+                                        "allowance": city_allowance,
+                                        "currency": city_currency
+                                    }
+                                    st.rerun()
+            
+                        # Mövcud şəhərlərin redaktəsi
+                        for city in list(COUNTRIES[country]['cities'].keys()):
+                            cols = st.columns([3, 2, 2, 1])
+                            with cols[0]:
+                                st.write(f"🏙️ {city}")
+                            with cols[1]:
+                                new_allowance = st.number_input(
+                                    "Müavinət",
+                                    value=COUNTRIES[country]['cities'][city]['allowance'],
+                                    key=f"allowance_{country}_{city}"
+                                )
+                            with cols[2]:
+                                new_curr = st.selectbox(
+                                    "Valyuta",
+                                    options=list(CURRENCY_RATES.keys()),
+                                    index=list(CURRENCY_RATES.keys()).index(
+                                        COUNTRIES[country]['cities'][city]['currency']
+                                    ),
+                                    key=f"currency_{country}_{city}"
+                                )
+                            with cols[3]:
+                                if st.button("🗑️", key=f"del_{country}_{city}"):
+                                    del COUNTRIES[country]['cities'][city]
+                                    st.rerun()
+            
+                            if new_allowance != COUNTRIES[country]['cities'][city]['allowance'] or \
+                               new_curr != COUNTRIES[country]['cities'][city]['currency']:
+                                COUNTRIES[country]['cities'][city]['allowance'] = new_allowance
+                                COUNTRIES[country]['cities'][city]['currency'] = new_curr
+                                st.rerun()
 
                         # Yeni əlavə edilən hissə
             with st.expander("🏙️ Daxili Ezamiyyət Müavinətləri (Ətraflı)", expanded=True):
@@ -901,6 +954,38 @@ with tab2:
                 
                 except FileNotFoundError:
                     st.info("Hələ heç bir məlumat faylı yaradılmayıb")
+
+        # valyuta 
+        with tab_currency:
+            st.markdown("### Valyuta Məzənnələrinin İdarə Edilməsi")
+            
+            # Valyuta məzənnələrinin yüklənməsi
+            try:
+                currency_df = pd.read_excel("currency_rates.xlsx")
+                CURRENCY_RATES = currency_df.set_index('Valyuta')['Məzənnə'].to_dict()
+            except FileNotFoundError:
+                currency_df = pd.DataFrame({
+                    'Valyuta': list(CURRENCY_RATES.keys()),
+                    'Məzənnə': list(CURRENCY_RATES.values())
+                })
+            
+            edited_currency = st.data_editor(
+                currency_df,
+                num_rows="dynamic",
+                use_container_width=True,
+                column_config={
+                    "Məzənnə": st.column_config.NumberColumn(
+                        "AZN qarşılığı",
+                        format="%.4f",
+                        min_value=0.0001
+                    )
+                }
+            )
+            
+            if st.button("💾 Valyuta məzənnələrini saxla"):
+                edited_currency.to_excel("currency_rates.xlsx", index=False)
+                st.success("Məzənnələr yeniləndi!")
+
 
 if __name__ == "__main__":
     if not os.path.exists("ezamiyyet_melumatlari.xlsx"):
