@@ -11,7 +11,6 @@ import requests
 from bs4 import BeautifulSoup
 import lxml
 
-
 # 1. İLK STREAMLIT ƏMRİ OLMALIDIR!
 st.set_page_config(
     page_title="Ezamiyyət İdarəetmə Sistemi",
@@ -60,11 +59,12 @@ if not st.session_state.logged_in:
         
         access_code = st.text_input("Giriş kodu", type="password", 
                                   label_visibility="collapsed", 
-                                  placeholder="Giriş kodunu daxil edin...")
+                                  placeholder="Giriş kodunu daxil edin...",
+                                  key="login_password_input")
         
         cols = st.columns([1,2,1])
         with cols[1]:
-            if st.button("Daxil ol", use_container_width=True):
+            if st.button("Daxil ol", use_container_width=True, key="main_login_btn"):
                 if access_code == "admin":
                     st.session_state.logged_in = True
                     st.rerun()
@@ -401,37 +401,39 @@ with tab1:
             with st.expander("👤 Şəxsi Məlumatlar", expanded=True):
                 cols = st.columns(2)
                 with cols[0]:
-                    first_name = st.text_input("Ad")
-                    father_name = st.text_input("Ata adı")
+                    first_name = st.text_input("Ad", key="first_name_input")
+                    father_name = st.text_input("Ata adı", key="father_name_input")
                 with cols[1]:
-                    last_name = st.text_input("Soyad")
-                    position = st.text_input("Vəzifə")
+                    last_name = st.text_input("Soyad", key="last_name_input")
+                    position = st.text_input("Vəzifə", key="position_input")
 
             with st.expander("🏢 Təşkilat Məlumatları"):
-                department = st.selectbox("Şöbə", DEPARTMENTS)
+                department = st.selectbox("Şöbə", DEPARTMENTS, key="department_select")
 
             with st.expander("🧳 Ezamiyyət Detalları"):
-                trip_type = st.radio("Növ", ["Ölkə daxili", "Ölkə xarici"])
-                payment_type = st.selectbox("Ödəniş növü", list(PAYMENT_TYPES.keys()))
+                trip_type = st.radio("Növ", ["Ölkə daxili", "Ölkə xarici"], key="trip_type_radio")
+                payment_type = st.selectbox("Ödəniş növü", list(PAYMENT_TYPES.keys()), key="payment_type_select")
                 
                 if trip_type == "Ölkə daxili":
                     cols = st.columns(2)
                     with cols[0]:
-                        from_city = st.selectbox("Haradan", CITIES, index=CITIES.index("Bakı"))
+                        from_city = st.selectbox("Haradan", CITIES, index=CITIES.index("Bakı"), key="from_city_select")
                     with cols[1]:
-                        to_city = st.selectbox("Haraya", [c for c in CITIES if c != from_city])
+                        to_city = st.selectbox("Haraya", [c for c in CITIES if c != from_city], key="to_city_select")
                     ticket_price = calculate_domestic_amount(from_city, to_city)
                     daily_allowance = 70
                     accommodation = "Tətbiq edilmir"
                 else:
-                    country = st.selectbox("Ölkə", list(COUNTRIES.keys()))
+                    country = st.selectbox("Ölkə", list(COUNTRIES.keys()), key="country_select")
                     payment_mode = st.selectbox(
                         "Ödəniş rejimi",
-                        options=["Adi rejim", "Günlük Normaya 50% əlavə", "Günlük Normaya 30% əlavə"]
+                        options=["Adi rejim", "Günlük Normaya 50% əlavə", "Günlük Normaya 30% əlavə"],
+                        key="payment_mode_select"
                     )
                     accommodation = st.selectbox(
                         "Qonaqlama xərcləri",
-                        options=["Adi rejim", "Yalnız yaşayış yeri ilə təmin edir", "Yalnız gündəlik xərcləri təmin edir"]
+                        options=["Adi rejim", "Yalnız yaşayış yeri ilə təmin edir", "Yalnız gündəlik xərcləri təmin edir"],
+                        key="accommodation_select"
                     )
                     base_allowance = COUNTRIES[country]
                     if payment_mode == "Adi rejim":
@@ -446,11 +448,11 @@ with tab1:
 
                 cols = st.columns(2)
                 with cols[0]:
-                    start_date = st.date_input("Başlanğıc tarixi")
+                    start_date = st.date_input("Başlanğıc tarixi", key="start_date_input")
                 with cols[1]:
-                    end_date = st.date_input("Bitmə tarixi")
+                    end_date = st.date_input("Bitmə tarixi", key="end_date_input")
                 
-                purpose = st.text_area("Ezamiyyət məqsədi")
+                purpose = st.text_area("Ezamiyyət məqsədi", key="purpose_textarea")
 
         # Sağ Sütun (Hesablama)
         with col2:
@@ -474,18 +476,19 @@ with tab1:
                     else:
                         delta_label = None
                     
-                    st.metric("📅 Günlük müavinət", f"{daily_allowance} AZN")
+                    st.metric("📅 Günlük müavinət", f"{daily_allowance} AZN", key="daily_allowance_metric")
                     if trip_type == "Ölkə daxili":
-                        st.metric("🚌 Nəqliyyat xərci", f"{ticket_price} AZN")
-                    st.metric("⏳ Müddət", f"{trip_days} gün")
+                        st.metric("🚌 Nəqliyyat xərci", f"{ticket_price} AZN", key="ticket_price_metric")
+                    st.metric("⏳ Müddət", f"{trip_days} gün", key="trip_days_metric")
                     st.metric(
                         "💳 Ümumi məbləğ", 
                         f"{total_amount:.2f} AZN", 
                         delta=delta_label,
-                        delta_color="normal" if delta_label else "off"
+                        delta_color="normal" if delta_label else "off",
+                        key="total_amount_metric"
                     )
 
-            if st.button("✅ Yadda Saxla", use_container_width=True):
+            if st.button("✅ Yadda Saxla", use_container_width=True, key="save_trip_button"):
                 if all([first_name, last_name, start_date, end_date]):
                     trip_data = {
                         "Tarix": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -508,10 +511,8 @@ with tab1:
                     }
                     if save_trip_data(trip_data):
                         st.success("Məlumatlar yadda saxlandı!")
-                        st.balloons()
                 else:
                     st.error("Zəhmət olmasa bütün məcburi sahələri doldurun!")
-
 
 
 # ========== VALYUTA MƏZƏNNƏSİ HISSƏSİ ==========
