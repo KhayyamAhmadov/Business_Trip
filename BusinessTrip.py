@@ -1732,7 +1732,7 @@ with tab2:
                 if st.button("🔄 Məlumat Sinxronizasiyası"):
                     st.info("🔗 Xarici sistemlərlə sinxronizasiya əlavə ediləcək")
 
-        # 7. SİSTEM ALƏTLƏRİ TAB
+# 7. SİSTEM ALƏTLƏRİ TAB
         with admin_tabs[6]:
             st.markdown("### 🔧 Sistem Təmizlik və Bərpa Alətləri")
             
@@ -1857,11 +1857,6 @@ with tab2:
                             except Exception as e:
                                 st.error(f"❌ Sıfırlama xətası: {str(e)}")
 
-# Admin panel kodunun sonuna əlavə edilməsi gereken hissələr
-
-                # Ana admin panel tab-larının sonuna əlavə kod
-                
-                # Sessiya izləmə
         # Footer məlumatları
         st.markdown("---")
         col1, col2, col3 = st.columns(3)
@@ -1879,7 +1874,6 @@ with tab2:
         with col3:
             st.caption(f"📅 Son yeniləmə: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
 
-
-# Admin panel kodunun bitişi
-        else:
-            st.warning("🔐 Admin paneli üçün giriş tələb olunur")
+    # Admin panel kodunun bitişi
+    else:
+        st.warning("🔐 Admin paneli üçün giriş tələb olunur")
