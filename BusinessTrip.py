@@ -1075,17 +1075,18 @@ with tab1:
                         st.metric("💳 Ümumi məbləğ", f"{total_amount:.2f} AZN")
                         
                     else:  # Xarici ezamiyyət hesablamaları
-                        country_data = COUNTRIES[country]
-                        if selected_city == "Digər":
-                            base_allowance = 500  # Default value
+                        country_data = countries_data[country]  # COUNTRIES 
+                        
+                        if selected_city == "digər":
+                            base_allowance = country_data['cities']['digər']['allowance']
                             currency = country_data['currency']
                         else:
                             city_data = country_data['cities'][selected_city]
                             base_allowance = city_data['allowance']
-                            currency = city_data['currency']
+                            currency = country_data['currency']
                         
-                        exchange_rate = CURRENCY_RATES.get(currency, 1.0)
-                        
+                        exchange_rate = currency_rates.get(currency, 1.0)  # Valyuta məzənnəsi
+
                         # Ödəniş rejimi əsasında günlük müavinəti hesabla (orijinal valyutada)
                         if payment_mode == "Adi rejim":
                             daily_allowance_foreign = float(base_allowance)
@@ -1519,8 +1520,7 @@ with tab2:
                                 save_countries_data(countries_data)
                                 st.rerun()
 
-#------------------------------------------------------------------------------                           
-            # Yeni əlavə edilən hissə
+            # Yeni hisse
             with st.expander("🏙️ Daxili Ezamiyyət Müavinətləri (Ətraflı)", expanded=True):
                 st.markdown("""
                 **Təlimat:**
