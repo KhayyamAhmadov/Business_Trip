@@ -7,8 +7,6 @@ import requests
 import xml.etree.ElementTree as ET
 import os
 from bs4 import BeautifulSoup
-import plotly 
-import openpyxl
 
 
 # 1. İLK STREAMLIT ƏMRİ OLMALIDIR!
@@ -325,70 +323,34 @@ def save_domestic_allowances(data):
     })
     df.to_excel("domestic_allowances.xlsx", index=False)
 
-def scrape_currency_rates():
+
+@st.cache_data(ttl=3600) # 1 saatlıq keş
+def get_currency_rates(date):
+    """
+    Cbar.az-dan valyuta məzənnələrini çəkərək DataFrame qaytarır
+    """
     try:
-        url = "https://www.cbar.az/currency/rates"
+        formatted_date = date.strftime("%Y%m%d")
+        url = f"https://www.cbar.az/currencies/{formatted_date}.xml"
         response = requests.get(url)
-        soup = BeautifulSoup(response.text, 'html.parser')
+        root = ET.fromstring(response.content)
         
-        currencies = {}
-        table = soup.find('table', {'class': 'table'})
-        
-        # Başlıqları tapaq
-        headers = [header.text.strip() for header in table.find('tr').find_all('th')]
-        
-        # Məlumat sətirlərini emal edək
-        for row in table.find_all('tr')[1:]:
-            cols = row.find_all('td')
-            if len(cols) >= 3:
-                code = cols[1].text.strip()
-                rate = cols[2].text.strip().replace(',', '.')
-                currencies[code] = float(rate)
-        return currencies
-    except Exception as e:
-        st.error(f"Valyuta məzənnələri skreyp edilərkən xəta: {str(e)}")
-        return {}
-
-# Valyuta məzənnələri üçün funksiyalar
-def load_currency_rates():
-    try:
-        df = pd.read_excel("currency_rates.xlsx", dtype={'Kod': str})
-        df = df.dropna(subset=['Kod'])
-        return df.set_index('Kod')['Məzənnə'].to_dict()
-    except FileNotFoundError:
-        return {}
-
-def save_currency_rates(rates_dict):
-    df = pd.DataFrame({
-        'Kod': rates_dict.keys(),
-        'Məzənnə': rates_dict.values()
-    })
-    df.to_excel("currency_rates.xlsx", index=False)
-
-
-# COUNTRIES konfiqurasiyasinin dinamiklesmesi 
-def load_countries_config():
-    try:
-        df = pd.read_excel("countries_config.xlsx")
-        countries = {}
-        for _, row in df.iterrows():
-            countries[row['Ölkə']] = {
-                "currency": row['Valyuta'],
-                "cities": eval(row['Şəhərlər'])  # Dict olaraq saxlayaq
+        currencies = []
+        for valute in root.findall('Valute'):
+            currency_data = {
+                'Kod': valute.get('Code'),
+                'Valyuta': valute.find('Name').text,
+                'Miqdar': float(valute.find('Nominal').text),
+                'Kurs (AZN)': float(valute.find('Value').text.replace(',', '.'))
             }
-        return countries
-    except FileNotFoundError:
-        return {}
+            currency_data['1 vahid üçün'] = currency_data['Kurs (AZN)'] / currency_data['Miqdar']
+            currencies.append(currency_data)
+            
+        return pd.DataFrame(currencies)
+    except Exception as e:
+        st.error(f"Məzənnələr alınarkən xəta: {str(e)}")
+        return pd.DataFrame()
 
-def save_countries_config(countries):
-    data = []
-    for country, info in countries.items():
-        data.append({
-            'Ölkə': country,
-            'Valyuta': info['currency'],
-            'Şəhərlər': str(info['cities'])
-        })
-    pd.DataFrame(data).to_excel("countries_config.xlsx", index=False)
 
 
 st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
@@ -463,6 +425,7 @@ with tab1:
                                 "Yalnız gündəlik xərcləri təmin edir"
                             ]
                         )
+
 
 
                 cols = st.columns(2)
@@ -623,6 +586,75 @@ with tab1:
                             st.rerun()
                     else:
                         st.error("Zəhmət olmasa bütün məcburi sahələri doldurun!")
+
+
+    
+            # VALYUTA MƏZƏNNƏLƏRİ
+            with st.expander("💵 Valyuta Məzənnələri (CBAR)", expanded=True):
+                cols = st.columns([2, 1])
+                with cols[0]:
+                    selected_date = st.date_input(
+                        "Məzənnə tarixi",
+                        datetime.today(),
+                        max_value=datetime.today(),
+                        format="DD.MM.YYYY",
+                        key="currency_date"
+                    )
+                
+                with cols[1]:
+                    if st.button("💱 Məzənnələri yenilə", use_container_width=True):
+                        st.session_state.currency_data = get_currency_rates(selected_date)
+                
+                if 'currency_data' in st.session_state and not st.session_state.currency_data.empty:
+                    st.dataframe(
+                        st.session_state.currency_data[['Valyuta', '1 vahid üçün']],
+                        column_config={
+                            "1 vahid üçün": st.column_config.NumberColumn(
+                                "Məzənnə",
+                                format="%.4f AZN",
+                                help="1 vahid valyuta üçün AZN ekvivalenti"
+                            )
+                        },
+                        use_container_width=True,
+                        hide_index=True,
+                        height=300
+                    )
+                    
+                    # Valyuta seçim üçün filtr
+                    selected_currency = st.selectbox(
+                        "Detallı məzənnə tarixçəsi üçün valyuta seçin",
+                        options=st.session_state.currency_data['Valyuta'].unique(),
+                        index=0
+                    )
+                    
+                    if selected_currency:
+                        # Son 7 günlük tarixçə
+                        st.markdown(f"**{selected_currency} üçün son 7 günlük dəyişikliklər:**")
+                        dates = [selected_date - timedelta(days=i) for i in range(7, 0, -1)]
+                        historical_data = []
+                        
+                        for date in dates:
+                            df = get_currency_rates(date)
+                            if not df.empty:
+                                rate = df[df['Valyuta'] == selected_currency]['1 vahid üçün'].values[0]
+                                historical_data.append({"Tarix": date, "Kurs": rate})
+                        
+                        if historical_data:
+                            df_history = pd.DataFrame(historical_data)
+                            fig = px.line(
+                                df_history, 
+                                x='Tarix', 
+                                y='Kurs',
+                                markers=True,
+                                labels={'Kurs': 'AZN ilə məzənnə'},
+                                height=300
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+                
+                elif 'currency_data' in st.session_state:
+                    st.warning("Seçilmiş tarix üçün məzənnə məlumatı tapılmadı!")
+                else:
+                    st.info("Məzənnələri görmək üçün 'Yenilə' düyməsini basın")
 
 
 # ============================== ADMIN PANELİ ==============================
@@ -853,156 +885,100 @@ with tab2:
                     st.error(f"Xəta: {str(e)}")
         
 
-        # Parametrler tabi 
+        # Parametrlər sekmesi
+        # Parametrlər sekmesi
         with tab_settings:
             st.markdown("### 🛠️ Sistem Parametrləri")
             
-            # Valyuta məzənnələri bölməsi
-            with st.expander("💱 Valyuta Məzənnələri", expanded=True):
-                # Skreyp et butonu
-                if st.button("🔄 Məzənnələri CBAR-dan yenilə"):
-                    scraped_rates = scrape_currency_rates()
-                    if scraped_rates:
-                        save_currency_rates(scraped_rates)
-                        st.success(f"{len(scraped_rates)} valyuta uğurla yeniləndi!")
-                
-                # Valyuta redaktə paneli
-                try:
-                    currency_rates = load_currency_rates()
-                    df_currency = pd.DataFrame({
-                        'Kod': currency_rates.keys(),
-                        'Məzənnə': currency_rates.values()
-                    })
-                    
-                    edited_currency = st.data_editor(
-                        df_currency,
-                        num_rows="dynamic",
-                        column_config={
-                            "Kod": st.column_config.TextColumn(
-                                "Valyuta Kodu (3 hərf)",
-                                max_chars=3,
-                                validate="^[A-Z]{3}$",
-                                required=True
-                            ),
-                            "Məzənnə": st.column_config.NumberColumn(
-                                "AZN qarşılığı",
-                                min_value=0.0001,
-                                format="%.4f",
-                                required=True
-                            )
-                        }
-                    )
-                    
-                    if st.button("💾 Valyuta dəyişikliklərini saxla"):
-                        new_rates = edited_currency.set_index('Kod')['Məzənnə'].to_dict()
-                        save_currency_rates(new_rates)
-                        st.success("Valyuta məzənnələri yeniləndi!")
-                        
-                except Exception as e:
-                    st.error(f"Valyuta məzənnələri yüklənərkən xəta: {str(e)}")
-        
-            # Ölkə və şəhər idarəetmə bölməsi
+            # Ölkə və məbləğlərin redaktə edilməsi
             with st.expander("🌍 Beynəlxalq Ezamiyyət Parametrləri", expanded=True):
-                COUNTRIES = load_countries_config()
-                CURRENCY_OPTIONS = list(load_currency_rates().keys())
+                st.markdown("### Ölkə və Şəhər İdarəetməsi")
                 
                 # Yeni ölkə əlavə etmə
                 cols = st.columns([3, 2, 1])
                 with cols[0]:
-                    new_country_name = st.text_input("Yeni ölkə adı")
+                    new_country = st.text_input("Yeni ölkə adı", key="new_country_name")
                 with cols[1]:
-                    new_country_currency = st.selectbox(
-                        "Valyuta seçin",
-                        options=CURRENCY_OPTIONS,
-                        index=0 if not CURRENCY_OPTIONS else None
-                    )
+                    new_currency = st.selectbox("Valyuta", list(CURRENCY_RATES.keys()), key="new_country_currency")
                 with cols[2]:
-                    if st.button("➕ Ölkə əlavə et"):
-                        if new_country_name and new_country_name not in COUNTRIES:
-                            COUNTRIES[new_country_name] = {
-                                "currency": new_country_currency,
+                    if st.button("➕ Ölkə əlavə et", key="add_new_country"):
+                        if new_country.strip() and new_country not in COUNTRIES:
+                            COUNTRIES[new_country] = {
+                                "currency": new_currency,
                                 "cities": {}
                             }
-                            save_countries_config(COUNTRIES)
                             st.rerun()
         
-                # Ölkə seçimi və redaktə
+                # Ölkə seçimi üçün dropdown
                 selected_country = st.selectbox(
-                    "Redaktə ediləcək ölkə",
-                    options=list(COUNTRIES.keys()),
-                    index=0 if COUNTRIES else None
+                    "Redaktə ediləcək ölkəni seçin",
+                    list(COUNTRIES.keys()),
+                    key="country_selector"
                 )
         
+                # Seçilmiş ölkənin parametrləri
                 if selected_country:
                     country_data = COUNTRIES[selected_country]
-                    
-                    # Ölkə əsas valyutasını redaktə
-                    new_currency = st.selectbox(
-                        "Ölkə valyutasını dəyişdir",
-                        options=CURRENCY_OPTIONS,
-                        index=CURRENCY_OPTIONS.index(country_data['currency']) if country_data['currency'] in CURRENCY_OPTIONS else 0
-                    )
-                    if new_currency != country_data['currency']:
-                        country_data['currency'] = new_currency
-                        save_countries_config(COUNTRIES)
-                        st.rerun()
-        
-                    # Şəhər idarəetmə
-                    st.markdown("### Şəhər Konfiqurasiyası")
                     
                     # Yeni şəhər əlavə etmə
                     cols = st.columns([3, 2, 2, 1])
                     with cols[0]:
-                        new_city_name = st.text_input("Yeni şəhər adı")
+                        new_city = st.text_input("Yeni şəhər", key=f"new_city_{selected_country}")
                     with cols[1]:
-                        new_city_allowance = st.number_input("Günlük müavinət", min_value=0)
+                        city_allowance = st.number_input(
+                            "Müavinət", 
+                            min_value=0, 
+                            value=0,
+                            key=f"city_allowance_{selected_country}"
+                        )
                     with cols[2]:
-                        new_city_currency = st.selectbox(
-                            "Valyuta seçin",
-                            options=CURRENCY_OPTIONS,
-                            index=CURRENCY_OPTIONS.index(country_data['currency']) if country_data['currency'] in CURRENCY_OPTIONS else 0
+                        city_currency = st.selectbox(
+                            "Valyuta",
+                            list(CURRENCY_RATES.keys()),
+                            index=list(CURRENCY_RATES.keys()).index(country_data['currency']),
+                            key=f"city_curr_{selected_country}"
                         )
                     with cols[3]:
-                        if st.button("➕ Şəhər əlavə et"):
-                            if new_city_name:
-                                country_data['cities'][new_city_name] = {
-                                    "allowance": new_city_allowance,
-                                    "currency": new_city_currency
+                        if st.button("Əlavə et", key=f"add_city_{selected_country}"):
+                            if new_city:
+                                country_data['cities'][new_city] = {
+                                    "allowance": city_allowance,
+                                    "currency": city_currency
                                 }
-                                save_countries_config(COUNTRIES)
                                 st.rerun()
         
                     # Mövcud şəhərlərin redaktəsi
+                    st.markdown("### Mövcud Şəhərlər")
                     for city in list(country_data['cities'].keys()):
-                        st.markdown(f"#### {city}")
-                        cols = st.columns([2, 2, 1])
+                        cols = st.columns([3, 2, 2, 1])
                         with cols[0]:
-                            new_allowance = st.number_input(
-                                "Günlük müavinət",
-                                value=country_data['cities'][city]['allowance'],
-                                key=f"allowance_{city}"
-                            )
+                            st.write(f"🏙️ {city}")
                         with cols[1]:
-                            new_currency = st.selectbox(
-                                "Valyuta",
-                                options=CURRENCY_OPTIONS,
-                                index=CURRENCY_OPTIONS.index(country_data['cities'][city]['currency']) if country_data['cities'][city]['currency'] in CURRENCY_OPTIONS else 0,
-                                key=f"currency_{city}"
+                            new_allowance = st.number_input(
+                                "Müavinət",
+                                value=country_data['cities'][city]['allowance'],
+                                key=f"allowance_{selected_country}_{city}"
                             )
                         with cols[2]:
-                            if st.button("🗑️ Sil", key=f"delete_{city}"):
+                            new_curr = st.selectbox(
+                                "Valyuta",
+                                options=list(CURRENCY_RATES.keys()),
+                                index=list(CURRENCY_RATES.keys()).index(
+                                    country_data['cities'][city]['currency']
+                                ),
+                                key=f"currency_{selected_country}_{city}"
+                            )
+                        with cols[3]:
+                            if st.button("🗑️", key=f"del_{selected_country}_{city}"):
                                 del country_data['cities'][city]
-                                save_countries_config(COUNTRIES)
                                 st.rerun()
         
-                        if new_allowance != country_data['cities'][city]['allowance'] or new_currency != country_data['cities'][city]['currency']:
+                        if new_allowance != country_data['cities'][city]['allowance'] or \
+                           new_curr != country_data['cities'][city]['currency']:
                             country_data['cities'][city]['allowance'] = new_allowance
-                            country_data['cities'][city]['currency'] = new_currency
-                            save_countries_config(COUNTRIES)
+                            country_data['cities'][city]['currency'] = new_curr
                             st.rerun()
 
-
-            
                         # Yeni əlavə edilən hissə
             with st.expander("🏙️ Daxili Ezamiyyət Müavinətləri (Ətraflı)", expanded=True):
                 st.markdown("""
@@ -1168,84 +1144,34 @@ with tab2:
                     st.info("Hələ heç bir məlumat faylı yaradılmayıb")
 
         # valyuta 
-        # Admin panelində Currency tab-ını elave olunur
         with tab_currency:
-            st.markdown("### 💱 Valyuta Məzənnələrinin İdarə Edilməsi")
+            st.markdown("### Valyuta Məzənnələrinin İdarə Edilməsi")
             
-            # Yenilə düyməsi və skreypinq
-            col1, col2 = st.columns([3,1])
-            with col2:
-                if st.button("🔄 CBAR-dan yenilə", help="Cəbrəyyarlıq Bankının rəsgi saytından aktual məzənnələri yüklə"):
-                    with st.spinner("Məzənnələr yüklənir..."):
-                        scraped_rates = scrape_currency_rates()
-                        if scraped_rates:
-                            save_currency_rates(scraped_rates)
-                            st.success(f"{len(scraped_rates)} valyuta uğurla yeniləndi!")
-                        else:
-                            st.error("Məzənnələr yüklənə bilmədi!")
-            
-            # Mövcud məzənnələrin redaktəsi
             try:
-                current_rates = load_currency_rates()
-                if current_rates:
-                    df = pd.DataFrame({
-                        'Kod': current_rates.keys(),
-                        'Məzənnə': current_rates.values()
-                    })
-                    # Valyuta kodlarını stringə çevir
-                    df['Kod'] = df['Kod'].astype(str)
-                    
-                    edited_df = st.data_editor(
-                        df,
-                        num_rows="dynamic",
-                        column_config={
-                            "Kod": st.column_config.TextColumn(
-                                "Valyuta Kodu (3 hərf)",
-                                max_chars=3,
-                                validate="^[A-Z]{3}$",
-                                required=True
-                            ),
-                            "Məzənnə": st.column_config.NumberColumn(
-                                "1 AZN = ?",
-                                format="%.4f",
-                                min_value=0.0001,
-                                required=True
-                            )
-                        },
-                        key="currency_editor"
+                currency_df = pd.read_excel("currency_rates.xlsx")
+            except FileNotFoundError:
+                currency_df = pd.DataFrame({
+                    'Valyuta': list(CURRENCY_RATES.keys()),
+                    'Məzənnə': list(CURRENCY_RATES.values())
+                })
+            
+            edited_currency = st.data_editor(
+                currency_df,
+                num_rows="dynamic",
+                column_config={
+                    "Məzənnə": st.column_config.NumberColumn(
+                        "AZN qarşılığı",
+                        format="%.4f",
+                        min_value=0.0001,
+                        default=1.0  # Əlavə et
                     )
-                    
-                    if st.button("💾 Saxla"):
-                        new_rates = edited_df.set_index('Kod')['Məzənnə'].to_dict()
-                        save_currency_rates(new_rates)
-                        st.success("Məzənnələr yeniləndi!")
-                else:
-                    st.warning("Valyuta məzənnələri tapılmadı")
-                    
-            except Exception as e:
-                st.error(f"Məzənnələr yüklənərkən xəta: {str(e)}")
-        
-            # Cari məzənnələrin cədvəli
-            with st.expander("📊 Cari Valyuta Məzənnələri"):
-                try:
-                    current_rates = load_currency_rates()
-                    if current_rates:
-                        df_display = pd.DataFrame({
-                            'Valyuta': current_rates.keys(),
-                            'Məzənnə (1 AZN)': current_rates.values()
-                        })
-                        st.dataframe(df_display, 
-                                    hide_index=True,
-                                    column_config={
-                                        "Valyuta": "Valyuta Kodu",
-                                        "Məzənnə (1 AZN)": st.column_config.NumberColumn(
-                                            format="%.4f"
-                                        )
-                                    })
-                    else:
-                        st.warning("Heç bir məzənnə tapılmadı")
-                except Exception as e:
-                    st.error(f"Məlumatlar göstərilərkən xəta: {str(e)}")
+                }
+            )
+
+            
+            if st.button("💾 Valyuta məzənnələrini saxla"):
+                edited_currency.to_excel("currency_rates.xlsx", index=False)
+                st.success("Məzənnələr yeniləndi!")
 
 
 if __name__ == "__main__":
