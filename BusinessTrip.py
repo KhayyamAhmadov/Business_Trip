@@ -56,71 +56,113 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 if not st.session_state.logged_in:
-    with st.container():
-        st.markdown('<div class="login-box"><div class="login-header"><h2>🔐 Sistemə Giriş</h2></div>', unsafe_allow_html=True)
-        
-        access_code = st.text_input("Giriş kodu", type="password", 
-                                  label_visibility="collapsed", 
-                                  placeholder="Giriş kodunu daxil edin...")
-        
-        cols = st.columns([1,2,1])
-        with cols[1]:
-            if st.button("Daxil ol", use_container_width=True):
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        with st.container():
+            st.markdown("""
+            <div class="login-glass">
+                <div style="text-align:center; margin-bottom:2rem;">
+                    <h1 style="color:white; font-size:2.5rem;">✈️ EZAMİYYƏT</h1>
+                    <p style="color:rgba(255,255,255,0.9);">İdarəetmə Sisteminə Xoş Gəlmisiniz</p>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            access_code = st.text_input(" ", 
+                                      type="password", 
+                                      placeholder="Giriş kodunu daxil edin...",
+                                      label_visibility="collapsed")
+            
+            if st.button("🔑 Sistemə daxil ol", use_container_width=True):
                 if access_code == "admin":
                     st.session_state.logged_in = True
                     st.rerun()
                 else:
                     st.error("Yanlış giriş kodu!")
-        st.markdown('</div>', unsafe_allow_html=True)
+            
+            st.markdown("</div>", unsafe_allow_html=True)
     st.stop()
 
 # 3. ƏSAS TƏRTİBAT VƏ PROQRAM MƏNTİQİ
 st.markdown("""
 <style>
     :root {
-        --primary-color: #6366f1;
-        --secondary-color: #8b5cf6;
-        --background-color: #ffffff;
+        --primary: #6366f1;
+        --secondary: #8b5cf6;
+        --accent: #ec4899;
+        --bg: #f8fafc;
+        --text: #1e293b;
+        --card-bg: rgba(255, 255, 255, 0.95);
+    }
+    
+    html, body, [class*="css"]  {
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
     }
     
     .main-header {
-        text-align: center;
-        padding: 2rem 1rem;
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-        color: white;
-        margin: -1rem -1rem 2rem -1rem;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        border-radius: 0 0 20px 20px;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        padding: 3rem 1rem;
+        border-radius: 0 0 30px 30px;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        margin: -2rem -1rem 3rem -1rem;
+        position: relative;
+        overflow: hidden;
     }
     
-    .section-header {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-        color: white!important;
-        padding: 1.5rem;
-        border-radius: 12px;
-        margin: 1.5rem 0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border-left: none;
+    .main-header::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, transparent 0%, rgba(255,255,255,0.1) 100%);
+    }
+    
+    .custom-card {
+        background: var(--card-bg);
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        border: 1px solid rgba(255,255,255,0.3);
+        backdrop-filter: blur(10px);
+        margin-bottom: 1.5rem;
     }
     
     .stButton>button {
-        border-radius: 8px!important;
-        padding: 0.5rem 1.5rem!important;
-        transition: all 0.3s ease!important;
-        border: 1px solid var(--primary-color)!important;
-        background: var(--secondary-color)!important;
-        color: white!important;
+        border-radius: 12px!important;
+        padding: 12px 24px!important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1)!important;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)!important;
+        border: none!important;
+        font-weight: 600!important;
     }
     
     .stButton>button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 6px rgba(99,102,241,0.3)!important;
-        background: var(--primary-color)!important;
+        box-shadow: 0 10px 15px -3px rgba(99,102,241,0.3)!important;
     }
     
-    .dataframe {
-        border-radius: 12px!important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05)!important;
+    .login-glass {
+        background: rgba(255, 255, 255, 0.15)!important;
+        backdrop-filter: blur(12px);
+        border-radius: 20px;
+        border: 1px solid rgba(255,255,255,0.2);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        padding: 3rem 2.5rem;
+    }
+    
+    .metric-card {
+        background: var(--card-bg);
+        border-radius: 14px;
+        padding: 1.5rem;
+        border: 1px solid rgba(0,0,0,0.05);
+        transition: transform 0.3s ease;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-5px);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -327,6 +369,12 @@ def save_domestic_allowances(data):
 
 st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
 tab1, tab2 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli"])
+st.markdown("""
+<div class="main-header">
+    <h1 style="color:white; font-size:2.8rem; letter-spacing:-0.05em;">Ezamiyyət İdarəetmə Sistemi</h1>
+    <p style="color:rgba(255,255,255,0.9); font-size:1.1rem;">Səmərəli ezamiyyət idarəetməsi üçün vahid platforma</p>
+</div>
+""", unsafe_allow_html=True)
 
 # YENİ EZAMİYYƏT HISSESI
 with tab1:
@@ -335,83 +383,112 @@ with tab1:
         
         # Sol Sütun
         with col1:
-            with st.expander("👤 Şəxsi Məlumatlar", expanded=True):
-                cols = st.columns(2)
-                with cols[0]:
-                    first_name = st.text_input("Ad")
-                    father_name = st.text_input("Ata adı")
-                with cols[1]:
-                    last_name = st.text_input("Soyad")
-                    position = st.text_input("Vəzifə")
-
-            with st.expander("🏢 Təşkilat Məlumatları"):
-                department = st.selectbox("Şöbə", DEPARTMENTS)
-
-            with st.expander("🧳 Ezamiyyət Detalları"):
-                trip_type = st.radio("Növ", ["Ölkə daxili", "Ölkə xarici"])
-                
-                if trip_type == "Ölkə daxili":
+            with st.container():
+                st.markdown('<div class="custom-card">', unsafe_allow_html=True)
+                with st.expander("👤 Şəxsi Məlumatlar", expanded=True):
                     cols = st.columns(2)
                     with cols[0]:
-                        from_city = st.selectbox("Haradan", CITIES, index=CITIES.index("Bakı"))
+                            st.markdown(f"""
+                            <div class="metric-card">
+                                <div style="font-size:0.9rem; color:#64748b;">Günlük müavinət</div>
+                                <div style="font-size:1.8rem; font-weight:700; color:var(--primary);">{daily_allowance} AZN</div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        first_name = st.text_input("Ad")
+                        father_name = st.text_input("Ata adı")
                     with cols[1]:
-                        to_city = st.selectbox("Haraya", [c for c in CITIES if c != from_city])
-                    ticket_price = calculate_domestic_amount(from_city, to_city)
-                    domestic_allowances = load_domestic_allowances()
-                    daily_allowance = domestic_allowances.get(to_city, domestic_allowances['Digər'])
-                else:  # Ölkə xarici ezamiyyət
-                    country = st.selectbox("Ölkə", list(COUNTRIES.keys()))
+                            st.markdown(f"""
+                            <div class="metric-card">
+                                <div style="font-size:0.9rem; color:#64748b;">Ümumi müddət</div>
+                                <div style="font-size:1.8rem; font-weight:700; color:var(--secondary);">{days} gün</div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        last_name = st.text_input("Soyad")
+                        position = st.text_input("Vəzifə")
+    
+                with st.expander("🏢 Təşkilat Məlumatları"):
+                    department = st.selectbox("Şöbə", DEPARTMENTS)
+    
+                with st.expander("🧳 Ezamiyyət Detalları"):
+                    trip_type = st.radio("Növ", ["Ölkə daxili", "Ölkə xarici"])
                     
-                    if country in COUNTRIES:
-                        city_options = list(COUNTRIES[country]['cities'].keys()) + ["Digər"]
-                        selected_city = st.selectbox("Şəhər", city_options)
+                    if trip_type == "Ölkə daxili":
+                        cols = st.columns(2)
+                        with cols[0]:
+                            from_city = st.selectbox("Haradan", CITIES, index=CITIES.index("Bakı"))
+                        with cols[1]:
+                            to_city = st.selectbox("Haraya", [c for c in CITIES if c != from_city])
+                        ticket_price = calculate_domestic_amount(from_city, to_city)
+                        domestic_allowances = load_domestic_allowances()
+                        daily_allowance = domestic_allowances.get(to_city, domestic_allowances['Digər'])
+                    else:  # Ölkə xarici ezamiyyət
+                        country = st.selectbox("Ölkə", list(COUNTRIES.keys()))
                         
-                        if selected_city == "Digər":
-                            base_allowance = 500  # Default value
-                            currency = COUNTRIES[country]['currency']
-                        else:
-                            city_data = COUNTRIES[country]['cities'][selected_city]
-                            base_allowance = city_data['allowance']
-                            currency = city_data['currency']
-                        
-                        # Ödəniş rejimi seçimi
-                        payment_mode = st.selectbox(
-                            "Ödəniş rejimi",
-                            options=["Adi rejim", "Günlük Normaya 50% əlavə", "Günlük Normaya 30% əlavə"]
-                        )
-                        
-                        # Günlük müavinətin hesablanması (ORİJİNAL VALYUTADA)
-                        if payment_mode == "Adi rejim":
-                            daily_allowance = float(base_allowance)
-                        elif payment_mode == "Günlük Normaya 50% əlavə":
-                            daily_allowance = float(base_allowance * 1.5)
-                        else:
-                            daily_allowance = float(base_allowance * 1.3)
-                        
-                        # Qonaqlama növünün seçimi
-                        accommodation = st.radio(
-                            "Qonaqlama növü",
-                            options=[
-                                "Adi Rejim",
-                                "Yalnız yaşayış yeri ilə təmin edir", 
-                                "Yalnız gündəlik xərcləri təmin edir"
-                            ]
-                        )
-
-
-
-                cols = st.columns(2)
-                with cols[0]:
-                    start_date = st.date_input("Başlanğıc tarixi")
-                with cols[1]:
-                    end_date = st.date_input("Bitmə tarixi")
-                
-                purpose = st.text_area("Ezamiyyət məqsədi")
+                        if country in COUNTRIES:
+                            city_options = list(COUNTRIES[country]['cities'].keys()) + ["Digər"]
+                            selected_city = st.selectbox("Şəhər", city_options)
+                            
+                            if selected_city == "Digər":
+                                base_allowance = 500  # Default value
+                                currency = COUNTRIES[country]['currency']
+                            else:
+                                city_data = COUNTRIES[country]['cities'][selected_city]
+                                base_allowance = city_data['allowance']
+                                currency = city_data['currency']
+                            
+                            # Ödəniş rejimi seçimi
+                            payment_mode = st.selectbox(
+                                "Ödəniş rejimi",
+                                options=["Adi rejim", "Günlük Normaya 50% əlavə", "Günlük Normaya 30% əlavə"]
+                            )
+                            
+                            # Günlük müavinətin hesablanması (ORİJİNAL VALYUTADA)
+                            if payment_mode == "Adi rejim":
+                                daily_allowance = float(base_allowance)
+                            elif payment_mode == "Günlük Normaya 50% əlavə":
+                                daily_allowance = float(base_allowance * 1.5)
+                            else:
+                                daily_allowance = float(base_allowance * 1.3)
+                            
+                            # Qonaqlama növünün seçimi
+                            accommodation = st.radio(
+                                "Qonaqlama növü",
+                                options=[
+                                    "Adi Rejim",
+                                    "Yalnız yaşayış yeri ilə təmin edir", 
+                                    "Yalnız gündəlik xərcləri təmin edir"
+                                ]
+                            )
+    
+    
+    
+                    cols = st.columns(2)
+                    with cols[0]:
+                        start_date = st.date_input("Başlanğıc tarixi")
+                    with cols[1]:
+                        end_date = st.date_input("Bitmə tarixi")
+                    
+                    purpose = st.text_area("Ezamiyyət məqsədi")
+                    st.markdown('</div>', unsafe_allow_html=True)
 
         # Sağ Sütun (Hesablama)
         with col2:
             with st.container():
                 st.markdown('<div class="section-header">💰 Hesablama</div>', unsafe_allow_html=True)
+                # Hesablama hissəsində:
+                fig = go.Figure(go.Indicator(
+                    mode = "number+gauge",
+                    value = total_amount,
+                    number = {'prefix': "₼"},
+                    gauge = {
+                        'shape': "bullet",
+                        'axis': {'range': [None, total_amount*1.2]},
+                        'bar': {'color': "#6366f1"}
+                    }
+                ))
+                fig.update_layout(height=100, margin=dict(t=0,b=0,l=0,r=0))
+                st.plotly_chart(fig, use_container_width=True)
+
                 
                 if start_date and end_date and end_date >= start_date:
                     trip_days = (end_date - start_date).days + 1
@@ -562,6 +639,20 @@ with tab1:
 
 # ============================== ADMIN PANELİ ==============================
 with tab2:
+    st.markdown("""
+    <style>
+        .ag-theme-streamlit {
+            --ag-border-radius: 12px;
+            --ag-font-family: 'Segoe UI';
+            --ag-header-background-color: #f8fafc;
+        }
+        .ag-root-wrapper {
+            border: 1px solid rgba(0,0,0,0.1)!important;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05)!important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
     # Admin giriş statusunun yoxlanılması
     if 'admin_logged' not in st.session_state:
         st.session_state.admin_logged = False
