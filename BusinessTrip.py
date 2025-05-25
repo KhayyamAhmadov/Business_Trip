@@ -329,20 +329,41 @@ def scrape_currency_rates():
     try:
         url = "https://www.cbar.az/currency/rates"
         response = requests.get(url)
-        soup = BeautifulSoup(response.content, 'html.parser')
+        soup = BeautifulSoup(response.text, 'html.parser')
         
         currencies = {}
         table = soup.find('table', {'class': 'table'})
-        for row in table.find_all('tr')[1:]:  # Başlığı atlayaq
+        
+        # Başlıqları tapaq
+        headers = [header.text.strip() for header in table.find('tr').find_all('th')]
+        
+        # Məlumat sətirlərini emal edək
+        for row in table.find_all('tr')[1:]:
             cols = row.find_all('td')
             if len(cols) >= 3:
                 code = cols[1].text.strip()
-                rate = float(cols[2].text.strip())
-                currencies[code] = rate
+                rate = cols[2].text.strip().replace(',', '.')
+                currencies[code] = float(rate)
         return currencies
     except Exception as e:
-        st.error(f"Valyuta məzənnələri yüklənərkən xəta: {str(e)}")
+        st.error(f"Valyuta məzənnələri skreyp edilərkən xəta: {str(e)}")
         return {}
+
+# Valyuta məzənnələri üçün funksiyalar
+def load_currency_rates():
+    try:
+        df = pd.read_excel("currency_rates.xlsx")
+        return df.set_index('Kod')['Məzənnə'].to_dict()
+    except FileNotFoundError:
+        return {}
+
+def save_currency_rates(rates_dict):
+    df = pd.DataFrame({
+        'Kod': rates_dict.keys(),
+        'Məzənnə': rates_dict.values()
+    })
+    df.to_excel("currency_rates.xlsx", index=False)
+
 
 # COUNTRIES konfiqurasiyasinin dinamiklesmesi 
 def load_countries_config():
@@ -367,19 +388,6 @@ def save_countries_config(countries):
             'Şəhərlər': str(info['cities'])
         })
     pd.DataFrame(data).to_excel("countries_config.xlsx", index=False)
-
-
-def get_exchange_rate(currency_code):
-    try:
-        df = pd.read_excel("currency_rates.xlsx")
-        rate = df[df['Kod'] == currency_code]['Məzənnə'].values[0]
-        return float(rate)
-    except:
-        return 1.0  # Əgər məzənnə tapılmasa
-
-# Xarici ezamiyyət hesablamalarında
-exchange_rate = get_exchange_rate(currency)
-
 
 
 st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
@@ -1161,53 +1169,78 @@ with tab2:
         # valyuta 
         # Admin panelində Currency tab-ını elave olunur
         with tab_currency:
-            st.markdown("### Valyuta Məzənnələrinin İdarə Edilməsi")
+            st.markdown("### 💱 Valyuta Məzənnələrinin İdarə Edilməsi")
             
-            # Valyutaları skreyp et
-            if st.button("🔄 Valyuta məzənnələrini yenilə"):
-                scraped_rates = scrape_currency_rates()
-                if scraped_rates:
-                    df_currency = pd.DataFrame({
-                        'Valyuta': scraped_rates.keys(),
-                        'Kod': scraped_rates.keys(),
-                        'Məzənnə': scraped_rates.values()
-                    })
-                    df_currency.to_excel("currency_rates.xlsx", index=False)
-                    st.success("Valyuta məzənnələri uğurla yeniləndi!")
+            # Yenilə düyməsi və skreypinq
+            col1, col2 = st.columns([3,1])
+            with col2:
+                if st.button("🔄 CBAR-dan yenilə", help="Cəbrəyyarlıq Bankının rəsgi saytından aktual məzənnələri yüklə"):
+                    with st.spinner("Məzənnələr yüklənir..."):
+                        scraped_rates = scrape_currency_rates()
+                        if scraped_rates:
+                            save_currency_rates(scraped_rates)
+                            st.success(f"{len(scraped_rates)} valyuta uğurla yeniləndi!")
+                        else:
+                            st.error("Məzənnələr yüklənə bilmədi!")
             
+            # Mövcud məzənnələrin redaktəsi
             try:
-                df_currency = pd.read_excel("currency_rates.xlsx")
-            except FileNotFoundError:
-                df_currency = pd.DataFrame(columns=['Valyuta', 'Kod', 'Məzənnə'])
-            
-            edited_currency = st.data_editor(
-                df_currency,
-                num_rows="dynamic",
-                column_config={
-                    "Məzənnə": st.column_config.NumberColumn(
-                        "AZN qarşılığı",
-                        format="%.4f",
-                        min_value=0.0001,
-                    ),
-                    "Kod": st.column_config.TextColumn(
-                        "Valyuta Kodu (3 hərf)",
-                        max_chars=3,
-                        validate="^[A-Z]{3}$",
-                    )
-                }
-            )
-            
-            if st.button("💾 Valyuta məzənnələrini saxla"):
-                edited_currency.to_excel("currency_rates.xlsx", index=False)
-                st.success("Məzənnələr yeniləndi!")
-            
-            # Cari məzənnələrin göstərilməsi
+                current_rates = load_currency_rates()
+                df = pd.DataFrame({
+                    'Kod': current_rates.keys(),
+                    'Məzənnə': current_rates.values()
+                })
+                
+                edited_df = st.data_editor(
+                    df,
+                    num_rows="dynamic",
+                    column_config={
+                        "Kod": st.column_config.TextColumn(
+                            "Valyuta Kodu (3 hərf)",
+                            max_chars=3,
+                            validate="^[A-Z]{3}$",
+                            required=True
+                        ),
+                        "Məzənnə": st.column_config.NumberColumn(
+                            "1 AZN = ?",
+                            format="%.4f",
+                            min_value=0.0001,
+                            required=True
+                        )
+                    },
+                    key="currency_editor"
+                )
+                
+                if st.button("💾 Saxla"):
+                    new_rates = edited_df.set_index('Kod')['Məzənnə'].to_dict()
+                    save_currency_rates(new_rates)
+                    st.success("Məzənnələr yeniləndi!")
+                    
+            except Exception as e:
+                st.error(f"Məzənnələr yüklənərkən xəta: {str(e)}")
+        
+            # Cari məzənnələrin cədvəli
             with st.expander("📊 Cari Valyuta Məzənnələri"):
                 try:
-                    current_rates = pd.read_excel("currency_rates.xlsx")
-                    st.dataframe(current_rates, hide_index=True)
-                except FileNotFoundError:
-                    st.warning("Valyuta məzənnələri faylı tapılmadı")
+                    current_rates = load_currency_rates()
+                    if current_rates:
+                        df_display = pd.DataFrame({
+                            'Valyuta': current_rates.keys(),
+                            'Məzənnə (1 AZN)': current_rates.values()
+                        })
+                        st.dataframe(df_display, 
+                                    hide_index=True,
+                                    column_config={
+                                        "Valyuta": "Valyuta Kodu",
+                                        "Məzənnə (1 AZN)": st.column_config.NumberColumn(
+                                            format="%.4f"
+                                        )
+                                    })
+                    else:
+                        st.warning("Heç bir məzənnə tapılmadı")
+                except Exception as e:
+                    st.error(f"Məlumatlar göstərilərkən xəta: {str(e)}")
+
 
 
 if __name__ == "__main__":
