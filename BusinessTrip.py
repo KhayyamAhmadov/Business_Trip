@@ -362,16 +362,6 @@ with tab1:
                 else:  # Ölkə xarici ezamiyyət
                     country = st.selectbox("Ölkə", list(COUNTRIES.keys()))
                     
-                    # Qonaqlama növünün seçimi əlavə edilməli
-                    accommodation = st.radio(
-                        "Qonaqlama növü",
-                        options=[
-                            "Tam təminat",
-                            "Yalnız yaşayış yeri ilə təmin edir", 
-                            "Yalnız gündəlik xərcləri təmin edir"
-                        ]
-                    )
-                    
                     if country in COUNTRIES:
                         city_options = list(COUNTRIES[country]['cities'].keys()) + ["Digər"]
                         selected_city = st.selectbox("Şəhər", city_options)
@@ -380,13 +370,9 @@ with tab1:
                             base_allowance = 500  # Default value
                             currency = COUNTRIES[country]['currency']
                         else:
-                            base_allowance = COUNTRIES[country]['cities'][selected_city]['allowance']
-                            currency = COUNTRIES[country]['cities'][selected_city]['currency']
-                        
-                        # Valyuta konvertasiyası
-                        # Valyuta konvertasiyası
-                        exchange_rate = CURRENCY_RATES.get(currency, 1)
-                        base_allowance_azn = base_allowance * exchange_rate
+                            city_data = COUNTRIES[country]['cities'][selected_city]
+                            base_allowance = city_data['allowance']
+                            currency = city_data['currency']
                         
                         # Ödəniş rejimi seçimi
                         payment_mode = st.selectbox(
@@ -394,13 +380,23 @@ with tab1:
                             options=["Adi rejim", "Günlük Normaya 50% əlavə", "Günlük Normaya 30% əlavə"]
                         )
                         
-                        # DÜZGÜN HESABLAMA -->
+                        # Günlük müavinətin hesablanması (ORİJİNAL VALYUTADA)
                         if payment_mode == "Adi rejim":
-                            daily_allowance = float(base_allowance_azn)
+                            daily_allowance = float(base_allowance)
                         elif payment_mode == "Günlük Normaya 50% əlavə":
-                            daily_allowance = float(base_allowance_azn * 1.5)
+                            daily_allowance = float(base_allowance * 1.5)
                         else:
-                            daily_allowance = float(base_allowance_azn * 1.3)
+                            daily_allowance = float(base_allowance * 1.3)
+                        
+                        # Qonaqlama növünün seçimi
+                        accommodation = st.radio(
+                            "Qonaqlama növü",
+                            options=[
+                                "Tam təminat",
+                                "Yalnız yaşayış yeri ilə təmin edir", 
+                                "Yalnız gündəlik xərcləri təmin edir"
+                            ]
+                        )
 
 
 
@@ -433,47 +429,84 @@ with tab1:
                         st.metric("🍽️ Gündəlik xərclər", f"{daily_expenses:.2f} AZN")
                         st.metric("⏳ Müddət", f"{trip_days} gün")
                         st.metric("💳 Ümumi məbləğ", f"{total_amount:.2f} AZN")
-        
+
                     else:
                         # Xarici ezamiyyət hesablamaları
-                        base_allowance = COUNTRIES[country]
-                        if payment_mode == "Adi rejim":
-                            daily_allowance = base_allowance
-                        elif payment_mode == "Günlük Normaya 50% əlavə":
-                            daily_allowance = base_allowance * 1.5
+                        country_data = COUNTRIES[country]
+                        if selected_city == "Digər":
+                            base_allowance = 500  # Default value
+                            currency = country_data['currency']
                         else:
-                            daily_allowance = base_allowance * 1.3
-        
+                            city_data = country_data['cities'][selected_city]
+                            base_allowance = city_data['allowance']
+                            currency = city_data['currency']
+                    
+                        # Valyuta məzənnəsi
+                        exchange_rate = CURRENCY_RATES.get(currency, 1.0)
+                        
+                        # Ödəniş rejimi ilə günlük müavinət
+                        if payment_mode == "Adi rejim":
+                            daily_foreign = float(base_allowance)
+                        elif payment_mode == "Günlük Normaya 50% əlavə":
+                            daily_foreign = float(base_allowance * 1.5)
+                        else:
+                            daily_foreign = float(base_allowance * 1.3)
+                    
+                        # AZN-ə çevrilmiş günlük müavinət
+                        daily_azn = daily_foreign * exchange_rate
+                    
+                        # Ümumi məbləğ hesablaması (ƏVVƏLCƏ ORİJİNAL VALYUTADA)
                         if accommodation == "Yalnız yaşayış yeri ilə təmin edir":
-                            daily_expenses = daily_allowance * 0.4 * trip_days
-                            total_amount = daily_expenses
-                            delta_label = "40% gündəlik xərclər"
+                            total_foreign = daily_foreign * 0.4 * trip_days
                         elif accommodation == "Yalnız gündəlik xərcləri təmin edir":
                             nights = trip_days - 1 if trip_days > 1 else 0
-                            hotel_cost = daily_allowance * 0.6 * nights
-                            total_amount = hotel_cost
-                            delta_label = "60% mehmanxana xərcləri" if nights > 0 else None
+                            total_foreign = daily_foreign * 0.6 * nights
                         else:
-                            total_amount = daily_allowance * trip_days
-                            delta_label = None
-        
+                            total_foreign = daily_foreign * trip_days
+                    
+                        # AZN-ə çevrilmiş ümumi məbləğ
+                        total_azn = total_foreign * exchange_rate
+                    
                         # Göstəricilər
-                        st.metric("📅 Günlük müavinət", f"{daily_allowance} AZN")
+                        st.metric("📅 Günlük müavinət", 
+                                 f"{daily_azn:.2f} AZN", 
+                                 delta=f"{daily_foreign:.2f} {currency}")
+                        
+                        # Qonaqlama növünə görə xərclər
                         if accommodation == "Yalnız yaşayış yeri ilə təmin edir":
-                            st.metric("🍽️ Gündəlik xərclər (40%)", f"{daily_expenses:.2f} AZN")
+                            st.metric("🍽️ Gündəlik xərclər", 
+                                     f"{(daily_foreign * 0.4 * trip_days * exchange_rate):.2f} AZN", 
+                                     delta=f"{(daily_foreign * 0.4 * trip_days):.2f} {currency}")
                         elif accommodation == "Yalnız gündəlik xərcləri təmin edir" and trip_days > 1:
-                            st.metric("🏨 Mehmanxana xərcləri (60%)", f"{hotel_cost:.2f} AZN")
+                            st.metric("🏨 Mehmanxana xərcləri", 
+                                     f"{(daily_foreign * 0.6 * (trip_days-1) * exchange_rate):.2f} AZN", 
+                                     delta=f"{(daily_foreign * 0.6 * (trip_days-1)):.2f} {currency}")
+                    
                         st.metric("⏳ Müddət", f"{trip_days} gün")
-                        st.metric(
-                            "💳 Ümumi məbləğ", 
-                            f"{total_amount:.2f} AZN", 
-                            delta=delta_label,
-                            delta_color="normal" if delta_label else "off"
-                        )
+                        
+                        # Ümumi məbləğ göstəricisi
+                        st.metric("💳 Ümumi məbləğ", 
+                                 f"{total_azn:.2f} AZN", 
+                                 delta=f"{total_foreign:.2f} {currency}",
+                                 help="Qırmızı rəqəm orijinal valyutada məbləği göstərir")
+                        
+                        # Məzənnə məlumatı
+                        st.info(f"💱 Cari məzənnə: 1 {currency} = {exchange_rate} AZN")
 
 
+            # hashas 
             if st.button("✅ Yadda Saxla", use_container_width=True):
                 if all([first_name, last_name, start_date, end_date]):
+                    # Valyuta məlumatlarını ümumiləşdir
+                    if trip_type == "Ölkə daxili":
+                        currency = "AZN"
+                        exchange_rate = 1.0
+                        daily_foreign = daily_allowance
+                        total_foreign = total_amount
+                    else:
+                        daily_foreign = daily_allowance / exchange_rate if exchange_rate != 0 else 0
+                        total_foreign = total_amount / exchange_rate if exchange_rate != 0 else 0
+            
                     trip_data = {
                         "Tarix": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         "Ad": first_name,
@@ -485,13 +518,19 @@ with tab1:
                         "Qonaqlama növü": accommodation if trip_type == "Ölkə xarici" else "Tətbiq edilmir",
                         "Marşrut": f"{from_city} → {to_city}" if trip_type == "Ölkə daxili" else f"{country} - {selected_city}",
                         "Bilet qiyməti": ticket_price,
-                        "Günlük müavinət": daily_allowance,
+                        # Valyuta məlumatları
+                        "Günlük müavinət (Valyuta)": f"{daily_foreign:.2f} {currency}" if trip_type == "Ölkə xarici" else "Tətbiq edilmir",
+                        "Günlük müavinət (AZN)": f"{daily_allowance:.2f}",
+                        "Ümumi məbləğ (Valyuta)": f"{total_foreign:.2f} {currency}" if trip_type == "Ölkə xarici" else "Tətbiq edilmir",
+                        "Ümumi məbləğ (AZN)": f"{total_amount:.2f}",
+                        "Valyuta": currency if trip_type == "Ölkə xarici" else "AZN",
+                        "Məzənnə": exchange_rate if trip_type == "Ölkə xarici" else 1.0,
                         "Başlanğıc tarixi": start_date.strftime("%Y-%m-%d"),
                         "Bitmə tarixi": end_date.strftime("%Y-%m-%d"),
                         "Günlər": trip_days,
-                        "Ümumi məbləğ": total_amount,
                         "Məqsəd": purpose
                     }
+                    
                     if save_trip_data(trip_data):
                         st.success("Məlumatlar yadda saxlandı!")
                 else:
