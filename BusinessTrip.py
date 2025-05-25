@@ -1451,7 +1451,7 @@ with tab2:
                         if new_country.strip() and new_country not in countries_data:
                             countries_data[new_country] = {
                                 "currency": new_currency,
-                                "cities": {"digər": {"allowance": 100, "currency": new_currency}}
+                                "cities": {"digər": {"allowance": 100, "currency": new_currency}}}
                             save_countries_data(countries_data)
                             st.rerun()
 
