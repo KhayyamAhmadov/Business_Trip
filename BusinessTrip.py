@@ -21,60 +21,279 @@ st.set_page_config(
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
-# Giriş üçün CSS
+# Giriş üçün CSS - Tam yenilənmiş dizayn
 st.markdown("""
 <style>
-    .login-box {
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-        color: white;
-        padding: 2.5rem;
-        border-radius: 15px;
-        box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        max-width: 500px;
-        margin: 5rem auto;
+    /* Ümumi sayfa stilleri */
+    .stApp {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
     }
+    
+    /* Login container */
+    .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 2rem;
+    }
+    
+    .login-box {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 3rem 2.5rem;
+        border-radius: 20px;
+        box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.1),
+            0 0 0 1px rgba(255, 255, 255, 0.05);
+        max-width: 450px;
+        width: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Dekorativ elementlər */
+    .login-box::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: conic-gradient(from 0deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+        animation: rotate 20s linear infinite;
+        z-index: -1;
+    }
+    
+    @keyframes rotate {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
     .login-header {
         text-align: center;
-        margin-bottom: 2rem;
+        margin-bottom: 2.5rem;
     }
-    .login-box .stTextInput {
-        width: 30%;
-        margin: 0 auto;
+    
+    .login-header h2 {
+        color: #2d3748;
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
-    .stTextInput input {
-        background-color: rgba(255,255,255,0.2)!important;
-        color: white!important;
-        border: 1px solid rgba(255,255,255,0.3)!important;
-        border-radius: 8px!important;
-        padding: 8px 12px!important;
-        font-size: 14px!important;
+    
+    .login-subtitle {
+        color: #718096;
+        font-size: 0.95rem;
+        margin-top: 0.5rem;
+        font-weight: 400;
     }
-    .stTextInput input::placeholder {
-        color: rgba(255,255,255,0.7)!important;
+    
+    /* Input sahəsi üçün xüsusi wrapper */
+    .custom-input-wrapper {
+        position: relative;
+        margin: 1.5rem 0;
+    }
+    
+    .input-icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #a0aec0;
+        font-size: 1.2rem;
+        z-index: 2;
+    }
+    
+    /* Streamlit input override */
+    .stTextInput > div > div > input {
+        background: rgba(247, 250, 252, 0.8) !important;
+        border: 2px solid rgba(226, 232, 240, 0.8) !important;
+        border-radius: 12px !important;
+        padding: 15px 20px 15px 50px !important;
+        font-size: 16px !important;
+        color: #2d3748 !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+    }
+    
+    .stTextInput > div > div > input:focus {
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+        background: rgba(255, 255, 255, 0.95) !important;
+        outline: none !important;
+    }
+    
+    .stTextInput > div > div > input::placeholder {
+        color: #a0aec0 !important;
+        font-weight: 400 !important;
+    }
+    
+    /* Düymə stilləri */
+    .login-button {
+        margin-top: 2rem;
+    }
+    
+    .stButton > button {
+        width: 100% !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 15px 30px !important;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.5px !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4) !important;
+        background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%) !important;
+    }
+    
+    .stButton > button:active {
+        transform: translateY(0px) !important;
+    }
+    
+    /* Xəta mesajı */
+    .stAlert {
+        border-radius: 10px !important;
+        margin-top: 1rem !important;
+    }
+    
+    /* Loading animation */
+    .loading-dots {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 80px;
+        margin: 1rem auto;
+    }
+    
+    .loading-dots div {
+        position: absolute;
+        top: 33px;
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        background: #667eea;
+        animation-timing-function: cubic-bezier(0, 1, 1, 0);
+    }
+    
+    .loading-dots div:nth-child(1) {
+        left: 8px;
+        animation: loading1 0.6s infinite;
+    }
+    
+    .loading-dots div:nth-child(2) {
+        left: 8px;
+        animation: loading2 0.6s infinite;
+    }
+    
+    .loading-dots div:nth-child(3) {
+        left: 32px;
+        animation: loading2 0.6s infinite;
+    }
+    
+    .loading-dots div:nth-child(4) {
+        left: 56px;
+        animation: loading3 0.6s infinite;
+    }
+    
+    @keyframes loading1 {
+        0% { transform: scale(0); }
+        100% { transform: scale(1); }
+    }
+    
+    @keyframes loading3 {
+        0% { transform: scale(1); }
+        100% { transform: scale(0); }
+    }
+    
+    @keyframes loading2 {
+        0% { transform: translate(0, 0); }
+        100% { transform: translate(24px, 0); }
+    }
+    
+    /* Responsive dizayn */
+    @media (max-width: 768px) {
+        .login-box {
+            margin: 1rem;
+            padding: 2rem 1.5rem;
+        }
+        
+        .login-header h2 {
+            font-size: 1.5rem;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
 
 if not st.session_state.logged_in:
-    with st.container():
-        st.markdown('<div class="login-box"><div class="login-header"><h2>🔐 Sistemə Giriş</h2></div>', unsafe_allow_html=True)
-        
-        access_code = st.text_input("Giriş kodu", type="password", 
-                                  label_visibility="collapsed", 
-                                  placeholder="Giriş kodunu daxil edin...")
-        
-        cols = st.columns([1,2,1])
-        with cols[1]:
-            if st.button("Daxil ol", use_container_width=True):
-                if access_code == "admin":
-                    st.session_state.logged_in = True
-                    st.rerun()
-                else:
-                    st.error("Yanlış giriş kodu!")
-        st.markdown('</div>', unsafe_allow_html=True)
+    # Login səhifəsi
+    st.markdown("""
+    <div class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <h2>🔐 Sistemə Giriş</h2>
+                <p class="login-subtitle">Ezamiyyət İdarəetmə Sistemi</p>
+            </div>
+    """, unsafe_allow_html=True)
+    
+    # Input sahəsi üçün xüsusi wrapper
+    st.markdown('<div class="custom-input-wrapper">', unsafe_allow_html=True)
+    st.markdown('<div class="input-icon">🔑</div>', unsafe_allow_html=True)
+    
+    access_code = st.text_input(
+        "Giriş kodu", 
+        type="password", 
+        label_visibility="collapsed", 
+        placeholder="Giriş kodunu daxil edin...",
+        key="access_code_input"
+    )
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Düymə
+    st.markdown('<div class="login-button">', unsafe_allow_html=True)
+    if st.button("🚀 Daxil ol", use_container_width=True):
+        # Loading animasiyası
+        with st.spinner('Yoxlanılır...'):
+            import time
+            time.sleep(1)  # Realistik loading təsiri
+            
+            if access_code == "admin":
+                st.session_state.logged_in = True
+                st.success("✅ Uğurla daxil oldunuz!")
+                time.sleep(1)
+                st.rerun()
+            else:
+                st.error("❌ Yanlış giriş kodu! Yenidən cəhd edin.")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Alt məlumat
+    st.markdown("""
+            <div style="text-align: center; margin-top: 2rem; color: #718096; font-size: 0.85rem;">
+                <p>🛡️ Təhlükəsiz giriş sistemi</p>
+                <p style="margin-top: 0.5rem;">© 2025 Ezamiyyət İdarəetmə Sistemi</p>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
     st.stop()
 
-# 3. ƏSAS TƏRTİBAT VƏ PROQRAM MƏNTİQİ
+# 3. ƏSAS TƏRTİBAT VƏ PROQRAM MƏNTİQİ (Login uğurlu olduqdan sonra)
 st.markdown("""
 <style>
     :root {
@@ -122,8 +341,24 @@ st.markdown("""
         border-radius: 12px!important;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05)!important;
     }
+    
+    /* Logout düyməsi */
+    .logout-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 999;
+    }
 </style>
 """, unsafe_allow_html=True)
+
+# Logout düyməsi
+st.markdown('<div class="logout-container">', unsafe_allow_html=True)
+if st.button("🚪 Çıxış", key="logout_btn"):
+    st.session_state.logged_in = False
+    st.rerun()
+st.markdown('</div>', unsafe_allow_html=True)
+
 
 # ============================== SABİTLƏR ==============================
 DEPARTMENTS = [
