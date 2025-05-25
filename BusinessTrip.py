@@ -892,6 +892,11 @@ CURRENCY_RATES = {
     "GEL": 0.7
 }
 
+# Fayl yoxlamaları ən başda
+if not os.path.exists("countries_data.json"):
+    with open('countries_data.json', 'w', encoding='utf-8') as f:
+        json.dump(COUNTRIES, f, ensure_ascii=False, indent=4)
+
 # Valyuta məzənnələri faylı
 if not os.path.exists("currency_rates.xlsx"):
     pd.DataFrame({
@@ -1455,6 +1460,9 @@ with tab2:
         # Parametrlər sekmesi
         # Parametrlər sekmesi
         with tab_settings:
+            # Ölkə məlumatlarını yüklə
+            countries_data = load_countries_data()  # ƏSAS DÜZƏLİŞ
+            
             st.markdown("### 🛠️ Sistem Parametrləri")
             
             # Ölkə və məbləğlərin redaktə edilməsi
