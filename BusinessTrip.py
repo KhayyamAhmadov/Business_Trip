@@ -501,8 +501,8 @@ with tab1:
                     if trip_type == "Ölkə daxili":
                         currency = "AZN"
                         exchange_rate = 1.0
-                        daily_foreign = daily_allowance
-                        total_foreign = total_amount
+                        daily_foreign = None
+                        total_foreign = None
                     else:
                         daily_foreign = daily_allowance / exchange_rate if exchange_rate != 0 else 0
                         total_foreign = total_amount / exchange_rate if exchange_rate != 0 else 0
@@ -519,10 +519,10 @@ with tab1:
                         "Marşrut": f"{from_city} → {to_city}" if trip_type == "Ölkə daxili" else f"{country} - {selected_city}",
                         "Bilet qiyməti": ticket_price,
                         # Valyuta məlumatları
-                        "Günlük müavinət (Valyuta)": f"{daily_foreign:.2f} {currency}" if trip_type == "Ölkə xarici" else "Tətbiq edilmir",
-                        "Günlük müavinət (AZN)": f"{daily_allowance:.2f}",
-                        "Ümumi məbləğ (Valyuta)": f"{total_foreign:.2f} {currency}" if trip_type == "Ölkə xarici" else "Tətbiq edilmir",
-                        "Ümumi məbləğ (AZN)": f"{total_amount:.2f}",
+                        "Günlük müavinət (Valyuta)": f"{daily_foreign:.2f} {currency}" if trip_type == "Ölkə xarici" else None,
+                        "Günlük müavinət (AZN)": daily_allowance,
+                        "Ümumi məbləğ (Valyuta)": f"{total_foreign:.2f} {currency}" if trip_type == "Ölkə xarici" else None,
+                        "Ümumi məbləğ (AZN)": total_amount,
                         "Valyuta": currency if trip_type == "Ölkə xarici" else "AZN",
                         "Məzənnə": exchange_rate if trip_type == "Ölkə xarici" else 1.0,
                         "Başlanğıc tarixi": start_date.strftime("%Y-%m-%d"),
@@ -535,6 +535,7 @@ with tab1:
                         st.success("Məlumatlar yadda saxlandı!")
                 else:
                     st.error("Zəhmət olmasa bütün məcburi sahələri doldurun!")
+
 
 # ============================== ADMIN PANELİ ==============================
 with tab2:
