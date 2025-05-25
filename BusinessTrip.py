@@ -324,58 +324,6 @@ def save_domestic_allowances(data):
     df.to_excel("domestic_allowances.xlsx", index=False)
 
 
-def scrape_all_cbar_rates():
-    try:
-        url = "https://www.cbar.az/currency/rates"
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-        
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()  # HTTP xətalarını yoxlayırıq
-        
-        tree = html.fromstring(response.content)
-        
-        # Bütün valyutalar cədvəlini tapırıq
-        table = tree.xpath('//div[@class="table_wrap"]/table')[0]
-        all_rows = table.xpath('.//tr')[1:]  # Başlıq sətrini çıxarırıq
-        
-        currencies = []
-        for row in all_rows:
-            try:
-                # Hüceyrələri dəqiq şəkildə çıxarırıq
-                columns = row.xpath('.//td')
-                
-                valyuta = columns[0].text_content().strip()
-                kod = columns[1].text_content().strip()
-                nominal = columns[2].text_content().strip().replace(' ', '')
-                ad = columns[3].text_content().strip()
-                mezenne = columns[4].text_content().strip().replace(',', '.')
-
-                # Məlumatları təmizləyir və konvertasiya edirik
-                currency_data = {
-                    'Valyuta': valyuta,
-                    'Kod': kod,
-                    'Nominal': int(nominal),
-                    'Adı': ad,
-                    'AZN qarşılığı': float(mezenne),
-                    '1 ədəd üçün': round(float(mezenne)/int(nominal), 4)
-                }
-                
-                currencies.append(currency_data)
-                
-            except Exception as e:
-                st.warning(f"Xəta: {row.text_content()} - {str(e)}")
-                continue
-
-        return pd.DataFrame(currencies)
-
-    except Exception as e:
-        st.error(f"Ümumi xəta: {str(e)}")
-        return None
-
-
-
 
 st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
 tab1, tab2 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli"])
@@ -649,11 +597,9 @@ with tab2:
             st.rerun()
         
         # Sekmələrin yaradılması
-        tab_manage, tab_import, tab_settings, tab_currency, tab_cbar = st.tabs(
-            ["📊 Məlumatlar", "📥 İdxal", "⚙️ Parametrlər", "💱 Valyuta Məzənnələri", "🌐 CBAR Valyuta"]
+        tab_manage, tab_import, tab_settings, tab_currency = st.tabs(
+            ["📊 Məlumatlar", "📥 İdxal", "⚙️ Parametrlər", "💱 Valyuta Məzənnələri"]
         )
-
-
         
         # Məlumatlar sekmesi
         with tab_manage:
@@ -1129,92 +1075,6 @@ with tab2:
             if st.button("💾 Valyuta məzənnələrini saxla"):
                 edited_currency.to_excel("currency_rates.xlsx", index=False)
                 st.success("Məzənnələr yeniləndi!")
-
-
-
-        with tab_cbar:
-            st.markdown("## 🇦🇿 CBAR Valyuta Məzənnələri")
-            st.caption("Son yenilənmə: " + pd.Timestamp.now().strftime("%Y-%m-%d %H:%M"))
-            
-            if st.button("🔄 Məzənnələri Yenilə", key="refresh_all"):
-                with st.spinner("Bütün valyutalar yüklənir..."):
-                    df = scrape_all_cbar_rates()
-                    if df is not None:
-                        st.session_state.all_currencies = df
-                        st.success(f"{len(df)} valyuta uğurla yükləndi!")
-            
-            if 'all_currencies' in st.session_state:
-                df = st.session_state.all_currencies
-                
-                # Interaktiv cədvəl konfiqurasiyası
-                gb = GridOptionsBuilder.from_dataframe(df)
-                gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=20)
-                gb.configure_selection('multiple', use_checkbox=True)
-                gb.configure_column('1 ədəd üçün', type=["numericColumn","numberColumnFilter","customNumericFormat"], precision=4)
-                gb.configure_column('AZN qarşılığı', headerName="1 AZN = X Valyuta", type=["numericColumn","numberColumnFilter","customNumericFormat"], precision=4)
-                
-                grid_options = gb.build()
-                
-                # Cədvəli göstəririk
-                AgGrid(
-                    df,
-                    gridOptions=grid_options,
-                    height=600,
-                    width='100%',
-                    theme='streamlit',
-                    allow_unsafe_jscode=True,
-                    update_mode=GridUpdateMode.SELECTION_CHANGED
-                )
-                
-                # Seçilmiş valyutalar üzrə əməliyyatlar
-                selected_rows = st.session_state.get('all_currencies_selected', [])
-                
-                if selected_rows:
-                    st.markdown("### Seçilmiş Valyutalar")
-                    cols = st.columns([3,1,1])
-                    with cols[0]:
-                        selected_df = pd.DataFrame(selected_rows)
-                        st.dataframe(selected_df[['Kod', 'Adı', '1 ədəd üçün']])
-                    
-                    with cols[1]:
-                        if st.button("📈 Qrafikdə göstər"):
-                            fig = px.bar(
-                                selected_df,
-                                x='Kod',
-                                y='1 ədəd üçün',
-                                title='Seçilmiş Valyutaların Müqayisəsi',
-                                labels={'1 ədəd üçün': 'AZN qarşılığı'},
-                                color='Kod'
-                            )
-                            st.plotly_chart(fig)
-                    
-                    with cols[2]:
-                        if st.button("💾 Excelə çıxar"):
-                            csv = selected_df.to_csv(index=False).encode('utf-8-sig')
-                            st.download_button(
-                                label="📥 Yüklə",
-                                data=csv,
-                                file_name='cbar_secilmis_valyutalar.csv',
-                                mime='text/csv'
-                            )
-                
-                # Statistik məlumatlar
-                st.markdown("### 📊 Ümumi Statistikalar")
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Ən güclü valyuta", 
-                             f"{df['1 ədəd üçün'].min():.4f} AZN", 
-                             df.loc[df['1 ədəd üçün'].idxmin()]['Kod'])
-                with col2:
-                    st.metric("Ən zəif valyuta", 
-                             f"{df['1 ədəd üçün'].max():.4f} AZN", 
-                             df.loc[df['1 ədəd üçün'].idxmax()]['Kod'])
-                with col3:
-                    st.metric("Ortalama dəyər", 
-                             f"{df['1 ədəd üçün'].mean():.4f} AZN")
-            
-            else:
-                st.info("Yuxarıdakı 'Yenilə' düyməsini istifadə edərək məzənnələri yükləyin")
 
 
 if __name__ == "__main__":
