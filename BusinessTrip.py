@@ -892,6 +892,22 @@ CURRENCY_RATES = {
     "GEL": 0.7
 }
 
+# Valyuta məzənnələri faylı
+if not os.path.exists("currency_rates.xlsx"):
+    pd.DataFrame({
+        'Valyuta': list(CURRENCY_RATES.keys()),
+        'Məzənnə': list(CURRENCY_RATES.values())
+    }).to_excel("currency_rates.xlsx", index=False)
+
+# Əsas məlumatlar faylı
+if not os.path.exists("ezamiyyet_melumatlari.xlsx"):
+    pd.DataFrame(columns=[
+        'Tarix', 'Ad', 'Soyad', 'Ata adı', 'Vəzifə', 'Şöbə', 
+        'Ezamiyyət növü', 'Ödəniş növü', 'Qonaqlama növü',
+        'Marşrut', 'Bilet qiyməti', 'Günlük müavinət', 
+        'Başlanğıc tarixi', 'Bitmə tarixi', 'Günlər', 
+        'Ümumi məbləğ', 'Məqsəd'
+    ]).to_excel("ezamiyyet_melumatlari.xlsx", index=False)
 
 
 # ============================== FUNKSİYALAR ==============================
@@ -998,7 +1014,11 @@ with tab1:
                 else:  # Ölkə xarici ezamiyyət
                     # YENİLİK 1: Dinamik yükləmə
                     countries_data = load_countries_data()
-                    currency_rates = pd.read_excel("currency_rates.xlsx").set_index('Valyuta')['Məzənnə'].to_dict()
+                    try:
+                        currency_rates = pd.read_excel("currency_rates.xlsx").set_index('Valyuta')['Məzənnə'].to_dict()
+                    except FileNotFoundError:
+                        currency_rates = CURRENCY_RATES.copy()
+                        st.warning("Valyuta məzənnələri faylı tapılmadı, standart dəyərlər istifadə olunur!")
                     
                     country = st.selectbox("Ölkə", list(countries_data.keys()))
                     
