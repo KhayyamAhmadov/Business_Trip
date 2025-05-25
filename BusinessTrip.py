@@ -392,12 +392,11 @@ with tab1:
                         accommodation = st.radio(
                             "Qonaqlama növü",
                             options=[
-                                "Tam təminat",
+                                "Adi Rejim",  # "Tam təminat" əvəzinə
                                 "Yalnız yaşayış yeri ilə təmin edir", 
                                 "Yalnız gündəlik xərcləri təmin edir"
                             ]
                         )
-
 
 
                 cols = st.columns(2)
@@ -457,15 +456,17 @@ with tab1:
                     
                         # Ümumi məbləğ hesablaması (ƏVVƏLCƏ ORİJİNAL VALYUTADA)
                         if accommodation == "Yalnız yaşayış yeri ilə təmin edir":
-                            total_foreign = daily_foreign * 0.4 * trip_days
+                            daily_expenses_foreign = daily_foreign * 0.4
+                            total_foreign = daily_expenses_foreign * trip_days
                         elif accommodation == "Yalnız gündəlik xərcləri təmin edir":
                             nights = trip_days - 1 if trip_days > 1 else 0
-                            total_foreign = daily_foreign * 0.6 * nights
-                        else:
+                            hotel_cost_foreign = daily_foreign * 0.6 * nights
+                            total_foreign = hotel_cost_foreign
+                        else:  # Adi Rejim
                             total_foreign = daily_foreign * trip_days
-                    
-                        # AZN-ə çevrilmiş ümumi məbləğ
+
                         total_azn = total_foreign * exchange_rate
+
                     
                         # Göstəricilər
                         st.metric("📅 Günlük müavinət", 
@@ -473,14 +474,21 @@ with tab1:
                                  delta=f"{daily_foreign:.2f} {currency}")
                         
                         # Qonaqlama növünə görə xərclər
+                        # Günlük müavinət hər iki valyutada
+                        st.metric("📅 Günlük müavinət", 
+                                 f"{daily_azn:.2f} AZN", 
+                                 delta=f"{daily_foreign:.2f} {currency}")
+                        
+                        # Şərti göstəricilər
                         if accommodation == "Yalnız yaşayış yeri ilə təmin edir":
                             st.metric("🍽️ Gündəlik xərclər", 
                                      f"{(daily_foreign * 0.4 * trip_days * exchange_rate):.2f} AZN", 
                                      delta=f"{(daily_foreign * 0.4 * trip_days):.2f} {currency}")
-                        elif accommodation == "Yalnız gündəlik xərcləri təmin edir" and trip_days > 1:
-                            st.metric("🏨 Mehmanxana xərcləri", 
-                                     f"{(daily_foreign * 0.6 * (trip_days-1) * exchange_rate):.2f} AZN", 
-                                     delta=f"{(daily_foreign * 0.6 * (trip_days-1)):.2f} {currency}")
+                        elif accommodation == "Yalnız gündəlik xərcləri təmin edir":
+                            if trip_days > 1:
+                                st.metric("🏨 Mehmanxana xərcləri", 
+                                         f"{(daily_foreign * 0.6 * (trip_days-1) * exchange_rate):.2f} AZN", 
+                                         delta=f"{(daily_foreign * 0.6 * (trip_days-1)):.2f} {currency}")
                     
                         st.metric("⏳ Müddət", f"{trip_days} gün")
                         
@@ -492,7 +500,6 @@ with tab1:
                         
                         # Məzənnə məlumatı
                         st.info(f"💱 Cari məzənnə: 1 {currency} = {exchange_rate} AZN")
-
 
             # hashas 
             if st.button("✅ Yadda Saxla", use_container_width=True):
