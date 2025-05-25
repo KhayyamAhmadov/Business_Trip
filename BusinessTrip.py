@@ -56,113 +56,71 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 if not st.session_state.logged_in:
-    col1, col2, col3 = st.columns([1,2,1])
-    with col2:
-        with st.container():
-            st.markdown("""
-            <div class="login-glass">
-                <div style="text-align:center; margin-bottom:2rem;">
-                    <h1 style="color:white; font-size:2.5rem;">✈️ EZAMİYYƏT</h1>
-                    <p style="color:rgba(255,255,255,0.9);">İdarəetmə Sisteminə Xoş Gəlmisiniz</p>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            access_code = st.text_input(" ", 
-                                      type="password", 
-                                      placeholder="Giriş kodunu daxil edin...",
-                                      label_visibility="collapsed")
-            
-            if st.button("🔑 Sistemə daxil ol", use_container_width=True):
+    with st.container():
+        st.markdown('<div class="login-box"><div class="login-header"><h2>🔐 Sistemə Giriş</h2></div>', unsafe_allow_html=True)
+        
+        access_code = st.text_input("Giriş kodu", type="password", 
+                                  label_visibility="collapsed", 
+                                  placeholder="Giriş kodunu daxil edin...")
+        
+        cols = st.columns([1,2,1])
+        with cols[1]:
+            if st.button("Daxil ol", use_container_width=True):
                 if access_code == "admin":
                     st.session_state.logged_in = True
                     st.rerun()
                 else:
                     st.error("Yanlış giriş kodu!")
-            
-            st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
 
 # 3. ƏSAS TƏRTİBAT VƏ PROQRAM MƏNTİQİ
 st.markdown("""
 <style>
     :root {
-        --primary: #6366f1;
-        --secondary: #8b5cf6;
-        --accent: #ec4899;
-        --bg: #f8fafc;
-        --text: #1e293b;
-        --card-bg: rgba(255, 255, 255, 0.95);
-    }
-    
-    html, body, [class*="css"]  {
-        font-family: 'Segoe UI', system-ui, sans-serif;
-        background: var(--bg);
-        color: var(--text);
+        --primary-color: #6366f1;
+        --secondary-color: #8b5cf6;
+        --background-color: #ffffff;
     }
     
     .main-header {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-        padding: 3rem 1rem;
-        border-radius: 0 0 30px 30px;
-        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-        margin: -2rem -1rem 3rem -1rem;
-        position: relative;
-        overflow: hidden;
+        text-align: center;
+        padding: 2rem 1rem;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        margin: -1rem -1rem 2rem -1rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-radius: 0 0 20px 20px;
     }
     
-    .main-header::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(45deg, transparent 0%, rgba(255,255,255,0.1) 100%);
-    }
-    
-    .custom-card {
-        background: var(--card-bg);
-        border-radius: 16px;
-        padding: 2rem;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-        border: 1px solid rgba(255,255,255,0.3);
-        backdrop-filter: blur(10px);
-        margin-bottom: 1.5rem;
+    .section-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white!important;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin: 1.5rem 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-left: none;
     }
     
     .stButton>button {
-        border-radius: 12px!important;
-        padding: 12px 24px!important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1)!important;
-        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)!important;
-        border: none!important;
-        font-weight: 600!important;
+        border-radius: 8px!important;
+        padding: 0.5rem 1.5rem!important;
+        transition: all 0.3s ease!important;
+        border: 1px solid var(--primary-color)!important;
+        background: var(--secondary-color)!important;
+        color: white!important;
     }
     
     .stButton>button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(99,102,241,0.3)!important;
+        box-shadow: 0 4px 6px rgba(99,102,241,0.3)!important;
+        background: var(--primary-color)!important;
     }
     
-    .login-glass {
-        background: rgba(255, 255, 255, 0.15)!important;
-        backdrop-filter: blur(12px);
-        border-radius: 20px;
-        border: 1px solid rgba(255,255,255,0.2);
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-        padding: 3rem 2.5rem;
-    }
-    
-    .metric-card {
-        background: var(--card-bg);
-        border-radius: 14px;
-        padding: 1.5rem;
-        border: 1px solid rgba(0,0,0,0.05);
-        transition: transform 0.3s ease;
-    }
-    
-    .metric-card:hover {
-        transform: translateY(-5px);
+    .dataframe {
+        border-radius: 12px!important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05)!important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -365,16 +323,65 @@ def save_domestic_allowances(data):
     })
     df.to_excel("domestic_allowances.xlsx", index=False)
 
+def scrape_currency_rates():
+    try:
+        url = "https://www.cbar.az/currency/rates"
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        currencies = {}
+        table = soup.find('table', {'class': 'table'})
+        for row in table.find_all('tr')[1:]:  # Başlığı atlayaq
+            cols = row.find_all('td')
+            if len(cols) >= 3:
+                code = cols[1].text.strip()
+                rate = float(cols[2].text.strip())
+                currencies[code] = rate
+        return currencies
+    except Exception as e:
+        st.error(f"Valyuta məzənnələri yüklənərkən xəta: {str(e)}")
+        return {}
+
+# COUNTRIES konfiqurasiyasinin dinamiklesmesi 
+def load_countries_config():
+    try:
+        df = pd.read_excel("countries_config.xlsx")
+        countries = {}
+        for _, row in df.iterrows():
+            countries[row['Ölkə']] = {
+                "currency": row['Valyuta'],
+                "cities": eval(row['Şəhərlər'])  # Dict olaraq saxlayaq
+            }
+        return countries
+    except FileNotFoundError:
+        return {}
+
+def save_countries_config(countries):
+    data = []
+    for country, info in countries.items():
+        data.append({
+            'Ölkə': country,
+            'Valyuta': info['currency'],
+            'Şəhərlər': str(info['cities'])
+        })
+    pd.DataFrame(data).to_excel("countries_config.xlsx", index=False)
+
+
+def get_exchange_rate(currency_code):
+    try:
+        df = pd.read_excel("currency_rates.xlsx")
+        rate = df[df['Kod'] == currency_code]['Məzənnə'].values[0]
+        return float(rate)
+    except:
+        return 1.0  # Əgər məzənnə tapılmasa
+
+# Xarici ezamiyyət hesablamalarında
+exchange_rate = get_exchange_rate(currency)
+
 
 
 st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
 tab1, tab2 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli"])
-st.markdown("""
-<div class="main-header">
-    <h1 style="color:white; font-size:2.8rem; letter-spacing:-0.05em;">Ezamiyyət İdarəetmə Sistemi</h1>
-    <p style="color:rgba(255,255,255,0.9); font-size:1.1rem;">Səmərəli ezamiyyət idarəetməsi üçün vahid platforma</p>
-</div>
-""", unsafe_allow_html=True)
 
 # YENİ EZAMİYYƏT HISSESI
 with tab1:
@@ -383,112 +390,82 @@ with tab1:
         
         # Sol Sütun
         with col1:
-            with st.container():
-                st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-                with st.expander("👤 Şəxsi Məlumatlar", expanded=True):
+            with st.expander("👤 Şəxsi Məlumatlar", expanded=True):
+                cols = st.columns(2)
+                with cols[0]:
+                    first_name = st.text_input("Ad")
+                    father_name = st.text_input("Ata adı")
+                with cols[1]:
+                    last_name = st.text_input("Soyad")
+                    position = st.text_input("Vəzifə")
+
+            with st.expander("🏢 Təşkilat Məlumatları"):
+                department = st.selectbox("Şöbə", DEPARTMENTS)
+
+            with st.expander("🧳 Ezamiyyət Detalları"):
+                trip_type = st.radio("Növ", ["Ölkə daxili", "Ölkə xarici"])
+                
+                if trip_type == "Ölkə daxili":
                     cols = st.columns(2)
                     with cols[0]:
-                            st.markdown(f"""
-                            <div class="metric-card">
-                                <div style="font-size:0.9rem; color:#64748b;">Günlük müavinət</div>
-                                <div style="font-size:1.8rem; font-weight:700; color:var(--primary);">{daily_allowance} AZN</div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                        first_name = st.text_input("Ad")
-                        father_name = st.text_input("Ata adı")
+                        from_city = st.selectbox("Haradan", CITIES, index=CITIES.index("Bakı"))
                     with cols[1]:
-                            st.markdown(f"""
-                            <div class="metric-card">
-                                <div style="font-size:0.9rem; color:#64748b;">Ümumi müddət</div>
-                                <div style="font-size:1.8rem; font-weight:700; color:var(--secondary);">{days} gün</div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                        last_name = st.text_input("Soyad")
-                        position = st.text_input("Vəzifə")
-    
-                with st.expander("🏢 Təşkilat Məlumatları"):
-                    department = st.selectbox("Şöbə", DEPARTMENTS)
-    
-                with st.expander("🧳 Ezamiyyət Detalları"):
-                    trip_type = st.radio("Növ", ["Ölkə daxili", "Ölkə xarici"])
+                        to_city = st.selectbox("Haraya", [c for c in CITIES if c != from_city])
+                    ticket_price = calculate_domestic_amount(from_city, to_city)
+                    domestic_allowances = load_domestic_allowances()
+                    daily_allowance = domestic_allowances.get(to_city, domestic_allowances['Digər'])
+                else:  # Ölkə xarici ezamiyyət
+                    country = st.selectbox("Ölkə", list(COUNTRIES.keys()))
                     
-                    if trip_type == "Ölkə daxili":
-                        cols = st.columns(2)
-                        with cols[0]:
-                            from_city = st.selectbox("Haradan", CITIES, index=CITIES.index("Bakı"))
-                        with cols[1]:
-                            to_city = st.selectbox("Haraya", [c for c in CITIES if c != from_city])
-                        ticket_price = calculate_domestic_amount(from_city, to_city)
-                        domestic_allowances = load_domestic_allowances()
-                        daily_allowance = domestic_allowances.get(to_city, domestic_allowances['Digər'])
-                    else:  # Ölkə xarici ezamiyyət
-                        country = st.selectbox("Ölkə", list(COUNTRIES.keys()))
+                    if country in COUNTRIES:
+                        city_options = list(COUNTRIES[country]['cities'].keys()) + ["Digər"]
+                        selected_city = st.selectbox("Şəhər", city_options)
                         
-                        if country in COUNTRIES:
-                            city_options = list(COUNTRIES[country]['cities'].keys()) + ["Digər"]
-                            selected_city = st.selectbox("Şəhər", city_options)
-                            
-                            if selected_city == "Digər":
-                                base_allowance = 500  # Default value
-                                currency = COUNTRIES[country]['currency']
-                            else:
-                                city_data = COUNTRIES[country]['cities'][selected_city]
-                                base_allowance = city_data['allowance']
-                                currency = city_data['currency']
-                            
-                            # Ödəniş rejimi seçimi
-                            payment_mode = st.selectbox(
-                                "Ödəniş rejimi",
-                                options=["Adi rejim", "Günlük Normaya 50% əlavə", "Günlük Normaya 30% əlavə"]
-                            )
-                            
-                            # Günlük müavinətin hesablanması (ORİJİNAL VALYUTADA)
-                            if payment_mode == "Adi rejim":
-                                daily_allowance = float(base_allowance)
-                            elif payment_mode == "Günlük Normaya 50% əlavə":
-                                daily_allowance = float(base_allowance * 1.5)
-                            else:
-                                daily_allowance = float(base_allowance * 1.3)
-                            
-                            # Qonaqlama növünün seçimi
-                            accommodation = st.radio(
-                                "Qonaqlama növü",
-                                options=[
-                                    "Adi Rejim",
-                                    "Yalnız yaşayış yeri ilə təmin edir", 
-                                    "Yalnız gündəlik xərcləri təmin edir"
-                                ]
-                            )
-    
-    
-    
-                    cols = st.columns(2)
-                    with cols[0]:
-                        start_date = st.date_input("Başlanğıc tarixi")
-                    with cols[1]:
-                        end_date = st.date_input("Bitmə tarixi")
-                    
-                    purpose = st.text_area("Ezamiyyət məqsədi")
-                    st.markdown('</div>', unsafe_allow_html=True)
+                        if selected_city == "Digər":
+                            base_allowance = 500  # Default value
+                            currency = COUNTRIES[country]['currency']
+                        else:
+                            city_data = COUNTRIES[country]['cities'][selected_city]
+                            base_allowance = city_data['allowance']
+                            currency = city_data['currency']
+                        
+                        # Ödəniş rejimi seçimi
+                        payment_mode = st.selectbox(
+                            "Ödəniş rejimi",
+                            options=["Adi rejim", "Günlük Normaya 50% əlavə", "Günlük Normaya 30% əlavə"]
+                        )
+                        
+                        # Günlük müavinətin hesablanması (ORİJİNAL VALYUTADA)
+                        if payment_mode == "Adi rejim":
+                            daily_allowance = float(base_allowance)
+                        elif payment_mode == "Günlük Normaya 50% əlavə":
+                            daily_allowance = float(base_allowance * 1.5)
+                        else:
+                            daily_allowance = float(base_allowance * 1.3)
+                        
+                        # Qonaqlama növünün seçimi
+                        accommodation = st.radio(
+                            "Qonaqlama növü",
+                            options=[
+                                "Adi Rejim",
+                                "Yalnız yaşayış yeri ilə təmin edir", 
+                                "Yalnız gündəlik xərcləri təmin edir"
+                            ]
+                        )
+
+
+                cols = st.columns(2)
+                with cols[0]:
+                    start_date = st.date_input("Başlanğıc tarixi")
+                with cols[1]:
+                    end_date = st.date_input("Bitmə tarixi")
+                
+                purpose = st.text_area("Ezamiyyət məqsədi")
 
         # Sağ Sütun (Hesablama)
         with col2:
             with st.container():
                 st.markdown('<div class="section-header">💰 Hesablama</div>', unsafe_allow_html=True)
-                # Hesablama hissəsində:
-                fig = go.Figure(go.Indicator(
-                    mode = "number+gauge",
-                    value = total_amount,
-                    number = {'prefix': "₼"},
-                    gauge = {
-                        'shape': "bullet",
-                        'axis': {'range': [None, total_amount*1.2]},
-                        'bar': {'color': "#6366f1"}
-                    }
-                ))
-                fig.update_layout(height=100, margin=dict(t=0,b=0,l=0,r=0))
-                st.plotly_chart(fig, use_container_width=True)
-
                 
                 if start_date and end_date and end_date >= start_date:
                     trip_days = (end_date - start_date).days + 1
@@ -639,20 +616,6 @@ with tab1:
 
 # ============================== ADMIN PANELİ ==============================
 with tab2:
-    st.markdown("""
-    <style>
-        .ag-theme-streamlit {
-            --ag-border-radius: 12px;
-            --ag-font-family: 'Segoe UI';
-            --ag-header-background-color: #f8fafc;
-        }
-        .ag-root-wrapper {
-            border: 1px solid rgba(0,0,0,0.1)!important;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05)!important;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-    
     # Admin giriş statusunun yoxlanılması
     if 'admin_logged' not in st.session_state:
         st.session_state.admin_logged = False
@@ -879,100 +842,156 @@ with tab2:
                     st.error(f"Xəta: {str(e)}")
         
 
-        # Parametrlər sekmesi
-        # Parametrlər sekmesi
+        # Parametrler tabi 
         with tab_settings:
             st.markdown("### 🛠️ Sistem Parametrləri")
             
-            # Ölkə və məbləğlərin redaktə edilməsi
+            # Valyuta məzənnələri bölməsi
+            with st.expander("💱 Valyuta Məzənnələri", expanded=True):
+                # Skreyp et butonu
+                if st.button("🔄 Məzənnələri CBAR-dan yenilə"):
+                    scraped_rates = scrape_currency_rates()
+                    if scraped_rates:
+                        save_currency_rates(scraped_rates)
+                        st.success(f"{len(scraped_rates)} valyuta uğurla yeniləndi!")
+                
+                # Valyuta redaktə paneli
+                try:
+                    currency_rates = load_currency_rates()
+                    df_currency = pd.DataFrame({
+                        'Kod': currency_rates.keys(),
+                        'Məzənnə': currency_rates.values()
+                    })
+                    
+                    edited_currency = st.data_editor(
+                        df_currency,
+                        num_rows="dynamic",
+                        column_config={
+                            "Kod": st.column_config.TextColumn(
+                                "Valyuta Kodu (3 hərf)",
+                                max_chars=3,
+                                validate="^[A-Z]{3}$",
+                                required=True
+                            ),
+                            "Məzənnə": st.column_config.NumberColumn(
+                                "AZN qarşılığı",
+                                min_value=0.0001,
+                                format="%.4f",
+                                required=True
+                            )
+                        }
+                    )
+                    
+                    if st.button("💾 Valyuta dəyişikliklərini saxla"):
+                        new_rates = edited_currency.set_index('Kod')['Məzənnə'].to_dict()
+                        save_currency_rates(new_rates)
+                        st.success("Valyuta məzənnələri yeniləndi!")
+                        
+                except Exception as e:
+                    st.error(f"Valyuta məzənnələri yüklənərkən xəta: {str(e)}")
+        
+            # Ölkə və şəhər idarəetmə bölməsi
             with st.expander("🌍 Beynəlxalq Ezamiyyət Parametrləri", expanded=True):
-                st.markdown("### Ölkə və Şəhər İdarəetməsi")
+                COUNTRIES = load_countries_config()
+                CURRENCY_OPTIONS = list(load_currency_rates().keys())
                 
                 # Yeni ölkə əlavə etmə
                 cols = st.columns([3, 2, 1])
                 with cols[0]:
-                    new_country = st.text_input("Yeni ölkə adı", key="new_country_name")
+                    new_country_name = st.text_input("Yeni ölkə adı")
                 with cols[1]:
-                    new_currency = st.selectbox("Valyuta", list(CURRENCY_RATES.keys()), key="new_country_currency")
+                    new_country_currency = st.selectbox(
+                        "Valyuta seçin",
+                        options=CURRENCY_OPTIONS,
+                        index=0 if not CURRENCY_OPTIONS else None
+                    )
                 with cols[2]:
-                    if st.button("➕ Ölkə əlavə et", key="add_new_country"):
-                        if new_country.strip() and new_country not in COUNTRIES:
-                            COUNTRIES[new_country] = {
-                                "currency": new_currency,
+                    if st.button("➕ Ölkə əlavə et"):
+                        if new_country_name and new_country_name not in COUNTRIES:
+                            COUNTRIES[new_country_name] = {
+                                "currency": new_country_currency,
                                 "cities": {}
                             }
+                            save_countries_config(COUNTRIES)
                             st.rerun()
         
-                # Ölkə seçimi üçün dropdown
+                # Ölkə seçimi və redaktə
                 selected_country = st.selectbox(
-                    "Redaktə ediləcək ölkəni seçin",
-                    list(COUNTRIES.keys()),
-                    key="country_selector"
+                    "Redaktə ediləcək ölkə",
+                    options=list(COUNTRIES.keys()),
+                    index=0 if COUNTRIES else None
                 )
         
-                # Seçilmiş ölkənin parametrləri
                 if selected_country:
                     country_data = COUNTRIES[selected_country]
+                    
+                    # Ölkə əsas valyutasını redaktə
+                    new_currency = st.selectbox(
+                        "Ölkə valyutasını dəyişdir",
+                        options=CURRENCY_OPTIONS,
+                        index=CURRENCY_OPTIONS.index(country_data['currency']) if country_data['currency'] in CURRENCY_OPTIONS else 0
+                    )
+                    if new_currency != country_data['currency']:
+                        country_data['currency'] = new_currency
+                        save_countries_config(COUNTRIES)
+                        st.rerun()
+        
+                    # Şəhər idarəetmə
+                    st.markdown("### Şəhər Konfiqurasiyası")
                     
                     # Yeni şəhər əlavə etmə
                     cols = st.columns([3, 2, 2, 1])
                     with cols[0]:
-                        new_city = st.text_input("Yeni şəhər", key=f"new_city_{selected_country}")
+                        new_city_name = st.text_input("Yeni şəhər adı")
                     with cols[1]:
-                        city_allowance = st.number_input(
-                            "Müavinət", 
-                            min_value=0, 
-                            value=0,
-                            key=f"city_allowance_{selected_country}"
-                        )
+                        new_city_allowance = st.number_input("Günlük müavinət", min_value=0)
                     with cols[2]:
-                        city_currency = st.selectbox(
-                            "Valyuta",
-                            list(CURRENCY_RATES.keys()),
-                            index=list(CURRENCY_RATES.keys()).index(country_data['currency']),
-                            key=f"city_curr_{selected_country}"
+                        new_city_currency = st.selectbox(
+                            "Valyuta seçin",
+                            options=CURRENCY_OPTIONS,
+                            index=CURRENCY_OPTIONS.index(country_data['currency']) if country_data['currency'] in CURRENCY_OPTIONS else 0
                         )
                     with cols[3]:
-                        if st.button("Əlavə et", key=f"add_city_{selected_country}"):
-                            if new_city:
-                                country_data['cities'][new_city] = {
-                                    "allowance": city_allowance,
-                                    "currency": city_currency
+                        if st.button("➕ Şəhər əlavə et"):
+                            if new_city_name:
+                                country_data['cities'][new_city_name] = {
+                                    "allowance": new_city_allowance,
+                                    "currency": new_city_currency
                                 }
+                                save_countries_config(COUNTRIES)
                                 st.rerun()
         
                     # Mövcud şəhərlərin redaktəsi
-                    st.markdown("### Mövcud Şəhərlər")
                     for city in list(country_data['cities'].keys()):
-                        cols = st.columns([3, 2, 2, 1])
+                        st.markdown(f"#### {city}")
+                        cols = st.columns([2, 2, 1])
                         with cols[0]:
-                            st.write(f"🏙️ {city}")
-                        with cols[1]:
                             new_allowance = st.number_input(
-                                "Müavinət",
+                                "Günlük müavinət",
                                 value=country_data['cities'][city]['allowance'],
-                                key=f"allowance_{selected_country}_{city}"
+                                key=f"allowance_{city}"
+                            )
+                        with cols[1]:
+                            new_currency = st.selectbox(
+                                "Valyuta",
+                                options=CURRENCY_OPTIONS,
+                                index=CURRENCY_OPTIONS.index(country_data['cities'][city]['currency']) if country_data['cities'][city]['currency'] in CURRENCY_OPTIONS else 0,
+                                key=f"currency_{city}"
                             )
                         with cols[2]:
-                            new_curr = st.selectbox(
-                                "Valyuta",
-                                options=list(CURRENCY_RATES.keys()),
-                                index=list(CURRENCY_RATES.keys()).index(
-                                    country_data['cities'][city]['currency']
-                                ),
-                                key=f"currency_{selected_country}_{city}"
-                            )
-                        with cols[3]:
-                            if st.button("🗑️", key=f"del_{selected_country}_{city}"):
+                            if st.button("🗑️ Sil", key=f"delete_{city}"):
                                 del country_data['cities'][city]
+                                save_countries_config(COUNTRIES)
                                 st.rerun()
         
-                        if new_allowance != country_data['cities'][city]['allowance'] or \
-                           new_curr != country_data['cities'][city]['currency']:
+                        if new_allowance != country_data['cities'][city]['allowance'] or new_currency != country_data['cities'][city]['currency']:
                             country_data['cities'][city]['allowance'] = new_allowance
-                            country_data['cities'][city]['currency'] = new_curr
+                            country_data['cities'][city]['currency'] = new_currency
+                            save_countries_config(COUNTRIES)
                             st.rerun()
 
+
+            
                         # Yeni əlavə edilən hissə
             with st.expander("🏙️ Daxili Ezamiyyət Müavinətləri (Ətraflı)", expanded=True):
                 st.markdown("""
@@ -1138,34 +1157,55 @@ with tab2:
                     st.info("Hələ heç bir məlumat faylı yaradılmayıb")
 
         # valyuta 
+        # Admin panelində Currency tab-ını elave olunur
         with tab_currency:
             st.markdown("### Valyuta Məzənnələrinin İdarə Edilməsi")
             
+            # Valyutaları skreyp et
+            if st.button("🔄 Valyuta məzənnələrini yenilə"):
+                scraped_rates = scrape_currency_rates()
+                if scraped_rates:
+                    df_currency = pd.DataFrame({
+                        'Valyuta': scraped_rates.keys(),
+                        'Kod': scraped_rates.keys(),
+                        'Məzənnə': scraped_rates.values()
+                    })
+                    df_currency.to_excel("currency_rates.xlsx", index=False)
+                    st.success("Valyuta məzənnələri uğurla yeniləndi!")
+            
             try:
-                currency_df = pd.read_excel("currency_rates.xlsx")
+                df_currency = pd.read_excel("currency_rates.xlsx")
             except FileNotFoundError:
-                currency_df = pd.DataFrame({
-                    'Valyuta': list(CURRENCY_RATES.keys()),
-                    'Məzənnə': list(CURRENCY_RATES.values())
-                })
+                df_currency = pd.DataFrame(columns=['Valyuta', 'Kod', 'Məzənnə'])
             
             edited_currency = st.data_editor(
-                currency_df,
+                df_currency,
                 num_rows="dynamic",
                 column_config={
                     "Məzənnə": st.column_config.NumberColumn(
                         "AZN qarşılığı",
                         format="%.4f",
                         min_value=0.0001,
-                        default=1.0  # Əlavə et
+                    ),
+                    "Kod": st.column_config.TextColumn(
+                        "Valyuta Kodu (3 hərf)",
+                        max_chars=3,
+                        validate="^[A-Z]{3}$",
                     )
                 }
             )
-
             
             if st.button("💾 Valyuta məzənnələrini saxla"):
                 edited_currency.to_excel("currency_rates.xlsx", index=False)
                 st.success("Məzənnələr yeniləndi!")
+            
+            # Cari məzənnələrin göstərilməsi
+            with st.expander("📊 Cari Valyuta Məzənnələri"):
+                try:
+                    current_rates = pd.read_excel("currency_rates.xlsx")
+                    st.dataframe(current_rates, hide_index=True)
+                except FileNotFoundError:
+                    st.warning("Valyuta məzənnələri faylı tapılmadı")
 
 
 if __name__ == "__main__":
