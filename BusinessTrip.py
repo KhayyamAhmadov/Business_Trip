@@ -1687,14 +1687,7 @@ with tab2:
         # valyuta 
         with tab_currency:
             st.markdown("### Valyuta Məzənnələrinin İdarə Edilməsi")
-            
-            try:
-                currency_df = pd.read_excel("currency_rates.xlsx")
-            except FileNotFoundError:
-                currency_df = pd.DataFrame({
-                    'Valyuta': list(CURRENCY_RATES.keys()),
-                    'Məzənnə': list(CURRENCY_RATES.values())
-                })
+            currency_df = pd.read_excel("currency_rates.xlsx")
             
             edited_currency = st.data_editor(
                 currency_df,
@@ -1704,18 +1697,19 @@ with tab2:
                         "AZN qarşılığı",
                         format="%.4f",
                         min_value=0.0001,
-                        default=1.0  # Əlavə et
+                        default=1.0
                     )
                 }
             )
-
-            
+        
             if st.button("💾 Valyuta məzənnələrini saxla"):
                 edited_currency.to_excel("currency_rates.xlsx", index=False)
                 st.success("Məzənnələr yeniləndi!")
 
 
+
 if __name__ == "__main__":
+    # Create main data file if not exists
     if not os.path.exists("ezamiyyet_melumatlari.xlsx"):
         pd.DataFrame(columns=[
             'Tarix', 'Ad', 'Soyad', 'Ata adı', 'Vəzifə', 'Şöbə', 
@@ -1724,3 +1718,12 @@ if __name__ == "__main__":
             'Başlanğıc tarixi', 'Bitmə tarixi', 'Günlər', 
             'Ümumi məbləğ', 'Məqsəd'
         ]).to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+    
+    # Create currency rates file if not exists
+    if not os.path.exists("currency_rates.xlsx"):
+        pd.DataFrame({
+            'Valyuta': list(CURRENCY_RATES.keys()),
+            'Məzənnə': list(CURRENCY_RATES.values())
+        }).to_excel("currency_rates.xlsx", index=False)
+
+
