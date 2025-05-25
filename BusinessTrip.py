@@ -352,7 +352,8 @@ def scrape_currency_rates():
 # Valyuta məzənnələri üçün funksiyalar
 def load_currency_rates():
     try:
-        df = pd.read_excel("currency_rates.xlsx")
+        df = pd.read_excel("currency_rates.xlsx", dtype={'Kod': str})
+        df = df.dropna(subset=['Kod'])
         return df.set_index('Kod')['Məzənnə'].to_dict()
     except FileNotFoundError:
         return {}
@@ -1186,35 +1187,40 @@ with tab2:
             # Mövcud məzənnələrin redaktəsi
             try:
                 current_rates = load_currency_rates()
-                df = pd.DataFrame({
-                    'Kod': current_rates.keys(),
-                    'Məzənnə': current_rates.values()
-                })
-                
-                edited_df = st.data_editor(
-                    df,
-                    num_rows="dynamic",
-                    column_config={
-                        "Kod": st.column_config.TextColumn(
-                            "Valyuta Kodu (3 hərf)",
-                            max_chars=3,
-                            validate="^[A-Z]{3}$",
-                            required=True
-                        ),
-                        "Məzənnə": st.column_config.NumberColumn(
-                            "1 AZN = ?",
-                            format="%.4f",
-                            min_value=0.0001,
-                            required=True
-                        )
-                    },
-                    key="currency_editor"
-                )
-                
-                if st.button("💾 Saxla"):
-                    new_rates = edited_df.set_index('Kod')['Məzənnə'].to_dict()
-                    save_currency_rates(new_rates)
-                    st.success("Məzənnələr yeniləndi!")
+                if current_rates:
+                    df = pd.DataFrame({
+                        'Kod': current_rates.keys(),
+                        'Məzənnə': current_rates.values()
+                    })
+                    # Valyuta kodlarını stringə çevir
+                    df['Kod'] = df['Kod'].astype(str)
+                    
+                    edited_df = st.data_editor(
+                        df,
+                        num_rows="dynamic",
+                        column_config={
+                            "Kod": st.column_config.TextColumn(
+                                "Valyuta Kodu (3 hərf)",
+                                max_chars=3,
+                                validate="^[A-Z]{3}$",
+                                required=True
+                            ),
+                            "Məzənnə": st.column_config.NumberColumn(
+                                "1 AZN = ?",
+                                format="%.4f",
+                                min_value=0.0001,
+                                required=True
+                            )
+                        },
+                        key="currency_editor"
+                    )
+                    
+                    if st.button("💾 Saxla"):
+                        new_rates = edited_df.set_index('Kod')['Məzənnə'].to_dict()
+                        save_currency_rates(new_rates)
+                        st.success("Məzənnələr yeniləndi!")
+                else:
+                    st.warning("Valyuta məzənnələri tapılmadı")
                     
             except Exception as e:
                 st.error(f"Məzənnələr yüklənərkən xəta: {str(e)}")
@@ -1240,7 +1246,6 @@ with tab2:
                         st.warning("Heç bir məzənnə tapılmadı")
                 except Exception as e:
                     st.error(f"Məlumatlar göstərilərkən xəta: {str(e)}")
-
 
 
 if __name__ == "__main__":
