@@ -21,18 +21,18 @@ st.set_page_config(
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
-# Giriş üçün CSS - Ultra müasir dizayn
+# Giriş üçün CSS - Yeni rəng sxemi
 st.markdown("""
 <style>
-    /* Ümumi sayfa stilleri */
+    /* Ümumi sayfa stilleri - Yeni rəng paleti */
     .stApp {
-        background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 25%, #16213e 50%, #0f3460 100%);
+        background: linear-gradient(135deg, #1a1625 0%, #2d1b3d 25%, #3d2553 50%, #4a2c66 100%);
         min-height: 100vh;
         position: relative;
         overflow: hidden;
     }
     
-    /* Arxa plan animasiyası */
+    /* Arxa plan animasiyası - Yenilənmiş rənglər */
     .stApp::before {
         content: '';
         position: fixed;
@@ -41,9 +41,9 @@ st.markdown("""
         width: 100%;
         height: 100%;
         background: 
-            radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-            radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
-            radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+            radial-gradient(circle at 20% 80%, rgba(124, 58, 237, 0.3) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(239, 68, 68, 0.3) 0%, transparent 50%),
+            radial-gradient(circle at 40% 40%, rgba(14, 165, 233, 0.2) 0%, transparent 50%);
         animation: float 6s ease-in-out infinite;
         z-index: -1;
     }
@@ -63,14 +63,14 @@ st.markdown("""
     }
     
     .login-box {
-        background: rgba(30, 30, 46, 0.85);
+        background: rgba(45, 27, 61, 0.85);
         backdrop-filter: blur(25px);
-        border: 1px solid rgba(147, 51, 234, 0.3);
+        border: 1px solid rgba(124, 58, 237, 0.3);
         padding: 3.5rem 3rem;
         border-radius: 24px;
         box-shadow: 
             0 25px 50px rgba(0, 0, 0, 0.25),
-            0 0 0 1px rgba(147, 51, 234, 0.1),
+            0 0 0 1px rgba(124, 58, 237, 0.1),
             inset 0 1px 0 rgba(255, 255, 255, 0.1);
         max-width: 480px;
         width: 100%;
@@ -78,7 +78,7 @@ st.markdown("""
         overflow: hidden;
     }
     
-    /* Dekorativ elementlər */
+    /* Dekorativ elementlər - Yeni rəng gradiyenti */
     .login-box::before {
         content: '';
         position: absolute;
@@ -89,9 +89,9 @@ st.markdown("""
         background: conic-gradient(
             from 0deg,
             transparent,
-            rgba(147, 51, 234, 0.1),
-            rgba(59, 130, 246, 0.1),
-            rgba(16, 185, 129, 0.1),
+            rgba(124, 58, 237, 0.1),
+            rgba(14, 165, 233, 0.1),
+            rgba(239, 68, 68, 0.1),
             transparent
         );
         animation: rotate 25s linear infinite;
@@ -105,7 +105,7 @@ st.markdown("""
         left: 0;
         right: 0;
         height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(147, 51, 234, 0.5), transparent);
+        background: linear-gradient(90deg, transparent, rgba(124, 58, 237, 0.5), transparent);
     }
     
     @keyframes rotate {
@@ -123,16 +123,16 @@ st.markdown("""
         font-size: 2.2rem;
         font-weight: 800;
         margin: 0;
-        background: linear-gradient(135deg, #a855f7 0%, #3b82f6 50%, #10b981 100%);
+        background: linear-gradient(135deg, #7c3aed 0%, #ef4444 50%, #0ea5e9 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
         letter-spacing: -0.5px;
-        text-shadow: 0 0 30px rgba(168, 85, 247, 0.3);
+        text-shadow: 0 0 30px rgba(124, 58, 237, 0.3);
     }
     
     .login-subtitle {
-        color: #94a3b8;
+        color: #cbd5e1;
         font-size: 1rem;
         margin-top: 0.8rem;
         font-weight: 500;
@@ -150,7 +150,7 @@ st.markdown("""
         left: 18px;
         top: 50%;
         transform: translateY(-50%);
-        background: linear-gradient(135deg, #a855f7, #3b82f6);
+        background: linear-gradient(135deg, #7c3aed, #0ea5e9);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -158,10 +158,10 @@ st.markdown("""
         z-index: 2;
     }
     
-    /* Streamlit input override */
+    /* Streamlit input override - Yeni rənglər */
     .stTextInput > div > div > input {
-        background: rgba(15, 15, 35, 0.6) !important;
-        border: 2px solid rgba(147, 51, 234, 0.3) !important;
+        background: rgba(26, 22, 37, 0.6) !important;
+        border: 2px solid rgba(124, 58, 237, 0.3) !important;
         border-radius: 16px !important;
         padding: 18px 24px 18px 55px !important;
         font-size: 16px !important;
@@ -174,28 +174,28 @@ st.markdown("""
     }
     
     .stTextInput > div > div > input:focus {
-        border-color: #a855f7 !important;
+        border-color: #7c3aed !important;
         box-shadow: 
-            0 0 0 4px rgba(168, 85, 247, 0.2),
-            0 8px 25px rgba(168, 85, 247, 0.15) !important;
-        background: rgba(15, 15, 35, 0.8) !important;
+            0 0 0 4px rgba(124, 58, 237, 0.2),
+            0 8px 25px rgba(124, 58, 237, 0.15) !important;
+        background: rgba(26, 22, 37, 0.8) !important;
         outline: none !important;
         transform: translateY(-1px) !important;
     }
     
     .stTextInput > div > div > input::placeholder {
-        color: #64748b !important;
+        color: #94a3b8 !important;
         font-weight: 500 !important;
     }
     
-    /* Düymə stilləri */
+    /* Düymə stilləri - Yeni gradiyent */
     .login-button {
         margin-top: 2.5rem;
     }
     
     .stButton > button {
         width: 100% !important;
-        background: linear-gradient(135deg, #a855f7 0%, #3b82f6 50%, #10b981 100%) !important;
+        background: linear-gradient(135deg, #7c3aed 0%, #ef4444 50%, #0ea5e9 100%) !important;
         color: white !important;
         border: none !important;
         border-radius: 16px !important;
@@ -205,7 +205,7 @@ st.markdown("""
         letter-spacing: 0.5px !important;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
         box-shadow: 
-            0 8px 25px rgba(168, 85, 247, 0.4),
+            0 8px 25px rgba(124, 58, 237, 0.4),
             inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
         position: relative !important;
         overflow: hidden !important;
@@ -229,9 +229,9 @@ st.markdown("""
     .stButton > button:hover {
         transform: translateY(-3px) scale(1.02) !important;
         box-shadow: 
-            0 15px 35px rgba(168, 85, 247, 0.5),
+            0 15px 35px rgba(124, 58, 237, 0.5),
             0 5px 15px rgba(0, 0, 0, 0.2) !important;
-        background: linear-gradient(135deg, #9333ea 0%, #2563eb 50%, #059669 100%) !important;
+        background: linear-gradient(135deg, #6d28d9 0%, #dc2626 50%, #0284c7 100%) !important;
     }
     
     .stButton > button:active {
@@ -245,7 +245,7 @@ st.markdown("""
         margin-top: 1rem !important;
     }
     
-    /* Loading animation - Yenilənmiş */
+    /* Loading animation - Yenilənmiş rənglər */
     .loading-dots {
         display: inline-block;
         position: relative;
@@ -260,9 +260,9 @@ st.markdown("""
         width: 13px;
         height: 13px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #a855f7, #3b82f6);
+        background: linear-gradient(135deg, #7c3aed, #ef4444);
         animation-timing-function: cubic-bezier(0, 1, 1, 0);
-        box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+        box-shadow: 0 0 10px rgba(124, 58, 237, 0.5);
     }
     
     .loading-dots div:nth-child(1) {
@@ -359,13 +359,13 @@ if not st.session_state.logged_in:
     
     # Alt məlumat
     st.markdown("""
-            <div style="text-align: center; margin-top: 2.5rem; color: #64748b; font-size: 0.9rem;">
+            <div style="text-align: center; margin-top: 2.5rem; color: #94a3b8; font-size: 0.9rem;">
                 <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 1rem;">
-                    <div style="height: 1px; width: 60px; background: linear-gradient(90deg, transparent, #475569);"></div>
-                    <span style="color: #94a3b8;">🛡️ Təhlükəsiz giriş sistemi</span>
-                    <div style="height: 1px; width: 60px; background: linear-gradient(90deg, #475569, transparent);"></div>
+                    <div style="height: 1px; width: 60px; background: linear-gradient(90deg, transparent, #64748b);"></div>
+                    <span style="color: #cbd5e1;">🛡️ Təhlükəsiz giriş sistemi</span>
+                    <div style="height: 1px; width: 60px; background: linear-gradient(90deg, #64748b, transparent);"></div>
                 </div>
-                <p style="margin-top: 0.8rem; color: #475569; font-weight: 500;">© 2025 Ezamiyyət İdarəetmə Sistemi</p>
+                <p style="margin-top: 0.8rem; color: #64748b; font-weight: 500;">© 2025 Ezamiyyət İdarəetmə Sistemi</p>
             </div>
         </div>
     </div>
@@ -373,20 +373,21 @@ if not st.session_state.logged_in:
     
     st.stop()
 
-# 3. ƏSAS TƏRTİBAT VƏ PROQRAM MƏNTİQİ (Login uğurlu olduqdan sonra)
+# 3. ƏSAS TƏRTİBAT VƏ PROQRAM MƏNTİQİ (Login uğurlu olduqdan sonra) - Yeni rəng sxemi
 st.markdown("""
 <style>
     :root {
-        --primary-color: #a855f7;
-        --secondary-color: #3b82f6;
-        --accent-color: #10b981;
-        --background-color: #0f172a;
-        --surface-color: #1e293b;
+        --primary-color: #7c3aed;
+        --secondary-color: #ef4444;
+        --accent-color: #0ea5e9;
+        --background-color: #1a1625;
+        --surface-color: #2d1b3d;
         --text-color: #f1f5f9;
+        --border-color: #4a5568;
     }
     
     .stApp {
-        background: linear-gradient(135deg, var(--background-color) 0%, #1a1a2e 50%, #16213e 100%);
+        background: linear-gradient(135deg, var(--background-color) 0%, #2d1b3d 50%, #3d2553 100%);
         color: var(--text-color);
     }
     
@@ -397,7 +398,7 @@ st.markdown("""
         color: white;
         margin: -1rem -1rem 2rem -1rem;
         box-shadow: 
-            0 8px 25px rgba(168, 85, 247, 0.3),
+            0 8px 25px rgba(124, 58, 237, 0.3),
             0 0 0 1px rgba(255, 255, 255, 0.1);
         border-radius: 0 0 24px 24px;
         position: relative;
@@ -427,9 +428,9 @@ st.markdown("""
         border-radius: 16px;
         margin: 2rem 0;
         box-shadow: 
-            0 8px 25px rgba(168, 85, 247, 0.2),
+            0 8px 25px rgba(124, 58, 237, 0.2),
             inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(168, 85, 247, 0.3);
+        border: 1px solid rgba(124, 58, 237, 0.3);
         position: relative;
         overflow: hidden;
     }
@@ -452,12 +453,12 @@ st.markdown("""
         background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%)!important;
         color: white!important;
         font-weight: 600!important;
-        box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3)!important;
+        box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3)!important;
     }
     
     .stButton>button:hover {
         transform: translateY(-3px) scale(1.02)!important;
-        box-shadow: 0 8px 25px rgba(168, 85, 247, 0.4)!important;
+        box-shadow: 0 8px 25px rgba(124, 58, 237, 0.4)!important;
         background: linear-gradient(135deg, var(--secondary-color) 0%, var(--accent-color) 100%)!important;
         border-color: var(--secondary-color)!important;
     }
@@ -466,11 +467,11 @@ st.markdown("""
         border-radius: 16px!important;
         box-shadow: 
             0 8px 25px rgba(0, 0, 0, 0.1),
-            0 0 0 1px rgba(168, 85, 247, 0.1)!important;
+            0 0 0 1px rgba(124, 58, 237, 0.1)!important;
         background: var(--surface-color)!important;
     }
     
-    /* Logout düyməsi */
+    /* Logout düyməsi - Yenilənmiş rəng */
     .logout-container {
         position: fixed;
         top: 25px;
@@ -479,18 +480,18 @@ st.markdown("""
     }
     
     .logout-container button {
-        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%)!important;
-        border: 2px solid #ef4444!important;
+        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%)!important;
+        border: 2px solid #f97316!important;
         border-radius: 12px!important;
         padding: 0.6rem 1.5rem!important;
         font-weight: 600!important;
-        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3)!important;
+        box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3)!important;
     }
     
     .logout-container button:hover {
         transform: translateY(-2px)!important;
-        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4)!important;
-        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)!important;
+        box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4)!important;
+        background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%)!important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -501,6 +502,7 @@ if st.button("🚪 Çıxış", key="logout_btn"):
     st.session_state.logged_in = False
     st.rerun()
 st.markdown('</div>', unsafe_allow_html=True)
+
 
 # ============================== SABİTLƏR ==============================
 DEPARTMENTS = [
