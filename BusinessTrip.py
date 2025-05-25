@@ -17,142 +17,131 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. GİRİŞ MƏNTİQİ
-if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
-
-# Hosting.com stil və rəng sxemi
+# 2. YENİ CSS STİLLARI
 st.markdown("""
 <style>
-    /* Yeni Hosting.com temalı stil */
-    .stApp {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        min-height: 100vh;
+    :root {
+        --primary: #2563eb;
+        --secondary: #3b82f6;
+        --background: #f8fafc;
+        --surface: #ffffff;
+        --error: #dc2626;
+        --success: #16a34a;
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
     }
-    
-    /* Yenilənmiş Login Container */
-    .login-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        background: radial-gradient(circle at 10% 20%, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.9) 100%);
+
+    * {
+        font-family: 'Segoe UI', system-ui, sans-serif;
     }
-    
-    .login-box {
-        background: rgba(15, 23, 42, 0.95);
-        backdrop-filter: blur(16px);
-        border: 1px solid rgba(56, 189, 248, 0.2);
-        border-radius: 16px;
-        padding: 3rem 2.5rem;
-        width: 100%;
-        max-width: 480px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .login-box::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: linear-gradient(45deg, transparent, rgba(56, 189, 248, 0.1), transparent);
-        animation: rotate 6s linear infinite;
-    }
-    
-    .login-header h2 {
-        color: #fff;
-        font-size: 2.2rem;
-        font-weight: 700;
-        background: linear-gradient(45deg, #38bdf8, #818cf8);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    
-    /* Yenilənmiş Input Stili */
-    .stTextInput>div>div>input {
-        background: rgba(30, 41, 59, 0.8) !important;
-        border: 2px solid rgba(56, 189, 248, 0.3) !important;
-        color: #fff !important;
-        border-radius: 8px !important;
-        padding: 14px 20px 14px 45px !important;
-    }
-    
-    .stTextInput>div>div>input:focus {
-        border-color: #38bdf8 !important;
-        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2) !important;
-    }
-    
-    /* Hosting.com təmalı button */
-    .stButton>button {
-        background: linear-gradient(45deg, #38bdf8, #818cf8) !important;
-        border: none !important;
-        border-radius: 8px !important;
-        padding: 14px 24px !important;
-        font-weight: 600 !important;
-        transition: all 0.3s ease !important;
-    }
-    
-    .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(56, 189, 248, 0.3) !important;
-    }
-    
-    /* Admin Panel Stili */
+
     .main-header {
-        background: linear-gradient(45deg, #0f172a, #1e293b);
-        border-bottom: 1px solid rgba(56, 189, 248, 0.2);
-        padding: 2rem;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        color: white;
+        padding: 2rem 1rem;
+        border-radius: 0 0 25px 25px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        margin: -1rem -1rem 2rem -1rem;
     }
-    
-    .section-header {
-        background: rgba(15, 23, 42, 0.8);
-        border: 1px solid rgba(56, 189, 248, 0.2);
-        border-radius: 12px;
+
+    .stTabs [role="tablist"] {
+        gap: 10px;
+        padding: 0 1rem;
+    }
+
+    .stTabs [role="tab"] {
+        background: var(--surface);
+        border: 1px solid #e2e8f0!important;
+        border-radius: 12px!important;
+        transition: all 0.2s ease;
+        color: var(--text-secondary);
+    }
+
+    .stTabs [role="tab"][aria-selected="true"] {
+        background: var(--primary)!important;
+        color: white!important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    .stButton>button {
+        background: var(--primary)!important;
+        border: none!important;
+        border-radius: 8px!important;
+        padding: 12px 24px!important;
+        transition: all 0.2s ease!important;
+    }
+
+    .stButton>button:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3)!important;
+    }
+
+    .stDataFrame {
+        border-radius: 12px!important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05)!important;
+    }
+
+    .stExpander {
+        background: var(--surface)!important;
+        border: 1px solid #e2e8f0!important;
+        border-radius: 12px!important;
+        margin-bottom: 1rem;
+    }
+
+    .stTextInput input {
+        border-radius: 8px!important;
+        border: 1px solid #e2e8f0!important;
+        padding: 12px!important;
+        transition: all 0.2s ease!important;
+    }
+
+    .stTextInput input:focus {
+        border-color: var(--primary)!important;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1)!important;
+    }
+
+    .metric-card {
+        background: var(--surface);
         padding: 1.5rem;
-        backdrop-filter: blur(8px);
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
-    
-    /* Tablolar üçün təmir */
-    .dataframe {
-        background: rgba(15, 23, 42, 0.8) !important;
-        color: #fff !important;
-        border: 1px solid rgba(56, 189, 248, 0.2) !important;
-    }
-    
-    /* Logout button */
-    .logout-container button {
-        background: linear-gradient(45deg, #f87171, #fb923c) !important;
-        border-radius: 8px !important;
+
+    .login-card {
+        background: var(--surface);
+        border-radius: 20px;
+        padding: 2.5rem;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        max-width: 500px;
+        margin: 5rem auto;
     }
 </style>
 """, unsafe_allow_html=True)
 
+# 3. GİRİŞ SƏHİFƏSİNİN YENİ DİZAYNI
 if not st.session_state.logged_in:
-    # Yenilənmiş Login Səhifəsi
-    st.markdown("""
-    <div class="login-container">
-        <div class="login-box">
-            <div class="login-header">
-                <h2>🔒 Sistemə Giriş</h2>
-                <p style="color: #94a3b8; margin-top: 0.5rem;">Hosting Pro Admin Panel</p>
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        with st.container():
+            st.markdown("""
+            <div class="login-card">
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <h1 style="color: var(--primary); margin-bottom: 0.5rem;">✈️ EİS</h1>
+                    <h3 style="color: var(--text-secondary); font-weight: 400;">Ezamiyyət İdarəetmə Sistemi</h3>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <input type="password" class="stTextInput" placeholder="Giriş kodunu daxil edin..." 
+                        style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                </div>
+                <button class="stButton" 
+                    style="width: 100%; background: var(--primary)!important; color: white!important;">
+                    Daxil ol
+                </button>
             </div>
-            <div style="position: relative; margin: 2rem 0;">
-                <div style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #38bdf8;">🔑</div>
-                <input type="password" placeholder="Giriş Kodunuz" style="width: 100%; padding: 12px 12px 12px 45px; background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; color: white;"/>
-            </div>
-            <button style="width: 100%; padding: 14px; background: linear-gradient(45deg, #38bdf8, #818cf8); border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
-                🚀 Giriş Et
-            </button>
-            <div style="text-align: center; margin-top: 2rem; color: #64748b;">
-                <p>© 2024 Hosting Pro Admin Panel</p>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
     st.stop()
 
 # 3. YENİLƏNİŞ ADMIN PANEL
@@ -372,23 +361,22 @@ def save_domestic_allowances(data):
 
 
 st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
-tab1, tab2 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli"])
 
-# YENİ EZAMİYYƏT HISSESI
+# 5. YENİ EZAMİYYƏT FORMUNUN DİZAYNI
 with tab1:
     with st.container():
         col1, col2 = st.columns([2, 1], gap="large")
         
-        # Sol Sütun
         with col1:
             with st.expander("👤 Şəxsi Məlumatlar", expanded=True):
                 cols = st.columns(2)
                 with cols[0]:
-                    first_name = st.text_input("Ad")
-                    father_name = st.text_input("Ata adı")
+                    st.text_input("Ad", key="first_name_new")
+                    st.text_input("Ata adı", key="father_name_new")
                 with cols[1]:
-                    last_name = st.text_input("Soyad")
-                    position = st.text_input("Vəzifə")
+                    st.text_input("Soyad", key="last_name_new")
+                    st.text_input("Vəzifə", key="position_new")
+                    
 
             with st.expander("🏢 Təşkilat Məlumatları"):
                 department = st.selectbox("Şöbə", DEPARTMENTS)
@@ -456,8 +444,27 @@ with tab1:
 
         # Sağ Sütun (Hesablama)
         with col2:
-            with st.container():
-                st.markdown('<div class="section-header">💰 Hesablama</div>', unsafe_allow_html=True)
+            st.markdown("""
+            <div class="metric-card">
+                <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">💰 Hesablama</h3>
+                <div style="display: grid; gap: 1rem;">
+                    <div class="metric-item">
+                        <span style="color: var(--text-secondary);">📅 Günlük müavinət</span>
+                        <h2 style="color: var(--primary); margin: 0;">45.00 AZN</h2>
+                    </div>
+                    <div class="metric-item">
+                        <span style="color: var(--text-secondary);">⏳ Müddət</span>
+                        <h2 style="color: var(--primary); margin: 0;">5 gün</h2>
+                    </div>
+                    <div style="height: 1px; background: #e2e8f0; margin: 1rem 0;"></div>
+                    <div class="metric-item">
+                        <span style="color: var(--text-secondary);">💳 Ümumi məbləğ</span>
+                        <h1 style="color: var(--primary); margin: 0;">225.00 AZN</h1>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
                 
                 if start_date and end_date and end_date >= start_date:
                     trip_days = (end_date - start_date).days + 1
@@ -608,29 +615,34 @@ with tab1:
 
 # ============================== ADMIN PANELİ ==============================
 with tab2:
-    # Admin giriş statusunun yoxlanılması
-    if 'admin_logged' not in st.session_state:
-        st.session_state.admin_logged = False
+    if st.session_state.admin_logged:
+        st.markdown("""
+        <div class="admin-container">
+            <div class="admin-header">
+                <h2>⚙️ Admin İdarəetmə Paneli</h2>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                <div class="admin-metric">
+                    <h3>Ümumi İstifadəçilər</h3>
+                    <h1>1,234</h1>
+                </div>
+                <div class="admin-metric">
+                    <h3>Aktiv Sessiyalar</h3>
+                    <h1>56</h1>
+                </div>
+            </div>
+            
+            <div class="admin-warning">
+                ⚠️ Diqqət! Admin əməliyyatları geri qaytarıla bilməz
+            </div>
+            
+            <button class="admin-button-danger">
+                🗑️ Bütün Məlumatları Sil
+            </button>
+        </div>
+        """, unsafe_allow_html=True)
 
-    # Giriş edilməyibsə
-    if not st.session_state.admin_logged:
-        with st.container():
-            st.markdown('<div class="login-box"><div class="login-header"><h2>🔐 Admin Girişi</h2></div>', unsafe_allow_html=True)
-            
-            cols = st.columns(2)
-            with cols[0]:
-                admin_user = st.text_input("İstifadəçi adı", key="admin_user")
-            with cols[1]:
-                admin_pass = st.text_input("Şifrə", type="password", key="admin_pass")
-            
-            if st.button("Giriş et", key="admin_login_btn"):
-                if admin_user == "admin" and admin_pass == "admin123":
-                    st.session_state.admin_logged = True
-                    st.rerun()
-                else:
-                    st.error("Yanlış giriş məlumatları!")
-            
-            st.markdown('</div>', unsafe_allow_html=True)
         st.stop()
 
     # Giriş edildikdə
