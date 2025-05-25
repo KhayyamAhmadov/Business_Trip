@@ -7,6 +7,8 @@ import requests
 import xml.etree.ElementTree as ET
 import os
 from bs4 import BeautifulSoup
+import plotly 
+import openpyxl
 
 
 # 1. İLK STREAMLIT ƏMRİ OLMALIDIR!
