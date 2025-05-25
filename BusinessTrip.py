@@ -21,13 +21,36 @@ st.set_page_config(
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
-# Giriş üçün CSS - Tam yenilənmiş dizayn
+# Giriş üçün CSS - Ultra müasir dizayn
 st.markdown("""
 <style>
     /* Ümumi sayfa stilleri */
     .stApp {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 25%, #16213e 50%, #0f3460 100%);
         min-height: 100vh;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Arxa plan animasiyası */
+    .stApp::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: 
+            radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+            radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+        animation: float 6s ease-in-out infinite;
+        z-index: -1;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
     }
     
     /* Login container */
@@ -40,15 +63,16 @@ st.markdown("""
     }
     
     .login-box {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        padding: 3rem 2.5rem;
-        border-radius: 20px;
+        background: rgba(30, 30, 46, 0.85);
+        backdrop-filter: blur(25px);
+        border: 1px solid rgba(147, 51, 234, 0.3);
+        padding: 3.5rem 3rem;
+        border-radius: 24px;
         box-shadow: 
-            0 8px 32px rgba(0, 0, 0, 0.1),
-            0 0 0 1px rgba(255, 255, 255, 0.05);
-        max-width: 450px;
+            0 25px 50px rgba(0, 0, 0, 0.25),
+            0 0 0 1px rgba(147, 51, 234, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        max-width: 480px;
         width: 100%;
         position: relative;
         overflow: hidden;
@@ -62,9 +86,26 @@ st.markdown("""
         left: -50%;
         width: 200%;
         height: 200%;
-        background: conic-gradient(from 0deg, transparent, rgba(99, 102, 241, 0.1), transparent);
-        animation: rotate 20s linear infinite;
+        background: conic-gradient(
+            from 0deg,
+            transparent,
+            rgba(147, 51, 234, 0.1),
+            rgba(59, 130, 246, 0.1),
+            rgba(16, 185, 129, 0.1),
+            transparent
+        );
+        animation: rotate 25s linear infinite;
         z-index: -1;
+    }
+    
+    .login-box::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(147, 51, 234, 0.5), transparent);
     }
     
     @keyframes rotate {
@@ -74,94 +115,128 @@ st.markdown("""
     
     .login-header {
         text-align: center;
-        margin-bottom: 2.5rem;
+        margin-bottom: 3rem;
     }
     
     .login-header h2 {
-        color: #2d3748;
-        font-size: 2rem;
-        font-weight: 700;
+        color: #f8fafc;
+        font-size: 2.2rem;
+        font-weight: 800;
         margin: 0;
-        background: linear-gradient(135deg, #667eea, #764ba2);
+        background: linear-gradient(135deg, #a855f7 0%, #3b82f6 50%, #10b981 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
+        letter-spacing: -0.5px;
+        text-shadow: 0 0 30px rgba(168, 85, 247, 0.3);
     }
     
     .login-subtitle {
-        color: #718096;
-        font-size: 0.95rem;
-        margin-top: 0.5rem;
-        font-weight: 400;
+        color: #94a3b8;
+        font-size: 1rem;
+        margin-top: 0.8rem;
+        font-weight: 500;
+        letter-spacing: 0.5px;
     }
     
     /* Input sahəsi üçün xüsusi wrapper */
     .custom-input-wrapper {
         position: relative;
-        margin: 1.5rem 0;
+        margin: 2rem 0;
     }
     
     .input-icon {
         position: absolute;
-        left: 15px;
+        left: 18px;
         top: 50%;
         transform: translateY(-50%);
-        color: #a0aec0;
-        font-size: 1.2rem;
+        background: linear-gradient(135deg, #a855f7, #3b82f6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-size: 1.3rem;
         z-index: 2;
     }
     
     /* Streamlit input override */
     .stTextInput > div > div > input {
-        background: rgba(247, 250, 252, 0.8) !important;
-        border: 2px solid rgba(226, 232, 240, 0.8) !important;
-        border-radius: 12px !important;
-        padding: 15px 20px 15px 50px !important;
+        background: rgba(15, 15, 35, 0.6) !important;
+        border: 2px solid rgba(147, 51, 234, 0.3) !important;
+        border-radius: 16px !important;
+        padding: 18px 24px 18px 55px !important;
         font-size: 16px !important;
-        color: #2d3748 !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+        color: #f1f5f9 !important;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: 
+            0 4px 6px rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+        backdrop-filter: blur(10px) !important;
     }
     
     .stTextInput > div > div > input:focus {
-        border-color: #667eea !important;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
-        background: rgba(255, 255, 255, 0.95) !important;
+        border-color: #a855f7 !important;
+        box-shadow: 
+            0 0 0 4px rgba(168, 85, 247, 0.2),
+            0 8px 25px rgba(168, 85, 247, 0.15) !important;
+        background: rgba(15, 15, 35, 0.8) !important;
         outline: none !important;
+        transform: translateY(-1px) !important;
     }
     
     .stTextInput > div > div > input::placeholder {
-        color: #a0aec0 !important;
-        font-weight: 400 !important;
+        color: #64748b !important;
+        font-weight: 500 !important;
     }
     
     /* Düymə stilləri */
     .login-button {
-        margin-top: 2rem;
+        margin-top: 2.5rem;
     }
     
     .stButton > button {
         width: 100% !important;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        background: linear-gradient(135deg, #a855f7 0%, #3b82f6 50%, #10b981 100%) !important;
         color: white !important;
         border: none !important;
-        border-radius: 12px !important;
-        padding: 15px 30px !important;
-        font-size: 16px !important;
-        font-weight: 600 !important;
+        border-radius: 16px !important;
+        padding: 18px 32px !important;
+        font-size: 17px !important;
+        font-weight: 700 !important;
         letter-spacing: 0.5px !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: 
+            0 8px 25px rgba(168, 85, 247, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+    
+    .stButton > button::before {
+        content: '' !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: -100% !important;
+        width: 100% !important;
+        height: 100% !important;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent) !important;
+        transition: left 0.5s !important;
+    }
+    
+    .stButton > button:hover::before {
+        left: 100% !important;
     }
     
     .stButton > button:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4) !important;
-        background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%) !important;
+        transform: translateY(-3px) scale(1.02) !important;
+        box-shadow: 
+            0 15px 35px rgba(168, 85, 247, 0.5),
+            0 5px 15px rgba(0, 0, 0, 0.2) !important;
+        background: linear-gradient(135deg, #9333ea 0%, #2563eb 50%, #059669 100%) !important;
     }
     
     .stButton > button:active {
-        transform: translateY(0px) !important;
+        transform: translateY(-1px) scale(1.01) !important;
+        transition: all 0.1s !important;
     }
     
     /* Xəta mesajı */
@@ -170,7 +245,7 @@ st.markdown("""
         margin-top: 1rem !important;
     }
     
-    /* Loading animation */
+    /* Loading animation - Yenilənmiş */
     .loading-dots {
         display: inline-block;
         position: relative;
@@ -185,8 +260,9 @@ st.markdown("""
         width: 13px;
         height: 13px;
         border-radius: 50%;
-        background: #667eea;
+        background: linear-gradient(135deg, #a855f7, #3b82f6);
         animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
     }
     
     .loading-dots div:nth-child(1) {
@@ -283,9 +359,13 @@ if not st.session_state.logged_in:
     
     # Alt məlumat
     st.markdown("""
-            <div style="text-align: center; margin-top: 2rem; color: #718096; font-size: 0.85rem;">
-                <p>🛡️ Təhlükəsiz giriş sistemi</p>
-                <p style="margin-top: 0.5rem;">© 2025 Ezamiyyət İdarəetmə Sistemi</p>
+            <div style="text-align: center; margin-top: 2.5rem; color: #64748b; font-size: 0.9rem;">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 1rem;">
+                    <div style="height: 1px; width: 60px; background: linear-gradient(90deg, transparent, #475569);"></div>
+                    <span style="color: #94a3b8;">🛡️ Təhlükəsiz giriş sistemi</span>
+                    <div style="height: 1px; width: 60px; background: linear-gradient(90deg, #475569, transparent);"></div>
+                </div>
+                <p style="margin-top: 0.8rem; color: #475569; font-weight: 500;">© 2025 Ezamiyyət İdarəetmə Sistemi</p>
             </div>
         </div>
     </div>
@@ -297,57 +377,120 @@ if not st.session_state.logged_in:
 st.markdown("""
 <style>
     :root {
-        --primary-color: #6366f1;
-        --secondary-color: #8b5cf6;
-        --background-color: #ffffff;
+        --primary-color: #a855f7;
+        --secondary-color: #3b82f6;
+        --accent-color: #10b981;
+        --background-color: #0f172a;
+        --surface-color: #1e293b;
+        --text-color: #f1f5f9;
+    }
+    
+    .stApp {
+        background: linear-gradient(135deg, var(--background-color) 0%, #1a1a2e 50%, #16213e 100%);
+        color: var(--text-color);
     }
     
     .main-header {
         text-align: center;
-        padding: 2rem 1rem;
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        padding: 2.5rem 1rem;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 50%, var(--accent-color) 100%);
         color: white;
         margin: -1rem -1rem 2rem -1rem;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        border-radius: 0 0 20px 20px;
+        box-shadow: 
+            0 8px 25px rgba(168, 85, 247, 0.3),
+            0 0 0 1px rgba(255, 255, 255, 0.1);
+        border-radius: 0 0 24px 24px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .main-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        animation: shimmer 3s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% { left: -100%; }
+        100% { left: 100%; }
     }
     
     .section-header {
         background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
         color: white!important;
-        padding: 1.5rem;
-        border-radius: 12px;
-        margin: 1.5rem 0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border-left: none;
+        padding: 1.8rem;
+        border-radius: 16px;
+        margin: 2rem 0;
+        box-shadow: 
+            0 8px 25px rgba(168, 85, 247, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(168, 85, 247, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .section-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
     }
     
     .stButton>button {
-        border-radius: 8px!important;
-        padding: 0.5rem 1.5rem!important;
-        transition: all 0.3s ease!important;
-        border: 1px solid var(--primary-color)!important;
-        background: var(--secondary-color)!important;
+        border-radius: 12px!important;
+        padding: 0.7rem 2rem!important;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1)!important;
+        border: 2px solid var(--primary-color)!important;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%)!important;
         color: white!important;
+        font-weight: 600!important;
+        box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3)!important;
     }
     
     .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 6px rgba(99,102,241,0.3)!important;
-        background: var(--primary-color)!important;
+        transform: translateY(-3px) scale(1.02)!important;
+        box-shadow: 0 8px 25px rgba(168, 85, 247, 0.4)!important;
+        background: linear-gradient(135deg, var(--secondary-color) 0%, var(--accent-color) 100%)!important;
+        border-color: var(--secondary-color)!important;
     }
     
     .dataframe {
-        border-radius: 12px!important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05)!important;
+        border-radius: 16px!important;
+        box-shadow: 
+            0 8px 25px rgba(0, 0, 0, 0.1),
+            0 0 0 1px rgba(168, 85, 247, 0.1)!important;
+        background: var(--surface-color)!important;
     }
     
     /* Logout düyməsi */
     .logout-container {
         position: fixed;
-        top: 20px;
-        right: 20px;
+        top: 25px;
+        right: 25px;
         z-index: 999;
+    }
+    
+    .logout-container button {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%)!important;
+        border: 2px solid #ef4444!important;
+        border-radius: 12px!important;
+        padding: 0.6rem 1.5rem!important;
+        font-weight: 600!important;
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3)!important;
+    }
+    
+    .logout-container button:hover {
+        transform: translateY(-2px)!important;
+        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4)!important;
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)!important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -358,7 +501,6 @@ if st.button("🚪 Çıxış", key="logout_btn"):
     st.session_state.logged_in = False
     st.rerun()
 st.markdown('</div>', unsafe_allow_html=True)
-
 
 # ============================== SABİTLƏR ==============================
 DEPARTMENTS = [
