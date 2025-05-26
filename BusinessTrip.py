@@ -1164,19 +1164,21 @@ with tab1:
                 st.markdown('<div class="section-header">💰 Hesablama</div>', unsafe_allow_html=True)
                 
                 if trip_type == "Ölkə daxili":
-                    total_amount = 0
-                    total_transport = 0
-                    total_days = 0
+                    domestic_allowances = load_domestic_allowances()
                     
+                    # Avtomatik müavinət təyini üçün əlavə edin
                     if st.session_state.trips:
-                        domestic_allowances = load_domestic_allowances()  # Yeni əlavə edildi
+                        total_amount = 0
+                        total_transport = 0
+                        total_days = 0
                         
                         for i, trip in enumerate(st.session_state.trips, 1):
-                            # Hər sefer üçün müavinəti təyin et
                             to_city = trip['to']
+                            
+                            # Avtomatik müavinət təyini
                             daily_allowance = domestic_allowances.get(
                                 to_city, 
-                                domestic_allowances['Digər']
+                                domestic_allowances.get('Digər', 90)  # Excel'dən gələn 'Digər' dəyəri
                             )
                             
                             days = (trip['end'] - trip['start']).days + 1
@@ -1187,6 +1189,7 @@ with tab1:
                             trip_total = hotel_cost + daily_expenses + trip['price']
                             total_amount += trip_total
                             total_transport += trip['price']
+
                             
                             with st.expander(f"Sefer {i} ({trip['from']}→{trip['to']})"):
                                 st.metric("Hədəf şəhər", to_city)
