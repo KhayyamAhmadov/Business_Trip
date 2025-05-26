@@ -18,141 +18,113 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Dizayn
+# 2. GİRİŞ MƏNTİQİ
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+
+# Giriş üçün CSS
 st.markdown("""
-<link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap' rel='stylesheet'>
 <style>
-    :root {
-        --primary-color: #6F4BFF;
-        --secondary-color: #2B1C8F;
-        --accent-color: #FF7F5C;
-        --background-light: #F8F9FF;
-        --text-dark: #2D2D3A;
-        --text-light: #FFFFFF;
-        --border-color: #E0E0F5;
+    .login-box {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
+        padding: 2.5rem;
+        border-radius: 15px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        max-width: 500px;
+        margin: 5rem auto;
     }
-
-    * {
-        font-family: 'Inter', sans-serif !important;
+    .login-header {
+        text-align: center;
+        margin-bottom: 2rem;
     }
-
-    .stApp {
-        background: var(--background-light) !important;
+    .login-box .stTextInput {
+        width: 30%;
+        margin: 0 auto;
     }
-
-    .custom-header {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-        color: var(--text-light) !important;
-        padding: 2rem;
-        border-radius: 0 0 30px 30px;
-        margin: -1rem -1rem 2rem -1rem;
-        box-shadow: 0 8px 24px rgba(111, 75, 255, 0.15);
+    .stTextInput input {
+        background-color: rgba(255,255,255,0.2)!important;
+        color: white!important;
+        border: 1px solid rgba(255,255,255,0.3)!important;
+        border-radius: 8px!important;
+        padding: 8px 12px!important;
+        font-size: 14px!important;
     }
-
-    .custom-input input, .custom-select select, .custom-date input, .custom-textarea textarea {
-        background: #FFFFFF !important;
-        border: 2px solid var(--border-color) !important;
-        border-radius: 12px !important;
-        padding: 12px 16px !important;
-        color: var(--text-dark) !important;
-        transition: all 0.3s ease !important;
-    }
-
-    .custom-input input:focus, .custom-select select:focus {
-        border-color: var(--primary-color) !important;
-        box-shadow: 0 0 0 3px rgba(111, 75, 255, 0.2) !important;
-    }
-
-    .custom-button button {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%) !important;
-        color: var(--text-light) !important;
-        border: none !important;
-        padding: 12px 30px !important;
-        border-radius: 12px !important;
-        font-weight: 600 !important;
-        transition: transform 0.3s ease !important;
-    }
-
-    .custom-button button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 12px rgba(111, 75, 255, 0.25) !important;
-    }
-
-    .custom-card {
-        background: #FFFFFF !important;
-        border-radius: 16px !important;
-        padding: 2rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
-        margin-bottom: 1.5rem;
-    }
-
-    @media (prefers-color-scheme: dark) {
-        :root {
-            --background-light: #1A1A2F;
-            --text-dark: #FFFFFF;
-        }
-        .custom-input input, .custom-select select {
-            background: #2D2D3A !important;
-            color: #FFFFFF !important;
-        }
+    .stTextInput input::placeholder {
+        color: rgba(255,255,255,0.7)!important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# 3.  BAŞLIQ TƏRTİBATI
-st.markdown("""
-<div class='main-header' style='
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-    color: var(--text-light);
-    padding: 2rem 1rem;
-    border-radius: 0 0 30px 30px;
-    margin: -1rem -1rem 2rem -1rem;
-    box-shadow: 0 8px 24px rgba(111, 75, 255, 0.15);
-'>
-    <h1 style='
-        margin: 0;
-        font-size: 2.5rem;
-        font-weight: 700;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    '>✈️ Ezamiyyət İdarəetmə Sistemi</h1>
-</div>
-""", unsafe_allow_html=True)
-
-# 4. GİRİŞ 
-if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
-
 if not st.session_state.logged_in:
     with st.container():
-        st.markdown("""
-        <div class='custom-header'>
-            <h1 style='margin:0; text-align:center;'>✈️ Ezamiyyət İdarəetmə Sistemi</h1>
-        </div>
-        <div style='max-width:500px; margin:5rem auto;'>
-            <div class='custom-card'>
-                <h2 style='text-align:center; margin-bottom:2rem;'>🔐 Sistemə Giriş</h2>
-                <div class='custom-input'>
-                    <input type='password' placeholder='Giriş kodunu daxil edin...' style='width:100%;'>
-                </div>
-                <div style='text-align:center; margin-top:1.5rem;'>
-                    <button class='custom-button' onclick='login()'>Daxil ol</button>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown('<div class="login-box"><div class="login-header"><h2>🔐 Sistemə Giriş</h2></div>', unsafe_allow_html=True)
         
-        access_code = st.text_input("hidden_password", type="password", label_visibility="collapsed")
+        access_code = st.text_input("Giriş kodu", type="password", 
+                                  label_visibility="collapsed", 
+                                  placeholder="Giriş kodunu daxil edin...")
         
-        if st.button("Daxil ol", key="secret_login"):
-            if access_code == "admin":
-                st.session_state.logged_in = True
-                st.rerun()
-            else:
-                st.error("Yanlış giriş kodu!")
-        st.stop()
+        cols = st.columns([1,2,1])
+        with cols[1]:
+            if st.button("Daxil ol", use_container_width=True):
+                if access_code == "admin":
+                    st.session_state.logged_in = True
+                    st.rerun()
+                else:
+                    st.error("Yanlış giriş kodu!")
+        st.markdown('</div>', unsafe_allow_html=True)
+    st.stop()
 
-
-
+# 3. ƏSAS TƏRTİBAT VƏ PROQRAM MƏNTİQİ
+st.markdown("""
+<style>
+    :root {
+        --primary-color: #6366f1;
+        --secondary-color: #8b5cf6;
+        --background-color: #ffffff;
+    }
+    
+    .main-header {
+        text-align: center;
+        padding: 2rem 1rem;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        margin: -1rem -1rem 2rem -1rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-radius: 0 0 20px 20px;
+    }
+    
+    .section-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white!important;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin: 1.5rem 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-left: none;
+    }
+    
+    .stButton>button {
+        border-radius: 8px!important;
+        padding: 0.5rem 1.5rem!important;
+        transition: all 0.3s ease!important;
+        border: 1px solid var(--primary-color)!important;
+        background: var(--secondary-color)!important;
+        color: white!important;
+    }
+    
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(99,102,241,0.3)!important;
+        background: var(--primary-color)!important;
+    }
+    
+    .dataframe {
+        border-radius: 12px!important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05)!important;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # ============================== SABİTLƏR ==============================
 DEPARTMENTS = [
@@ -1008,13 +980,46 @@ def save_countries_data(data):
         json.dump(data, f, ensure_ascii=False, indent=4)
 
 
+@st.cache_data(ttl=3600) # 1 saat cache
+def get_currency_rates(date):
+    """
+    Cbar.az-dan valyuta məzənnələrini çəkərək DataFrame qaytarır
+    """
+    try:
+        formatted_date = date.strftime("%d.%m.%Y")
+        url = f"https://cbar.az/currencies/{formatted_date}.xml"
+        response = requests.get(url)
+        response.raise_for_status()
+        
+        root = ET.fromstring(response.content)
+        
+        currencies = []
+        for val_type in root.findall('.//ValType'):
+            if val_type.get('Type') == 'Xarici valyutalar':
+                for valute in val_type.findall('Valute'):
+                    code = valute.get('Code')
+                    name = valute.find('Name').text
+                    nominal = valute.find('Nominal').text
+                    value = valute.find('Value').text
+                    currencies.append({
+                        'Valyuta': code,
+                        'Ad': name,
+                        'Nominal': int(nominal),
+                        'Məzənnə': float(value.replace(',', '.'))
+                    })
+        
+        df = pd.DataFrame(currencies)
+        df['1 vahid üçün AZN'] = df['Məzənnə'] / df['Nominal']
+        return df.sort_values('Valyuta')
+    
+    except Exception as e:
+        st.error(f"Məzənnələr alınarkən xəta: {str(e)}")
+        return pd.DataFrame()
 
 
-st.markdown("""
-<div class='custom-header'>
-    <h1 style='margin:0; text-align:center;'>✈️ Ezamiyyət İdarəetmə Sistemi</h1>
-</div>
-""", unsafe_allow_html=True)
+
+
+st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
 tab1, tab2 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli"])
 
 # YENİ EZAMİYYƏT HISSESI
@@ -1753,27 +1758,101 @@ with tab2:
 
         # valyuta 
         with tab_currency:
-            st.markdown("### Valyuta Məzənnələrinin İdarə Edilməsi")
-            currency_df = pd.read_excel("currency_rates.xlsx")
+            st.markdown("## Cbar.az Valyuta Məzənnələri")
             
-            edited_currency = st.data_editor(
-                currency_df,
-                num_rows="dynamic",
-                column_config={
-                    "Məzənnə": st.column_config.NumberColumn(
-                        "AZN qarşılığı",
-                        format="%.4f",
-                        min_value=0.0001,
-                        default=1.0
+            # Tarix seçimi
+            cols = st.columns([2,1,1])
+            with cols[0]:
+                selected_date = st.date_input(
+                    "Tarix seçin",
+                    datetime.now(),
+                    max_value=datetime.now(),
+                    format="DD.MM.YYYY"
+                )
+            
+            # Məlumatları yüklə
+            df_currency = get_currency_rates(selected_date)
+            
+            if not df_currency.empty:
+                # Görünüş parametrləri
+                cols = st.columns([3,2])
+                with cols[0]:
+                    show_columns = st.multiselect(
+                        "Göstəriləcək sütunlar",
+                        options=df_currency.columns,
+                        default=['Valyuta', 'Ad', '1 vahid üçün AZN']
                     )
-                }
+                
+                with cols[1]:
+                    sort_by = st.selectbox(
+                        "Çeşidləmə",
+                        options=df_currency.columns,
+                        index=0
+                    )
+                    ascending = st.checkbox("Artan sıra", True)
+                
+                # Filter və çeşidləmə
+                df_display = df_currency[show_columns].sort_values(
+                    sort_by, 
+                    ascending=ascending
+                )
+                
+                # Cədvəl
+                st.dataframe(
+                    df_display,
+                    use_container_width=True,
+                    height=600
+                )
+                
+                # Statistik məlumatlar
+                st.markdown("### Statistik Məlumatlar")
+                cols = st.columns(3)
+                cols[0].metric("Ən yüksək məzənnə", 
+                              f"{df_currency['1 vahid üçün AZN'].max():.4f} AZN")
+                cols[1].metric("Ən aşağı məzənnə", 
+                              f"{df_currency['1 vahid üçün AZN'].min():.4f} AZN")
+                cols[2].metric("Orta məzənnə", 
+                              f"{df_currency['1 vahid üçün AZN'].mean():.4f} AZN")
+                
+                # İxrac funksionallığı
+                st.markdown("### İxrac Seçimləri")
+                csv = df_currency.to_csv(index=False).encode('utf-8-sig')
+                excel_buffer = BytesIO()
+                df_currency.to_excel(excel_buffer, index=False)
+                
+                cols = st.columns(2)
+                cols[0].download_button(
+                    "CSV olaraq yüklə",
+                    data=csv,
+                    file_name=f"valyuta_mezenneleri_{selected_date.strftime('%d%m%Y')}.csv",
+                    mime="text/csv"
+                )
+                cols[1].download_button(
+                    "Excel olaraq yüklə",
+                    data=excel_buffer.getvalue(),
+                    file_name=f"valyuta_mezenneleri_{selected_date.strftime('%d%m%Y')}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+            
+            else:
+                st.warning("Seçilmiş tarix üçün məlumat tapılmadı!")
+                
+            # Tarixə görə axtarış
+            st.markdown("---")
+            st.markdown("### Tarixə görə axtarış")
+            hist_date = st.date_input(
+                "Tarix seçin (son 1 il ərzində)",
+                datetime.now() - timedelta(days=30),
+                max_value=datetime.now()
             )
-        
-            if st.button("💾 Valyuta məzənnələrini saxla"):
-                edited_currency.to_excel("currency_rates.xlsx", index=False)
-                st.success("Məzənnələr yeniləndi!")
-
-
+            
+            if st.button("Tarixə görə yüklə"):
+                df_hist = get_currency_rates(hist_date)
+                if not df_hist.empty:
+                    st.dataframe(df_hist)
+                else:
+                    st.error("Bu tarix üçün məlumat yoxdur!")
+    
 
 if __name__ == "__main__":
     # Create main data file if not exists
@@ -1792,3 +1871,4 @@ if __name__ == "__main__":
             'Valyuta': list(CURRENCY_RATES.keys()),
             'Məzənnə': list(CURRENCY_RATES.values())
         }).to_excel("currency_rates.xlsx", index=False)
+
