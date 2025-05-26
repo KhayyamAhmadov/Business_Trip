@@ -1169,11 +1169,19 @@ with tab1:
                     total_days = 0
                     
                     if st.session_state.trips:
+                        domestic_allowances = load_domestic_allowances()  # Yeni əlavə edildi
+                        
                         for i, trip in enumerate(st.session_state.trips, 1):
+                            # Hər sefer üçün müavinəti təyin et
+                            to_city = trip['to']
+                            daily_allowance = domestic_allowances.get(
+                                to_city, 
+                                domestic_allowances['Digər']
+                            )
+                            
                             days = (trip['end'] - trip['start']).days + 1
                             total_days += days
                             
-                            # Yeni: Hər sefer üçün ayrı hesablama
                             hotel_cost = 0.7 * daily_allowance * (days-1)
                             daily_expenses = 0.3 * daily_allowance * days
                             trip_total = hotel_cost + daily_expenses + trip['price']
@@ -1181,6 +1189,8 @@ with tab1:
                             total_transport += trip['price']
                             
                             with st.expander(f"Sefer {i} ({trip['from']}→{trip['to']})"):
+                                st.metric("Hədəf şəhər", to_city)
+                                st.metric("Günlük müavinət", f"{daily_allowance} AZN")
                                 st.metric("Günlər", days)
                                 st.metric("Mehmanxana xərcləri", f"{hotel_cost:.2f} AZN")
                                 st.metric("Gündəlik xərclər", f"{daily_expenses:.2f} AZN")
