@@ -1739,15 +1739,89 @@ with tab2:
                                                        key="new_city_allowance")
                 with cols[2]:
                     if st.button("Əlavə et", key="add_new_city"):
-                        allowances = load_domestic_allowances()
-                        if new_city and new_city not in allowances:
-                            allowances[new_city] = new_city_allowance
-                            save_domestic_allowances(allowances)
-                            st.success(f"{new_city} üçün {new_city_allowance} AZN müavinət təyin edildi!")
-                            st.rerun()
-                        else:
-                            st.error("Zəhmət olmasa unikal şəhər adı daxil edin!")
+                        try:
+                            allowances = load_domestic_allowances()
+                            # Əgər fayl korrupsiya olubsa
+                            if not isinstance(allowances, dict):
+                                st.warning("Müavinət məlumatları yenidən yaradılır...")
+                                allowances = {'Digər': 90}
+                            
+                            if new_city and new_city not in allowances:
+                                allowances[new_city] = new_city_allowance
+                                save_domestic_allowances(allowances)
+                                st.success(f"{new_city} üçün {new_city_allowance} AZN müavinət təyin edildi!")
+                                st.rerun()
+                            else:
+                                st.error("Zəhmət olmasa unikal şəhər adı daxil edin!")
+                        except Exception as e:
+                            st.error(f"Xəta baş verdi: {str(e)}")
             
+                # Mövcud məlumatların yüklənməsi
+                try:
+                    allowances = load_domestic_allowances()
+                    # Əgər faylda 'Digər' yoxdursa
+                    if 'Digər' not in allowances:
+                        allowances['Digər'] = 90
+                        save_domestic_allowances(allowances)
+                except Exception as e:
+                    st.error(f"Müavinət məlumatları yüklənmədi: {str(e)}")
+                    allowances = {'Digər': 90}
+                    save_domestic_allowances(allowances)
+            
+                # Digər kateqoriyası üçün tənzimləmə
+                other_allowance = allowances.get('Digər', 90)
+                new_other = st.number_input(
+                    "Digər şəhərlər üçün müavinət (AZN)",
+                    min_value=0,
+                    value=int(other_allowance),
+                    key="other_allowance"
+                )
+                
+                if new_other != other_allowance:
+                    allowances['Digər'] = new_other
+                    save_domestic_allowances(allowances)
+                    st.rerun()
+            
+                # Mövcud şəhərlərin idarə edilməsi
+                st.markdown("### 📋 Mövcud Şəhər Müavinətləri")
+                try:
+                    # DataFrame yaratmaq
+                    df = pd.DataFrame({
+                        'Şəhər': allowances.keys(),
+                        'Müavinət (AZN)': allowances.values()
+                    })
+                    
+                    # Data Editor ilə redaktə
+                    edited_df = st.data_editor(
+                        df,
+                        column_config={
+                            "Şəhər": st.column_config.TextColumn(
+                                width="medium",
+                                disabled=True
+                            ),
+                            "Müavinət (AZN)": st.column_config.NumberColumn(
+                                min_value=0,
+                                step=5,
+                                format="%d AZN"
+                            )
+                        },
+                        hide_index=True,
+                        use_container_width=True
+                    )
+                    
+                    if st.button("💾 Bütün dəyişiklikləri saxla", key="save_all_changes"):
+                        new_allowances = pd.Series(
+                            edited_df['Müavinət (AZN)'].values, 
+                            index=edited_df['Şəhər']
+                        ).to_dict()
+                        save_domestic_allowances(new_allowances)
+                        st.success("Bütün dəyişikliklər uğurla yadda saxlanıldı!")
+                        st.rerun()
+                        
+                except Exception as e:
+                    st.error(f"Cədvəl yaradılarkən xəta: {str(e)}")            
+                
+                
                 # Mövcud şəhərlərin idarə edilməsi
                 st.markdown("### 📋 Mövcud Şəhər Müavinətləri")
                 allowances = load_domestic_allowances()
