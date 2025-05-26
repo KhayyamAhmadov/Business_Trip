@@ -1151,7 +1151,11 @@ with tab1:
                         st.warning("Ən azı bir sefer əlavə edin!")
                     
                 else:  # Xarici ezamiyyət hesablamaları
+                    trip_days = (end_date - start_date).days + 1
+                    trip_nights = trip_days - 1 if trip_days > 1 else 0
+
                     country_data = countries_data[country]  # COUNTRIES 
+                    
                     
                     if selected_city == "digər":
                         base_allowance = country_data['cities']['digər']['allowance']
@@ -1264,6 +1268,11 @@ with tab1:
                                 for trip in st.session_state.trips:
                                     days = (trip['end'] - trip['start']).days + 1
                                     nights = days - 1 if days > 1 else 0
+                                    current_allowance = domestic_allowances.get(
+                                        trip['to'], 
+                                        domestic_allowances.get('Digər', 90)
+                                    )
+
                                     
                                     # Daxili ezamiyyət məlumatları
                                     trip_data = {
@@ -1279,9 +1288,9 @@ with tab1:
                                         "Marşrut": f"{trip['from']} → {trip['to']}",
                                         "Bilet qiyməti": trip['price'],
                                         "Günlük müavinət (Valyuta)": f"{daily_allowance} AZN",
-                                        "Günlük müavinət (AZN)": daily_allowance,
+                                        "Günlük müavinət (AZN)": current_allowance,
                                         "Ümumi məbləğ (Valyuta)": "Tətbiq edilmir",
-                                        "Ümumi məbləğ (AZN)": 0.7*daily_allowance*nights + 0.3*daily_allowance*days + trip['price'],
+                                        "Ümumi məbləğ (AZN)": 0.7*current_allowance*nights + 0.3*current_allowance*days + trip['price'],
                                         "Valyuta": "AZN",
                                         "Məzənnə": 1.0,
                                         "Başlanğıc tarixi": trip['start'].strftime("%Y-%m-%d"),
@@ -1759,43 +1768,6 @@ with tab2:
                     st.error(f"Cədvəl yaradılarkən xəta: {str(e)}")            
                 
                 
-                # Mövcud şəhərlərin idarə edilməsi
-                st.markdown("### 📋 Mövcud Şəhər Müavinətləri")
-                allowances = load_domestic_allowances()
-                
-                # Dynamic dataframe for editing
-                df_allowances = pd.DataFrame({
-                    'Şəhər': allowances.keys(),
-                    'Müavinət (AZN)': allowances.values()
-                })
-                
-                edited_df = st.data_editor(
-                    df_allowances,
-                    column_config={
-                        "Şəhər": st.column_config.TextColumn(
-                            width="medium",
-                            disabled=True
-                        ),
-                        "Müavinət (AZN)": st.column_config.NumberColumn(
-                            min_value=0,
-                            step=5,
-                            format="%d AZN"
-                        )
-                    },
-                    hide_index=True,
-                    use_container_width=True
-                )
-                
-                if st.button("💾 Dəyişiklikləri saxla"):
-                    new_allowances = pd.Series(
-                        edited_df['Müavinət (AZN)'].values, 
-                        index=edited_df['Şəhər']
-                    ).to_dict()
-                    save_domestic_allowances(new_allowances)
-                    st.success("Müavinət məbləğləri uğurla yeniləndi!")
-                    st.rerun()
-
-
                 # Digər kateqoriyası üçün
                 st.markdown("### 🔄 Digər Şəhərlər")
                 new_other = st.number_input(
