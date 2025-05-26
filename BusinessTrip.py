@@ -830,66 +830,12 @@ COUNTRIES = {
 }
 
 
-DOMESTIC_ROUTES = {
-    ("Bakı", "Ağcabədi"): 10.50,
-    ("Bakı", "Ağdam"): 13.50,
-    ("Bakı", "Ağdaş"): 10.30,
-    ("Bakı", "Astara"): 10.40,
-    ("Bakı", "Şuşa"): 28.90,
-    ("Bakı", "Balakən"): 17.30,
-    ("Bakı", "Beyləqan"): 10.00,
-    ("Bakı", "Bərdə"): 11.60,
-    ("Bakı", "Biləsuvar"): 6.50,
-    ("Bakı", "Cəlilabad"): 7.10,
-    ("Bakı", "Füzuli"): 10.80,
-    ("Bakı", "Gədəbəy"): 16.50,
-    ("Bakı", "Gəncə"): 13.10,
-    ("Bakı", "Goranboy"): 9.40,
-    ("Bakı", "Göyçay"): 9.20,
-    ("Bakı", "Göygöl"): 13.50,
-    ("Bakı", "İmişli"): 8.10,
-    ("Bakı", "İsmayıllı"): 7.00,
-    ("Bakı", "Kürdəmir"): 7.10,
-    ("Bakı", "Lənkəran"): 8.80,
-    ("Bakı", "Masallı"): 7.90,
-    ("Bakı", "Mingəçevir"): 11.40,
-    ("Bakı", "Naftalan"): 12.20,
-    ("Bakı", "Oğuz"): 13.10,
-    ("Bakı", "Qax"): 14.60,
-    ("Bakı", "Qazax"): 17.60,
-    ("Bakı", "Qəbələ"): 11.50,
-    ("Bakı", "Quba"): 5.90,
-    ("Bakı", "Qusar"): 6.40,
-    ("Bakı", "Saatlı"): 7.10,
-    ("Bakı", "Sabirabad"): 6.10,
-    ("Bakı", "Şəki"): 13.20,
-    ("Bakı", "Şəmkir"): 15.00,
-    ("Bakı", "Siyəzən"): 3.60,
-    ("Bakı", "Tərtər"): 12.20,
-    ("Bakı", "Tovuz"): 16.40,
-    ("Bakı", "Ucar"): 8.90,
-    ("Bakı", "Xaçmaz"): 5.50,
-    ("Bakı", "Nabran"): 7.20,
-    ("Bakı", "Xudat"): 6.30,
-    ("Bakı", "Zaqatala"): 15.60,
-    ("Bakı", "Zərdab"): 9.30
-}
-
 DOMESTIC_ALLOWANCES = {
     "Bakı": 125,
     "Naxçıvan": 100,
     "Gəncə": 95,
     "Sumqayıt": 95,
     "Digər": 90
-}
-
-# currency_rates.xlsx faylı üçün nümunə məlumatlar
-CURRENCY_RATES = {
-    "USD": 1.7,
-    "EUR": 1.9,
-    "TRY": 0.2,
-    "RUB": 0.02,
-    "GEL": 0.7
 }
 
 # Fayl yoxlamaları ən başda
@@ -1065,7 +1011,6 @@ with tab1:
                         with cols_dates[1]:
                             end_date = st.date_input("Bitmə tarixi", key=f"end_date")
                         
-                        # Yeni: Hər sefer üçün ayrı nəqliyyat xərci
                         ticket_price = st.number_input("Nəqliyyat xərci (AZN)", min_value=0.0, value=0.0, key=f"ticket_price")
                         
                         cols_buttons = st.columns([3,1])
@@ -1076,7 +1021,7 @@ with tab1:
                                     'to': to_city,
                                     'start': start_date,
                                     'end': end_date,
-                                    'price': ticket_price  # Yeni: Qiyməti seferlə birlikdə saxla
+                                    'price': ticket_price
                                 })
                                 st.rerun()
                         with cols_buttons[1]:
@@ -1089,14 +1034,12 @@ with tab1:
                     if st.session_state.trips:
                         st.markdown("**Əlavə edilmiş seferlər:**")
                         for i, trip in enumerate(st.session_state.trips, 1):
-                            # Yeni: Hər sefer üçün nəqliyyat xərclərinin göstərilməsi
                             st.write(f"{i}. {trip['from']} → {trip['to']} | "
                                     f"{trip['start']} - {trip['end']} | "
                                     f"Nəqliyyat: {trip['price']} AZN")
                     
+                    # Müavinət məlumatlarını yüklə (seçim olmadan)
                     domestic_allowances = load_domestic_allowances()
-                    to_city = st.selectbox("Müavinət tətbiq ediləcək şəhər", [c for c in CITIES], key="allowance_city")
-                    daily_allowance = domestic_allowances.get(to_city, domestic_allowances['Digər'])
 
                 else:  # Ölkə xarici ezamiyyət
                     #  Dinamik yükləmə
@@ -1166,19 +1109,16 @@ with tab1:
                 if trip_type == "Ölkə daxili":
                     domestic_allowances = load_domestic_allowances()
                     
-                    # Avtomatik müavinət təyini üçün əlavə edin
                     if st.session_state.trips:
                         total_amount = 0
                         total_transport = 0
                         total_days = 0
                         
-                        for i, trip in enumerate(st.session_state.trips, 1):
-                            to_city = trip['to']
-                            
-                            # Avtomatik müavinət təyini
+                        for trip in st.session_state.trips:
+                            # Hər sefer üçün müavinət təyin et
                             daily_allowance = domestic_allowances.get(
-                                to_city, 
-                                domestic_allowances.get('Digər', 90)  # Excel'dən gələn 'Digər' dəyəri
+                                trip['to'], 
+                                domestic_allowances.get('Digər', 90)
                             )
                             
                             days = (trip['end'] - trip['start']).days + 1
@@ -1189,26 +1129,23 @@ with tab1:
                             trip_total = hotel_cost + daily_expenses + trip['price']
                             total_amount += trip_total
                             total_transport += trip['price']
-
-                            
-                            with st.expander(f"Sefer {i} ({trip['from']}→{trip['to']})"):
-                                st.metric("Hədəf şəhər", to_city)
+        
+                            with st.expander(f"Sefer {trip['from']}→{trip['to']}"):
+                                st.metric("Hədəf şəhər", trip['to'])
                                 st.metric("Günlük müavinət", f"{daily_allowance} AZN")
                                 st.metric("Günlər", days)
                                 st.metric("Mehmanxana xərcləri", f"{hotel_cost:.2f} AZN")
                                 st.metric("Gündəlik xərclər", f"{daily_expenses:.2f} AZN")
                                 st.metric("Nəqliyyat xərci", f"{trip['price']:.2f} AZN")
                                 st.metric("Sefer ümumi", f"{trip_total:.2f} AZN")
-
-                        
+        
                         st.divider()
                         cols_total = st.columns(2)
                         with cols_total[0]:
                             st.metric("Ümumi Günlər", total_days)
                             st.metric("Ümumi Nəqliyyat Xərcləri", f"{total_transport:.2f} AZN")
                         with cols_total[1]:
-                            st.metric("Günlük Müavinət", f"{daily_allowance:.2f} AZN")
-                            st.metric("Ümumi Məbləğ", f"{total_amount:.2f} AZN", delta="Bütün seferlər üçün ümumi")
+                            st.metric("Ümumi Məbləğ", f"{total_amount:.2f} AZN")
                     
                     else:
                         st.warning("Ən azı bir sefer əlavə edin!")
@@ -1872,55 +1809,6 @@ with tab2:
                     save_domestic_allowances(allowances)
                     st.rerun()
 
-
-            # Daxili marşrutların redaktə edilməsi
-            with st.expander("🚌 Daxili Marşrut Parametrləri"):
-                st.markdown("#### Daxili Marşrut Qiymətləri")
-                
-                # Yeni marşrut əlavə etmə
-                cols = st.columns([1, 1, 1, 1])
-                with cols[0]:
-                    route_from = st.selectbox("Haradan", CITIES, key="route_from")
-                with cols[1]:
-                    route_to = st.selectbox("Haraya", [c for c in CITIES if c != route_from], key="route_to")
-                with cols[2]:
-                    route_price = st.number_input("Qiymət (AZN)", min_value=0.0, value=10.0, step=0.5)
-                with cols[3]:
-                    if st.button("➕ Marşrut əlavə et"):
-                        DOMESTIC_ROUTES[(route_from, route_to)] = route_price
-                        st.success(f"{route_from} → {route_to} marşrutu əlavə edildi!")
-                        st.rerun()
-                
-                # Mövcud marşrutları göstər
-                route_df = pd.DataFrame([
-                    {"Haradan": k[0], "Haraya": k[1], "Qiymət": v} 
-                    for k, v in DOMESTIC_ROUTES.items()
-                ])
-                
-                if not route_df.empty:
-                    edited_routes = st.data_editor(
-                        route_df,
-                        use_container_width=True,
-                        num_rows="dynamic",
-                        column_config={
-                            "Qiymət": st.column_config.NumberColumn(
-                                "Qiymət (AZN)",
-                                min_value=0,
-                                max_value=100,
-                                step=0.5,
-                                format="%.2f AZN"
-                            )
-                        }
-                    )
-                    
-                    if st.button("💾 Marşrut dəyişikliklərini saxla"):
-                        # Yenilənmiş marşrutları saxla
-                        new_routes = {}
-                        for _, row in edited_routes.iterrows():
-                            new_routes[(row['Haradan'], row['Haraya'])] = row['Qiymət']
-                        DOMESTIC_ROUTES.clear()
-                        DOMESTIC_ROUTES.update(new_routes)
-                        st.success("Marşrut məlumatları yeniləndi!")
 
             # Sistem məlumatları
             # In the "Sistem Məlumatları" section under tab_settings:
