@@ -1200,109 +1200,109 @@ with tab1:
                     else:
                         st.warning("Ən azı bir sefer əlavə edin!")
                     
-                    else:  # Xarici ezamiyyət hesablamaları
-                        country_data = countries_data[country]  # COUNTRIES 
+                else:  # Xarici ezamiyyət hesablamaları
+                    country_data = countries_data[country]  # COUNTRIES 
+                    
+                    if selected_city == "digər":
+                        base_allowance = country_data['cities']['digər']['allowance']
+                        currency = country_data['currency']
+                    else:
+                        city_data = country_data['cities'][selected_city]
+                        base_allowance = city_data['allowance']
+                        currency = country_data['currency']
+                    
+                    # tarixe uygun
+                    try:
+                        # Cbar.az-dan məzənnə məlumatlarını çək
+                        currency_df = get_currency_rates(start_date)
                         
-                        if selected_city == "digər":
-                            base_allowance = country_data['cities']['digər']['allowance']
-                            currency = country_data['currency']
-                        else:
-                            city_data = country_data['cities'][selected_city]
-                            base_allowance = city_data['allowance']
-                            currency = country_data['currency']
-                        
-                        # tarixe uygun
-                        try:
-                            # Cbar.az-dan məzənnə məlumatlarını çək
-                            currency_df = get_currency_rates(start_date)
-                            
-                            if currency_df.empty:
-                                st.error(f"{start_date.strftime('%d.%m.%Y')} tarixi üçün məzənnə məlumatı tapılmadı!")
-                                st.stop()
-                                
-                            # Valyuta koduna görə məzənnəni seç
-                            exchange_rate = currency_df.loc[currency_df['Valyuta'] == currency, '1 vahid üçün AZN'].values[0]
-                            
-                            # Salam . 
-                            exchange_date = start_date.strftime("%d.%m.%Y")
-                            
-                        except IndexError:
-                            st.error(f"{currency} valyutası üçün məzənnə tapılmadı!")
+                        if currency_df.empty:
+                            st.error(f"{start_date.strftime('%d.%m.%Y')} tarixi üçün məzənnə məlumatı tapılmadı!")
                             st.stop()
-                        except Exception as e:
-                            st.error(f"Məzənnə alınarkən xəta: {str(e)}")
-                            st.stop()
-
+                            
+                        # Valyuta koduna görə məzənnəni seç
+                        exchange_rate = currency_df.loc[currency_df['Valyuta'] == currency, '1 vahid üçün AZN'].values[0]
                         
-                        # Qonaqlama növünə görə hesablama
-                        if accommodation == "Adi Rejim":
-                            hotel_cost_foreign = 0.6 * daily_allowance_foreign * trip_nights
-                            daily_expenses_foreign = 0.4 * daily_allowance_foreign * trip_days
-                            total_amount_foreign = hotel_cost_foreign + daily_expenses_foreign
-                        elif accommodation == "Yalnız yaşayış yeri ilə təmin edir":
-                            daily_expenses_foreign = daily_allowance_foreign * 0.4 * trip_days
-                            hotel_cost_foreign = 0
-                            total_amount_foreign = daily_expenses_foreign
-                        else:  # "Yalnız gündəlik xərcləri təmin edir"
-                            hotel_cost_foreign = daily_allowance_foreign * 0.6 * trip_nights if trip_nights > 0 else 0
-                            daily_expenses_foreign = 0
-                            total_amount_foreign = hotel_cost_foreign
-        
-                        # AZN-ə çevir
-                        total_amount_azn = total_amount_foreign * exchange_rate
-                        hotel_cost_azn = hotel_cost_foreign * exchange_rate
-                        daily_expenses_azn = daily_expenses_foreign * exchange_rate
-
-                        # Valyuta məzənnəsi ilə günlük müavinətin AZN-ə çevrilməsi
-                        daily_allowance_azn = daily_allowance_foreign * exchange_rate 
-
-                        # Göstəricilər ⚙️ YENİLƏNİB
-                        st.metric("📅 Günlük müavinət", 
-                                 f"{daily_allowance_azn:.2f} AZN", 
-                                 delta=f"{daily_allowance_foreign:.2f} {currency}")
+                        # Salam . 
+                        exchange_date = start_date.strftime("%d.%m.%Y")
                         
-                        # Adi Rejim üçün hər iki xərc növü ⚙️
-                        if accommodation == "Adi Rejim":
-                            cols_metrics = st.columns(2)
-                            with cols_metrics[0]:
-                                st.metric("🏨 Mehmanxana xərcləri", 
-                                         f"{hotel_cost_azn:.2f} AZN",
-                                         delta=f"{hotel_cost_foreign:.2f} {currency}",
-                                         help=f"Günlük müavinətin 60%-i × {trip_nights} gecə")
-                            with cols_metrics[1]:
-                                st.metric("🍽️ Gündəlik xərclər", 
-                                         f"{daily_expenses_azn:.2f} AZN", 
-                                         delta=f"{daily_expenses_foreign:.2f} {currency}",
-                                         help=f"Günlük müavinətin 40%-i × {trip_days} gün")
-                        else:
-                            # Digər hallar üçün ⚙️
-                            if accommodation == "Yalnız yaşayış yeri ilə təmin edir":
-                                st.metric("🍽️ Gündəlik xərclər", 
-                                         f"{daily_expenses_azn:.2f} AZN", 
-                                         delta=f"{daily_expenses_foreign:.2f} {currency}")
-                            elif accommodation == "Yalnız gündəlik xərcləri təmin edir" and trip_nights > 0:
-                                st.metric("🏨 Mehmanxana xərcləri", 
-                                         f"{hotel_cost_azn:.2f} AZN",
-                                         delta=f"{hotel_cost_foreign:.2f} {currency}")
-                        #Butun kodlari ozum bir bir el ile yazmisam.
-                        st.metric("⏳ Müddət", f"{trip_days} gün")
-                        st.metric("💳 Ümumi məbləğ", 
-                                 f"{total_amount_azn:.2f} AZN", 
-                                 delta=f"{total_amount_foreign:.2f} {currency}",
-                                 help="Delta orijinal valyutada məbləği göstərir")
-                        st.info(
-                        f"💱 İstifadə edilən məzənnə ({exchange_date}): "
-                        f"1 {currency} = {exchange_rate:.4f} AZN"
-                        )
+                    except IndexError:
+                        st.error(f"{currency} valyutası üçün məzənnə tapılmadı!")
+                        st.stop()
+                    except Exception as e:
+                        st.error(f"Məzənnə alınarkən xəta: {str(e)}")
+                        st.stop()
 
-                        
-                        # Əlavə məlumat  
-                        if accommodation == "Adi Rejim":
-                            st.caption("ℹ️ Adi Rejim: Günlük müavinətin 60%-i mehmanxana xərclərinə, 40%-i gündəlik xərclərə ayrılır")
-                        elif accommodation == "Yalnız yaşayış yeri ilə təmin edir":
-                            st.caption("ℹ️ Yalnız gündəlik xərclər ödənilir (günlük müavinətin 40%-i)")
-                        elif accommodation == "Yalnız gündəlik xərcləri təmin edir":
-                            st.caption("ℹ️ Yalnız mehmanxana xərcləri ödənilir (günlük müavinətin 60%-i × gecə sayı)")
+                    
+                    # Qonaqlama növünə görə hesablama
+                    if accommodation == "Adi Rejim":
+                        hotel_cost_foreign = 0.6 * daily_allowance_foreign * trip_nights
+                        daily_expenses_foreign = 0.4 * daily_allowance_foreign * trip_days
+                        total_amount_foreign = hotel_cost_foreign + daily_expenses_foreign
+                    elif accommodation == "Yalnız yaşayış yeri ilə təmin edir":
+                        daily_expenses_foreign = daily_allowance_foreign * 0.4 * trip_days
+                        hotel_cost_foreign = 0
+                        total_amount_foreign = daily_expenses_foreign
+                    else:  # "Yalnız gündəlik xərcləri təmin edir"
+                        hotel_cost_foreign = daily_allowance_foreign * 0.6 * trip_nights if trip_nights > 0 else 0
+                        daily_expenses_foreign = 0
+                        total_amount_foreign = hotel_cost_foreign
+    
+                    # AZN-ə çevir
+                    total_amount_azn = total_amount_foreign * exchange_rate
+                    hotel_cost_azn = hotel_cost_foreign * exchange_rate
+                    daily_expenses_azn = daily_expenses_foreign * exchange_rate
+
+                    # Valyuta məzənnəsi ilə günlük müavinətin AZN-ə çevrilməsi
+                    daily_allowance_azn = daily_allowance_foreign * exchange_rate 
+
+                    # Göstəricilər ⚙️ YENİLƏNİB
+                    st.metric("📅 Günlük müavinət", 
+                             f"{daily_allowance_azn:.2f} AZN", 
+                             delta=f"{daily_allowance_foreign:.2f} {currency}")
+                    
+                    # Adi Rejim üçün hər iki xərc növü ⚙️
+                    if accommodation == "Adi Rejim":
+                        cols_metrics = st.columns(2)
+                        with cols_metrics[0]:
+                            st.metric("🏨 Mehmanxana xərcləri", 
+                                     f"{hotel_cost_azn:.2f} AZN",
+                                     delta=f"{hotel_cost_foreign:.2f} {currency}",
+                                     help=f"Günlük müavinətin 60%-i × {trip_nights} gecə")
+                        with cols_metrics[1]:
+                            st.metric("🍽️ Gündəlik xərclər", 
+                                     f"{daily_expenses_azn:.2f} AZN", 
+                                     delta=f"{daily_expenses_foreign:.2f} {currency}",
+                                     help=f"Günlük müavinətin 40%-i × {trip_days} gün")
+                    else:
+                        # Digər hallar üçün ⚙️
+                        if accommodation == "Yalnız yaşayış yeri ilə təmin edir":
+                            st.metric("🍽️ Gündəlik xərclər", 
+                                     f"{daily_expenses_azn:.2f} AZN", 
+                                     delta=f"{daily_expenses_foreign:.2f} {currency}")
+                        elif accommodation == "Yalnız gündəlik xərcləri təmin edir" and trip_nights > 0:
+                            st.metric("🏨 Mehmanxana xərcləri", 
+                                     f"{hotel_cost_azn:.2f} AZN",
+                                     delta=f"{hotel_cost_foreign:.2f} {currency}")
+                    #Butun kodlari ozum bir bir el ile yazmisam.
+                    st.metric("⏳ Müddət", f"{trip_days} gün")
+                    st.metric("💳 Ümumi məbləğ", 
+                             f"{total_amount_azn:.2f} AZN", 
+                             delta=f"{total_amount_foreign:.2f} {currency}",
+                             help="Delta orijinal valyutada məbləği göstərir")
+                    st.info(
+                    f"💱 İstifadə edilən məzənnə ({exchange_date}): "
+                    f"1 {currency} = {exchange_rate:.4f} AZN"
+                    )
+
+                    
+                    # Əlavə məlumat  
+                    if accommodation == "Adi Rejim":
+                        st.caption("ℹ️ Adi Rejim: Günlük müavinətin 60%-i mehmanxana xərclərinə, 40%-i gündəlik xərclərə ayrılır")
+                    elif accommodation == "Yalnız yaşayış yeri ilə təmin edir":
+                        st.caption("ℹ️ Yalnız gündəlik xərclər ödənilir (günlük müavinətin 40%-i)")
+                    elif accommodation == "Yalnız gündəlik xərcləri təmin edir":
+                        st.caption("ℹ️ Yalnız mehmanxana xərcləri ödənilir (günlük müavinətin 60%-i × gecə sayı)")
 
                 
         
