@@ -1055,17 +1055,18 @@ with tab1:
                     with st.container(border=True):
                         cols = st.columns(2)
                         with cols[0]:
-                            from_city = st.selectbox("Haradan", CITIES, index=CITIES.index("Bakı"), key=f"from_city_{len(st.session_state.trips)}")
+                            from_city = st.selectbox("Haradan", CITIES, index=CITIES.index("Bakı"), key=f"from_city")
                         with cols[1]:
-                            to_city = st.selectbox("Haraya", [c for c in CITIES if c != from_city], key=f"to_city_{len(st.session_state.trips)}")
+                            to_city = st.selectbox("Haraya", [c for c in CITIES if c != from_city], key=f"to_city")
                         
                         cols_dates = st.columns(2)
                         with cols_dates[0]:
-                            start_date = st.date_input("Başlanğıc tarixi", key=f"start_date_{len(st.session_state.trips)}")
+                            start_date = st.date_input("Başlanğıc tarixi", key=f"start_date")
                         with cols_dates[1]:
-                            end_date = st.date_input("Bitmə tarixi", key=f"end_date_{len(st.session_state.trips)}")
+                            end_date = st.date_input("Bitmə tarixi", key=f"end_date")
                         
-                        ticket_price = st.number_input("Nəqliyyat xərci (AZN)", min_value=0.0, value=0.0, key=f"ticket_{len(st.session_state.trips)}")
+                        # Yeni: Hər sefer üçün ayrı nəqliyyat xərci
+                        ticket_price = st.number_input("Nəqliyyat xərci (AZN)", min_value=0.0, value=0.0, key=f"ticket_price")
                         
                         cols_buttons = st.columns([3,1])
                         with cols_buttons[0]:
@@ -1075,7 +1076,7 @@ with tab1:
                                     'to': to_city,
                                     'start': start_date,
                                     'end': end_date,
-                                    'price': ticket_price
+                                    'price': ticket_price  # Yeni: Qiyməti seferlə birlikdə saxla
                                 })
                                 st.rerun()
                         with cols_buttons[1]:
@@ -1083,11 +1084,12 @@ with tab1:
                                 if st.session_state.trips:
                                     st.session_state.trips.pop()
                                     st.rerun()
-                    
+                
                     # Əlavə edilmiş seferləri göstər
                     if st.session_state.trips:
                         st.markdown("**Əlavə edilmiş seferlər:**")
                         for i, trip in enumerate(st.session_state.trips, 1):
+                            # Yeni: Hər sefer üçün nəqliyyat xərclərinin göstərilməsi
                             st.write(f"{i}. {trip['from']} → {trip['to']} | "
                                     f"{trip['start']} - {trip['end']} | "
                                     f"Nəqliyyat: {trip['price']} AZN")
@@ -1171,6 +1173,7 @@ with tab1:
                             days = (trip['end'] - trip['start']).days + 1
                             total_days += days
                             
+                            # Yeni: Hər sefer üçün ayrı hesablama
                             hotel_cost = 0.7 * daily_allowance * (days-1)
                             daily_expenses = 0.3 * daily_allowance * days
                             trip_total = hotel_cost + daily_expenses + trip['price']
@@ -1183,6 +1186,7 @@ with tab1:
                                 st.metric("Gündəlik xərclər", f"{daily_expenses:.2f} AZN")
                                 st.metric("Nəqliyyat xərci", f"{trip['price']:.2f} AZN")
                                 st.metric("Sefer ümumi", f"{trip_total:.2f} AZN")
+
                         
                         st.divider()
                         cols_total = st.columns(2)
