@@ -1125,16 +1125,16 @@ with tab1:
                         
                         # Qonaqlama növünə görə hesablama
                         if accommodation == "Adi Rejim":
-                            total_amount_foreign = daily_allowance_foreign * trip_days
-                            hotel_cost_foreign = 0
-                            daily_expenses_foreign = daily_allowance_foreign * trip_days
-                            
+                            # 60% mehmanxana xərcləri (gecə sayına görə)
+                            hotel_cost_foreign = 0.6 * daily_allowance_foreign * trip_nights
+                            # 40% gündəlik xərclər (gün sayına görə)
+                            daily_expenses_foreign = 0.4 * daily_allowance_foreign * trip_days
+                            total_amount_foreign = hotel_cost_foreign + daily_expenses_foreign
                         elif accommodation == "Yalnız yaşayış yeri ilə təmin edir":
                             # Yalnız gündəlik xərclər ödənilir (40%)
                             daily_expenses_foreign = daily_allowance_foreign * 0.4 * trip_days
                             hotel_cost_foreign = 0
                             total_amount_foreign = daily_expenses_foreign
-                            
                         else:  # "Yalnız gündəlik xərcləri təmin edir"
                             # Yalnız mehmanxana xərcləri ödənilir (60%)
                             if trip_nights > 0:
