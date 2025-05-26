@@ -20,108 +20,81 @@ st.set_page_config(
 
 # Dizayn
 st.markdown("""
+<link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap' rel='stylesheet'>
 <style>
     :root {
-        --primary-color: #6F4BFF;          /* Hostinger's primary purple */
-        --secondary-color: #2B1C8F;       /* Deep blue for gradients */
-        --accent-color: #FF7F5C;          /* Vibrant accent color */
-        --background-light: #F8F9FF;      /* Light background */
-        --text-dark: #2D2D3A;             /* Primary text color */
-        --text-light: #FFFFFF;            /* Light text */
-        --border-color: #E0E0F5;          /* Subtle borders */
+        --primary-color: #6F4BFF;
+        --secondary-color: #2B1C8F;
+        --accent-color: #FF7F5C;
+        --background-light: #F8F9FF;
+        --text-dark: #2D2D3A;
+        --text-light: #FFFFFF;
+        --border-color: #E0E0F5;
+    }
+
+    * {
+        font-family: 'Inter', sans-serif !important;
     }
 
     .stApp {
         background: var(--background-light) !important;
     }
 
-    .login-box {
+    .custom-header {
         background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-        border-radius: 20px;
-        box-shadow: 0 12px 24px rgba(111, 75, 255, 0.2);
-        padding: 2.5rem;
-        color: var(--text-light);
-        max-width: 500px;
-        margin: 5rem auto;
-        border: 1px solid rgba(255,255,255,0.15);
+        color: var(--text-light) !important;
+        padding: 2rem;
+        border-radius: 0 0 30px 30px;
+        margin: -1rem -1rem 2rem -1rem;
+        box-shadow: 0 8px 24px rgba(111, 75, 255, 0.15);
     }
 
-    .stTextInput input, .stSelectbox select, .stDateInput input, .stTextArea textarea {
-        background: rgba(255,255,255,0.95) !important;
+    .custom-input input, .custom-select select, .custom-date input, .custom-textarea textarea {
+        background: #FFFFFF !important;
         border: 2px solid var(--border-color) !important;
         border-radius: 12px !important;
         padding: 12px 16px !important;
-        font-size: 16px !important;
         color: var(--text-dark) !important;
         transition: all 0.3s ease !important;
     }
 
-    .stTextInput input:focus, .stSelectbox select:focus, 
-    .stDateInput input:focus, .stTextArea textarea:focus {
+    .custom-input input:focus, .custom-select select:focus {
         border-color: var(--primary-color) !important;
         box-shadow: 0 0 0 3px rgba(111, 75, 255, 0.2) !important;
     }
 
-    .stButton>button {
+    .custom-button button {
         background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%) !important;
-        border: none !important;
         color: var(--text-light) !important;
+        border: none !important;
         padding: 12px 30px !important;
         border-radius: 12px !important;
         font-weight: 600 !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0 4px 6px rgba(111, 75, 255, 0.15) !important;
+        transition: transform 0.3s ease !important;
     }
 
-    .stButton>button:hover {
+    .custom-button button:hover {
         transform: translateY(-2px);
         box-shadow: 0 8px 12px rgba(111, 75, 255, 0.25) !important;
-        opacity: 0.9;
     }
 
-    .stDataFrame {
-        border: 1px solid var(--border-color) !important;
+    .custom-card {
+        background: #FFFFFF !important;
         border-radius: 16px !important;
+        padding: 2rem;
         box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+        margin-bottom: 1.5rem;
     }
 
-    [data-baseweb="tab-list"] {
-        gap: 8px !important;
-        padding: 8px !important;
-        background: var(--background-light) !important;
-    }
-
-    [data-baseweb="tab"] {
-        padding: 12px 24px !important;
-        border-radius: 12px !important;
-        transition: all 0.3s ease !important;
-        background: rgba(111, 75, 255, 0.1) !important;
-        color: var(--text-dark) !important;
-    }
-
-    [data-baseweb="tab"]:hover {
-        background: rgba(111, 75, 255, 0.2) !important;
-    }
-
-    [aria-selected="true"] {
-        background: var(--primary-color) !important;
-        color: var(--text-light) !important;
-    }
-
-    .st-emotion-cache-1v0mbdj.e115fcil1 img {
-        border-radius: 16px !important;
-        box-shadow: 0 8px 16px rgba(0,0,0,0.1) !important;
-        border: 2px solid var(--border-color) !important;
-    }
-
-    .stTextInput input::placeholder, .stSelectbox select::placeholder {
-        color: rgba(45, 45, 58, 0.6) !important;
-        opacity: 1 !important;
-    }
-
-    [data-baseweb="calendar"] {
-        border-radius: 12px !important;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important;
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --background-light: #1A1A2F;
+            --text-dark: #FFFFFF;
+        }
+        .custom-input input, .custom-select select {
+            background: #2D2D3A !important;
+            color: #FFFFFF !important;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -151,22 +124,33 @@ if 'logged_in' not in st.session_state:
 
 if not st.session_state.logged_in:
     with st.container():
-        st.markdown('<div class="login-box"><div class="login-header"><h2>🔐 Sistemə Giriş</h2></div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class='custom-header'>
+            <h1 style='margin:0; text-align:center;'>✈️ Ezamiyyət İdarəetmə Sistemi</h1>
+        </div>
+        <div style='max-width:500px; margin:5rem auto;'>
+            <div class='custom-card'>
+                <h2 style='text-align:center; margin-bottom:2rem;'>🔐 Sistemə Giriş</h2>
+                <div class='custom-input'>
+                    <input type='password' placeholder='Giriş kodunu daxil edin...' style='width:100%;'>
+                </div>
+                <div style='text-align:center; margin-top:1.5rem;'>
+                    <button class='custom-button' onclick='login()'>Daxil ol</button>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         
-        access_code = st.text_input("Giriş kodu", type="password", 
-                                 label_visibility="collapsed", 
-                                 placeholder="Giriş kodunu daxil edin...")
+        access_code = st.text_input("hidden_password", type="password", label_visibility="collapsed")
         
-        cols = st.columns([1,2,1])
-        with cols[1]:
-            if st.button("Daxil ol", use_container_width=True):
-                if access_code == "admin":
-                    st.session_state.logged_in = True
-                    st.rerun()
-                else:
-                    st.error("Yanlış giriş kodu!")
-        st.markdown('</div>', unsafe_allow_html=True)
-    st.stop()
+        if st.button("Daxil ol", key="secret_login"):
+            if access_code == "admin":
+                st.session_state.logged_in = True
+                st.rerun()
+            else:
+                st.error("Yanlış giriş kodu!")
+        st.stop()
+
 
 
 
@@ -1026,7 +1010,11 @@ def save_countries_data(data):
 
 
 
-st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
+st.markdown("""
+<div class='custom-header'>
+    <h1 style='margin:0; text-align:center;'>✈️ Ezamiyyət İdarəetmə Sistemi</h1>
+</div>
+""", unsafe_allow_html=True)
 tab1, tab2 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli"])
 
 # YENİ EZAMİYYƏT HISSESI
