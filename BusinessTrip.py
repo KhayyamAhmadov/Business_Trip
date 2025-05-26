@@ -25,40 +25,104 @@ if 'logged_in' not in st.session_state:
 # Giriş üçün CSS
 st.markdown("""
 <style>
-    .login-box {
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-        color: white;
-        padding: 2.5rem;
-        border-radius: 15px;
-        box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        max-width: 500px;
-        margin: 5rem auto;
+    /* Ümumi tema uyğunluğu */
+    :root {
+        --primary: #6366f1;
+        --secondary: #8b5cf6;
+        --background: rgba(255,255,255,0.95);
+        --text: #2d3748;
+        --border: rgba(0,0,0,0.1);
     }
-    .login-header {
-        text-align: center;
-        margin-bottom: 2rem;
+    
+    /* Giriş panelləri üçün modern dizayn */
+    .modern-login {
+        background: var(--background)!important;
+        border-radius: 24px!important;
+        padding: 2.5rem!important;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1)!important;
+        backdrop-filter: blur(10px)!important;
+        border: 1px solid var(--border)!important;
+        max-width: 480px!important;
+        margin: 5rem auto!important;
+        transition: all 0.3s ease!important;
     }
-    .login-box .stTextInput {
-        width: 30%;
-        margin: 0 auto;
+    
+    .modern-login:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.15)!important;
     }
-    .stTextInput input {
-        background-color: rgba(255,255,255,0.2)!important;
-        color: white!important;
-        border: 1px solid rgba(255,255,255,0.3)!important;
-        border-radius: 8px!important;
-        padding: 8px 12px!important;
-        font-size: 14px!important;
+    
+    .modern-login h2 {
+        color: var(--text)!important;
+        font-family: 'Segoe UI', sans-serif!important;
+        font-weight: 700!important;
+        margin-bottom: 2rem!important;
+        text-align: center!important;
     }
-    .stTextInput input::placeholder {
-        color: rgba(255,255,255,0.7)!important;
+    
+    /* Input sahələri üçün modern stil */
+    .stTextInput input, .stPassword input {
+        background: rgba(255,255,255,0.9)!important;
+        border: 2px solid var(--border)!important;
+        border-radius: 12px!important;
+        padding: 14px 20px!important;
+        font-size: 16px!important;
+        color: var(--text)!important;
+        transition: all 0.3s ease!important;
+    }
+    
+    .stTextInput input:focus, .stPassword input:focus {
+        border-color: var(--primary)!important;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.2)!important;
+    }
+    
+    .stTextInput input::placeholder, .stPassword input::placeholder {
+        color: #718096!important;
+        opacity: 0.8!important;
+    }
+    
+    /* Düymələr üçün modern stil */
+    .stButton>button {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)!important;
+        border: none!important;
+        border-radius: 12px!important;
+        padding: 14px 28px!important;
+        font-weight: 600!important;
+        letter-spacing: 0.5px!important;
+        transition: all 0.3s ease!important;
+        width: 100%!important;
+    }
+    
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(99,102,241,0.3)!important;
+    }
+    
+    /* Xəta mesajları üçün */
+    .stAlert {
+        border-radius: 12px!important;
+        border-left: 4px solid #ff4444!important;
+    }
+    
+    /* Admin paneli üçün əlavə stil */
+    .admin-card {
+        background: var(--background)!important;
+        border-radius: 16px!important;
+        padding: 2rem!important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05)!important;
+        margin: 1rem 0!important;
+        border: 1px solid var(--border)!important;
     }
 </style>
 """, unsafe_allow_html=True)
 
 if not st.session_state.logged_in:
     with st.container():
-        st.markdown('<div class="login-box"><div class="login-header"><h2>🔐 Sistemə Giriş</h2></div>', unsafe_allow_html=True)
+        st.markdown('''
+        <div class="modern-login">
+            <h2>🔐 Sistemə Giriş</h2>
+        </div>
+        ''', unsafe_allow_html=True)
         
         access_code = st.text_input("Giriş kodu", type="password", 
                                   label_visibility="collapsed", 
@@ -1243,10 +1307,14 @@ with tab2:
         st.session_state.admin_logged = False
 
     # Giriş edilməyibsə
-    if not st.session_state.admin_logged:
-        with st.container():
-            st.markdown('<div class="login-box"><div class="login-header"><h2>🔐 Admin Girişi</h2></div>', unsafe_allow_html=True)
-            
+if not st.session_state.admin_logged:
+    with st.container():
+        st.markdown('''
+        <div class="modern-login">
+            <h2>🛡️ Admin Girişi</h2>
+        </div>
+        ''', unsafe_allow_html=True)
+        
             cols = st.columns(2)
             with cols[0]:
                 admin_user = st.text_input("İstifadəçi adı", key="admin_user")
