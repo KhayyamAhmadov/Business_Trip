@@ -205,6 +205,14 @@ if not os.path.exists("ezamiyyet_melumatlari.xlsx"):
         'Ümumi məbləğ', 'Məqsəd'
     ]).to_excel("ezamiyyet_melumatlari.xlsx", index=False)
 
+
+MELUMATLAR_JSON = "melumatlar.json"
+# Fayl yoxlamaları (əvvəlki yoxlamalara əlavə)
+if not os.path.exists(MELUMATLAR_JSON):
+    with open(MELUMATLAR_JSON, 'w', encoding='utf-8') as f:
+        json.dump({}, f, ensure_ascii=False, indent=4)
+
+
 # ============================== FUNKSİYALAR ==============================
 def load_trip_data():
     try:
@@ -297,7 +305,8 @@ def get_currency_rates(date):
 
 # ============================== ƏSAS İNTERFEYS ==============================
 st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
-tab1, tab2 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli"])
+tab1, tab2, tab3 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli", "📰 Məlumatlar"])
+
 
 with tab1:
     with st.container():
@@ -455,6 +464,23 @@ with tab1:
                             st.rerun()
 
 
+with tab3:
+    st.markdown('<div class="section-header">📋 Məlumatlar və Qeydlər</div>', unsafe_allow_html=True)
+    
+    try:
+        with open(MELUMATLAR_JSON, 'r', encoding='utf-8') as f:
+            sections = json.load(f)
+            
+            if not sections:
+                st.info("Hələ heç bir məlumat əlavə edilməyib")
+            else:
+                for section_id, section_data in sections.items():
+                    with st.expander(f"📌 {section_data.get('title', 'Başlıqsız')}", expanded=True):
+                        st.markdown(section_data.get('content', ''))
+    except Exception as e:
+        st.error(f"Məlumatlar yüklənərkən xəta: {str(e)}")
+
+
 # ============================== ADMIN PANELİ ==============================
 with tab2:
     # Admin giriş statusunun yoxlanılması
@@ -492,9 +518,10 @@ with tab2:
             st.rerun()
         
         # Sekmələrin yaradılması
-        tab_manage, tab_import, tab_settings, tab_currency = st.tabs(
-            ["📊 Məlumatlar", "📥 İdxal", "⚙️ Parametrlər", "💱 Valyuta Məzənnələri"]
+        tab_manage, tab_import, tab_settings, tab_currency, tab_texts = st.tabs(
+            ["📊 Məlumatlar", "📥 İdxal", "⚙️ Parametrlər", "💱 Valyuta Məzənnələri", "📝 Yazılar"]
         )
+
         
         # Məlumatlar sekmesi
         with tab_manage:
@@ -1028,6 +1055,79 @@ with tab2:
             
             else:
                 st.warning("Seçilmiş tarix üçün məlumat tapılmadı!")    
+
+
+
+            # YENİ YAZILAR İDARƏETMƏ SEKMESİ
+    with tab_texts:
+        st.markdown('<div class="section-header">📝 Məlumatların İdarə Edilməsi</div>', unsafe_allow_html=True)
+        
+        try:
+            with open(MELUMATLAR_JSON, 'r', encoding='utf-8') as f:
+                sections = json.load(f)
+        except Exception as e:
+            st.error(f"Fayl oxuma xətası: {str(e)}")
+            sections = {}
+
+        # Yeni bölmə əlavə et
+        with st.expander("➕ Yeni Bölmə Əlavə Et", expanded=True):
+            new_title = st.text_input("Başlıq", key="new_section_title")
+            new_content = st.text_area("Məzmun (Markdown dəstəklənir)", height=300, key="new_section_content")
+            
+            if st.button("Yadda Saxla", key="save_new_section"):
+                if new_title.strip():
+                    new_id = f"section_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                    sections[new_id] = {
+                        "title": new_title,
+                        "content": new_content,
+                        "created_at": datetime.now().isoformat()
+                    }
+                    with open(MELUMATLAR_JSON, 'w', encoding='utf-8') as f:
+                        json.dump(sections, f, ensure_ascii=False, indent=4)
+                    st.success("Yeni bölmə əlavə edildi!")
+                    st.rerun()
+                else:
+                    st.error("Başlıq daxil edilməlidir!")
+
+        # Mövcud bölmələrin redaktəsi
+        st.markdown("### 📋 Mövcud Bölmələr")
+        if not sections:
+            st.info("Hələ heç bir bölmə yoxdur")
+        else:
+            for section_id in list(sections.keys()):
+                section_data = sections[section_id]
+                with st.expander(f"✏️ {section_data.get('title', 'Başlıqsız')}", expanded=False):
+                    edited_title = st.text_input(
+                        "Başlıq", 
+                        value=section_data.get('title', ''),
+                        key=f"title_{section_id}"
+                    )
+                    edited_content = st.text_area(
+                        "Məzmun", 
+                        value=section_data.get('content', ''),
+                        height=300,
+                        key=f"content_{section_id}"
+                    )
+                    
+                    cols = st.columns([4,1,1])
+                    with cols[0]:
+                        if st.button("💾 Saxla", key=f"save_{section_id}"):
+                            sections[section_id]['title'] = edited_title
+                            sections[section_id]['content'] = edited_content
+                            with open(MELUMATLAR_JSON, 'w', encoding='utf-8') as f:
+                                json.dump(sections, f, ensure_ascii=False, indent=4)
+                            st.success("Dəyişikliklər yadda saxlanıldı!")
+                    with cols[1]:
+                        if st.button("🗑️ Sil", key=f"delete_{section_id}"):
+                            del sections[section_id]
+                            with open(MELUMATLAR_JSON, 'w', encoding='utf-8') as f:
+                                json.dump(sections, f, ensure_ascii=False, indent=4)
+                            st.success("Bölmə silindi!")
+                            st.rerun()
+                    with cols[2]:
+                        created_at = section_data.get('created_at', 'Tarix bilinmir')
+                        st.caption(f"Yaradılma tarixi: {created_at[:10]}")
+
 
 
 
