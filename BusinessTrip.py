@@ -1761,58 +1761,57 @@ with tab2:
             st.markdown("## Cbar.az Valyuta Məzənnələri")
             
             # Tarix seçimi
-            cols = st.columns([2,1,1])
-            with cols[0]:
-                selected_date = st.date_input(
-                    "Tarix seçin",
-                    datetime.now(),
-                    max_value=datetime.now(),
-                    format="DD.MM.YYYY"
-                )
+            selected_date = st.date_input(
+                "Tarix seçin",
+                datetime.now(),
+                max_value=datetime.now(),
+                format="DD.MM.YYYY"
+            )
             
             # Məlumatları yüklə
             df_currency = get_currency_rates(selected_date)
             
             if not df_currency.empty:
-                # Görünüş parametrləri
+                # Çeşidləmə parametrləri
                 cols = st.columns([3,2])
                 with cols[0]:
-                    show_columns = st.multiselect(
-                        "Göstəriləcək sütunlar",
-                        options=df_currency.columns,
-                        default=['Valyuta', 'Ad', '1 vahid üçün AZN']
-                    )
-                
-                with cols[1]:
                     sort_by = st.selectbox(
-                        "Çeşidləmə",
+                        "Çeşidləmə üçün sütun",
                         options=df_currency.columns,
                         index=0
                     )
+                with cols[1]:
                     ascending = st.checkbox("Artan sıra", True)
                 
-                # Filter və çeşidləmə
-                df_display = df_currency[show_columns].sort_values(
-                    sort_by, 
-                    ascending=ascending
-                )
-                
-                # Cədvəl
+                # Bütün sütunları göstər
+                st.markdown("### Bütün Valyuta Məzənnələri")
+                df_sorted = df_currency.sort_values(sort_by, ascending=ascending)
                 st.dataframe(
-                    df_display,
+                    df_sorted,
                     use_container_width=True,
-                    height=600
+                    height=600,
+                    column_config={
+                        "1 vahid üçün AZN": st.column_config.NumberColumn(
+                            format="%.4f AZN"
+                        )
+                    }
                 )
                 
                 # Statistik məlumatlar
                 st.markdown("### Statistik Məlumatlar")
-                cols = st.columns(3)
-                cols[0].metric("Ən yüksək məzənnə", 
-                              f"{df_currency['1 vahid üçün AZN'].max():.4f} AZN")
-                cols[1].metric("Ən aşağı məzənnə", 
-                              f"{df_currency['1 vahid üçün AZN'].min():.4f} AZN")
-                cols[2].metric("Orta məzənnə", 
-                              f"{df_currency['1 vahid üçün AZN'].mean():.4f} AZN")
+                cols_stats = st.columns(3)
+                cols_stats[0].metric(
+                    "Ən yüksək məzənnə",
+                    f"{df_currency['1 vahid üçün AZN'].max():.4f} AZN"
+                )
+                cols_stats[1].metric(
+                    "Ən aşağı məzənnə",
+                    f"{df_currency['1 vahid üçün AZN'].min():.4f} AZN"
+                )
+                cols_stats[2].metric(
+                    "Orta məzənnə",
+                    f"{df_currency['1 vahid üçün AZN'].mean():.4f} AZN"
+                )
                 
                 # İxrac funksionallığı
                 st.markdown("### İxrac Seçimləri")
@@ -1820,14 +1819,14 @@ with tab2:
                 excel_buffer = BytesIO()
                 df_currency.to_excel(excel_buffer, index=False)
                 
-                cols = st.columns(2)
-                cols[0].download_button(
+                cols_export = st.columns(2)
+                cols_export[0].download_button(
                     "CSV olaraq yüklə",
                     data=csv,
                     file_name=f"valyuta_mezenneleri_{selected_date.strftime('%d%m%Y')}.csv",
                     mime="text/csv"
                 )
-                cols[1].download_button(
+                cols_export[1].download_button(
                     "Excel olaraq yüklə",
                     data=excel_buffer.getvalue(),
                     file_name=f"valyuta_mezenneleri_{selected_date.strftime('%d%m%Y')}.xlsx",
@@ -1835,24 +1834,9 @@ with tab2:
                 )
             
             else:
-                st.warning("Seçilmiş tarix üçün məlumat tapılmadı!")
-                
-            # Tarixə görə axtarış
-            st.markdown("---")
-            st.markdown("### Tarixə görə axtarış")
-            hist_date = st.date_input(
-                "Tarix seçin (son 1 il ərzində)",
-                datetime.now() - timedelta(days=30),
-                max_value=datetime.now()
-            )
-            
-            if st.button("Tarixə görə yüklə"):
-                df_hist = get_currency_rates(hist_date)
-                if not df_hist.empty:
-                    st.dataframe(df_hist)
-                else:
-                    st.error("Bu tarix üçün məlumat yoxdur!")
-    
+                st.warning("Seçilmiş tarix üçün məlumat tapılmadı!")    
+
+
 
 if __name__ == "__main__":
     # Create main data file if not exists
