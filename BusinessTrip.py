@@ -906,19 +906,6 @@ with tab2:
                 except Exception as e:
                     st.error(f"Cədvəl yaradılarkən xəta: {str(e)}")            
                 
-                
-                # Digər kateqoriyası üçün
-                st.markdown("### 🔄 Digər Şəhərlər")
-                new_other = st.number_input(
-                    "Digər şəhərlər üçün müavinət (AZN)",
-                    min_value=0,
-                    value=int(other_allowance),
-                    key="other_allowance"
-                )
-                if new_other != other_allowance:
-                    allowances['Digər'] = new_other
-                    save_domestic_allowances(allowances)
-                    st.rerun()
 
 
             # Sistem məlumatları
