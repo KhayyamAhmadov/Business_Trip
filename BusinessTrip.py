@@ -326,17 +326,17 @@ with tab1:
                     with st.container(border=True):
                         cols = st.columns(2)
                         with cols[0]:
-                            from_city = st.selectbox("Haradan", CITIES, index=CITIES.index("Bakı"), key="from_city")
+                            from_city = st.selectbox("Haradan", CITIES, index=CITIES.index("Bakı"))
                         with cols[1]:
-                            to_city = st.selectbox("Haraya", [c for c in CITIES if c != from_city], key="to_city")
+                            to_city = st.selectbox("Haraya", [c for c in CITIES if c != from_city])
                         
                         cols_dates = st.columns(2)
                         with cols_dates[0]:
-                            start_date = st.date_input("Başlanğıc tarixi", key="start_date")
+                            start_date = st.date_input("Başlanğıc tarixi")
                         with cols_dates[1]:
-                            end_date = st.date_input("Bitmə tarixi", key="end_date")
+                            end_date = st.date_input("Bitmə tarixi")
                         
-                        ticket_price = st.number_input("Nəqliyyat xərci (AZN)", min_value=0.0, value=0.0, key="ticket_price")
+                        ticket_price = st.number_input("Nəqliyyat xərci (AZN)", min_value=0.0, value=0.0)
                         
                         cols_buttons = st.columns([3,1])
                         with cols_buttons[0]:
@@ -354,7 +354,7 @@ with tab1:
                                 if st.session_state.trips:
                                     st.session_state.trips.pop()
                                     st.rerun()
-                
+                        
                     if st.session_state.trips:
                         st.markdown("**Əlavə edilmiş seferlər:**")
                         for i, trip in enumerate(st.session_state.trips, 1):
@@ -392,6 +392,7 @@ with tab1:
                         total_days = 0
                         
                         for trip in st.session_state.trips:
+                            # Müavinət təyini YALNIZ 'to_city' əsasında
                             daily_allowance = domestic_allowances.get(
                                 trip['to'], 
                                 domestic_allowances.get('Digər', 90)
