@@ -1115,6 +1115,12 @@ with tab2:
                         created_at = section_data.get('created_at', 'Tarix bilinmir')
                         st.caption(f"Yaradılma tarixi: {created_at[:10]}")
 
+        new_other = st.number_input(
+            "Digər parametr", 
+            key="unique_key_for_texts_tab"  # Unikalliq
+        )
+
+
 
 
 
