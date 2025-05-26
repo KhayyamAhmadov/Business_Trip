@@ -1772,30 +1772,44 @@ with tab2:
             df_currency = get_currency_rates(selected_date)
             
             if not df_currency.empty:
+                # Tələb olunan sütunların yoxlanılması
+                required_columns = ['Valyuta', 'Ad', 'Nominal', 'Məzənnə', '1 vahid üçün AZN']
+                if not all(col in df_currency.columns for col in required_columns):
+                    st.error("Məlumatlar düzgün formatda deyil!")
+                    st.stop()
+                
                 # Çeşidləmə parametrləri
                 cols = st.columns([3,2])
                 with cols[0]:
                     sort_by = st.selectbox(
                         "Çeşidləmə üçün sütun",
                         options=df_currency.columns,
-                        index=0
+                        index=0  # Default olaraq 'Valyuta' sütunu
                     )
                 with cols[1]:
                     ascending = st.checkbox("Artan sıra", True)
                 
-                # Bütün sütunları göstər
-                st.markdown("### Bütün Valyuta Məzənnələri")
-                df_sorted = df_currency.sort_values(sort_by, ascending=ascending)
-                st.dataframe(
-                    df_sorted,
-                    use_container_width=True,
-                    height=600,
-                    column_config={
-                        "1 vahid üçün AZN": st.column_config.NumberColumn(
-                            format="%.4f AZN"
-                        )
-                    }
-                )
+                try:
+                    # Çeşidləmə əməliyyatı
+                    df_sorted = df_currency.sort_values(sort_by, ascending=ascending)
+                    
+                    # Cədvəlin göstərilməsi
+                    st.markdown("### Bütün Valyuta Məzənnələri")
+                    st.dataframe(
+                        df_sorted,
+                        use_container_width=True,
+                        height=600,
+                        column_config={
+                            "1 vahid üçün AZN": st.column_config.NumberColumn(
+                                format="%.4f AZN"
+                            )
+                        }
+                    )
+                    
+                except KeyError as e:
+                    st.error(f"Çeşidləmə xətası: {e} sütunu mövcud deyil")
+                    st.stop()
+
                 
                 # Statistik məlumatlar
                 st.markdown("### Statistik Məlumatlar")
