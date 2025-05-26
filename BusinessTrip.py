@@ -980,10 +980,10 @@ def save_countries_data(data):
         json.dump(data, f, ensure_ascii=False, indent=4)
 
 
-@st.cache_data(ttl=3600) # 1 saat cache
+@st.cache_data(ttl=3600)
 def get_currency_rates(date):
     """
-    Cbar.az-dan valyuta məzənnələrini çəkərək DataFrame qaytarır
+    Cbar.az-dan konkret tarix üçün valyuta məzənnələrini çəkərək DataFrame qaytarır
     """
     try:
         formatted_date = date.strftime("%d.%m.%Y")
@@ -1009,12 +1009,14 @@ def get_currency_rates(date):
                     })
         
         df = pd.DataFrame(currencies)
-        df['1 vahid üçün AZN'] = df['Məzənnə'] / df['Nominal']
+        if not df.empty:
+            df['1 vahid üçün AZN'] = df['Məzənnə'] / df['Nominal']
         return df.sort_values('Valyuta')
     
     except Exception as e:
         st.error(f"Məzənnələr alınarkən xəta: {str(e)}")
         return pd.DataFrame()
+
 
 
 
@@ -1054,7 +1056,7 @@ with tab1:
                     domestic_allowances = load_domestic_allowances()
                     daily_allowance = domestic_allowances.get(to_city, domestic_allowances['Digər'])
                 else:  # Ölkə xarici ezamiyyət
-                    # YENİLİK 1: Dinamik yükləmə
+                    #  Dinamik yükləmə
                     countries_data = load_countries_data()
                     try:
                         currency_rates = pd.read_excel("currency_rates.xlsx").set_index('Valyuta')['Məzənnə'].to_dict()
@@ -1065,7 +1067,7 @@ with tab1:
                     country = st.selectbox("Ölkə", list(countries_data.keys()))
                     
                     if country in countries_data:
-                        # YENİLİK 2: Dinamik şəhər siyahısı
+                        #  Dinamik şəhər siyahısı
                         city_options = [c for c in countries_data[country]['cities'].keys() if c != 'digər']
                         city_options.append("digər")
                         selected_city = st.selectbox("Şəhər", city_options)
@@ -1147,18 +1149,28 @@ with tab1:
                             base_allowance = city_data['allowance']
                             currency = country_data['currency']
                         
-                        exchange_rate = currency_rates.get(currency, 1.0)  # Valyuta məzənnəsi
+                        # tarixe uygun
+                        try:
+                            # Cbar.az-dan məzənnə məlumatlarını çək
+                            currency_df = get_currency_rates(start_date)
+                            
+                            if currency_df.empty:
+                                st.error(f"{start_date.strftime('%d.%m.%Y')} tarixi üçün məzənnə məlumatı tapılmadı!")
+                                st.stop()
+                                
+                            # Valyuta koduna görə məzənnəni seç
+                            exchange_rate = currency_df.loc[currency_df['Valyuta'] == currency, '1 vahid üçün AZN'].values[0]
+                            
+                            # Salam . 
+                            exchange_date = start_date.strftime("%d.%m.%Y")
+                            
+                        except IndexError:
+                            st.error(f"{currency} valyutası üçün məzənnə tapılmadı!")
+                            st.stop()
+                        except Exception as e:
+                            st.error(f"Məzənnə alınarkən xəta: {str(e)}")
+                            st.stop()
 
-                        # Ödəniş rejimi əsasında günlük müavinəti hesabla (orijinal valyutada)
-                        if payment_mode == "Adi rejim":
-                            daily_allowance_foreign = float(base_allowance)
-                        elif payment_mode == "Günlük Normaya 50% əlavə":
-                            daily_allowance_foreign = float(base_allowance * 1.5)
-                        else:  # 30% əlavə
-                            daily_allowance_foreign = float(base_allowance * 1.3)
-                        
-                        # AZN-də günlük müavinət
-                        daily_allowance_azn = daily_allowance_foreign * exchange_rate
                         
                         # Qonaqlama növünə görə hesablama
                         if accommodation == "Adi Rejim":
@@ -1207,15 +1219,19 @@ with tab1:
                                 st.metric("🏨 Mehmanxana xərcləri", 
                                          f"{hotel_cost_azn:.2f} AZN",
                                          delta=f"{hotel_cost_foreign:.2f} {currency}")
-                        
+                        #Butun kodlari ozum bir bir el ile yazmisam.
                         st.metric("⏳ Müddət", f"{trip_days} gün")
                         st.metric("💳 Ümumi məbləğ", 
                                  f"{total_amount_azn:.2f} AZN", 
                                  delta=f"{total_amount_foreign:.2f} {currency}",
                                  help="Delta orijinal valyutada məbləği göstərir")
-                        st.info(f"💱 Cari məzənnə: 1 {currency} = {exchange_rate:.4f} AZN")
+                        st.info(
+                        f"💱 İstifadə edilən məzənnə ({exchange_date}): "
+                        f"1 {currency} = {exchange_rate:.4f} AZN"
+                        )
+
                         
-                        # Əlavə məlumat ⚙️ YENİLƏNİB
+                        # Əlavə məlumat  
                         if accommodation == "Adi Rejim":
                             st.caption("ℹ️ Adi Rejim: Günlük müavinətin 60%-i mehmanxana xərclərinə, 40%-i gündəlik xərclərə ayrılır")
                         elif accommodation == "Yalnız yaşayış yeri ilə təmin edir":
@@ -1853,7 +1869,7 @@ with tab2:
 
 
 if __name__ == "__main__":
-    # Create main data file if not exists
+    # İlkin fayl yoxlamaları
     if not os.path.exists("ezamiyyet_melumatlari.xlsx"):
         pd.DataFrame(columns=[
             'Tarix', 'Ad', 'Soyad', 'Ata adı', 'Vəzifə', 'Şöbə', 
@@ -1863,10 +1879,6 @@ if __name__ == "__main__":
             'Ümumi məbləğ', 'Məqsəd'
         ]).to_excel("ezamiyyet_melumatlari.xlsx", index=False)
     
-    # Create currency rates file if not exists
-    if not os.path.exists("currency_rates.xlsx"):
-        pd.DataFrame({
-            'Valyuta': list(CURRENCY_RATES.keys()),
-            'Məzənnə': list(CURRENCY_RATES.values())
-        }).to_excel("currency_rates.xlsx", index=False)
-
+    # Köhnə valyuta faylını sil
+    if os.path.exists("currency_rates.xlsx"):
+        os.remove("currency_rates.xlsx")
