@@ -1719,62 +1719,71 @@ with tab2:
             # Yeni hisse
             with st.expander("🏙️ Daxili Ezamiyyət Müavinətləri (Ətraflı)", expanded=True):
                 st.markdown("""
-                **Təlimat:**
-                - Mövcud şəhərlərin müavinətlərini dəyişə bilərsiniz
-                - Yeni şəhərlər əlavə edə bilərsiniz
-                - "Digər" kateqoriyası siyahıda olmayan bütün şəhərlər üçün əsas götürülür
+                **İstifadə qaydası:**
+                1. Yeni şəhər əlavə etmək üçün sol sahədən ad daxil edin
+                2. Müvafiq müavinət məbləğini AZN ilə təyin edin
+                3. "Əlavə et" düyməsinə basın
+                4. Mövcud şəhərlərin məbləğlərini dəyişdirmək üçün sütunlarda redaktə edin
+                5. "Digər" kateqoriyası üçün standart dəyəri təyin edin
                 """)
                 
                 # Yeni şəhər əlavə etmə paneli
-                st.markdown("### ➕ Yeni Şəhər Əlavə Et")
                 cols = st.columns([2, 1, 1])
                 with cols[0]:
                     new_city = st.text_input("Şəhər adı", key="new_city")
                 with cols[1]:
-                    new_city_allowance = st.number_input("Müavinət (AZN)", min_value=0, value=90, key="new_city_allowance")
+                    new_city_allowance = st.number_input("Müavinət (AZN)", 
+                                                       min_value=0, 
+                                                       value=90, 
+                                                       step=5,
+                                                       key="new_city_allowance")
                 with cols[2]:
                     if st.button("Əlavə et", key="add_new_city"):
                         allowances = load_domestic_allowances()
                         if new_city and new_city not in allowances:
                             allowances[new_city] = new_city_allowance
                             save_domestic_allowances(allowances)
-                            st.success(f"{new_city} əlavə edildi!")
+                            st.success(f"{new_city} üçün {new_city_allowance} AZN müavinət təyin edildi!")
                             st.rerun()
                         else:
-                            st.error("Zəhmət olmasa etibarlı şəhər adı daxil edin!")
-
+                            st.error("Zəhmət olmasa unikal şəhər adı daxil edin!")
+            
                 # Mövcud şəhərlərin idarə edilməsi
                 st.markdown("### 📋 Mövcud Şəhər Müavinətləri")
                 allowances = load_domestic_allowances()
                 
-                # Default 'Digər' sütununu qorumaq üçün
-                other_allowance = allowances.get('Digər', 90)
+                # Dynamic dataframe for editing
+                df_allowances = pd.DataFrame({
+                    'Şəhər': allowances.keys(),
+                    'Müavinət (AZN)': allowances.values()
+                })
                 
-                # Şəhərləri düzəlt
-                cities = [city for city in allowances if city != 'Digər']
-                cities.sort()
-                
-                for city in cities:
-                    cols = st.columns([3, 2, 1])
-                    with cols[0]:
-                        st.write(f"🏙️ {city}")
-                    with cols[1]:
-                        new_allowance = st.number_input(
-                            "Müavinət",
+                edited_df = st.data_editor(
+                    df_allowances,
+                    column_config={
+                        "Şəhər": st.column_config.TextColumn(
+                            width="medium",
+                            disabled=True
+                        ),
+                        "Müavinət (AZN)": st.column_config.NumberColumn(
                             min_value=0,
-                            value=int(allowances[city]),
-                            key=f"allowance_{city}"
+                            step=5,
+                            format="%d AZN"
                         )
-                    with cols[2]:
-                        if city != 'Digər' and st.button("🗑️", key=f"del_{city}"):
-                            del allowances[city]
-                            save_domestic_allowances(allowances)
-                            st.rerun()
-                    
-                    if new_allowance != allowances[city]:
-                        allowances[city] = new_allowance
-                        save_domestic_allowances(allowances)
-                        st.rerun()
+                    },
+                    hide_index=True,
+                    use_container_width=True
+                )
+                
+                if st.button("💾 Dəyişiklikləri saxla"):
+                    new_allowances = pd.Series(
+                        edited_df['Müavinət (AZN)'].values, 
+                        index=edited_df['Şəhər']
+                    ).to_dict()
+                    save_domestic_allowances(new_allowances)
+                    st.success("Müavinət məbləğləri uğurla yeniləndi!")
+                    st.rerun()
+
 
                 # Digər kateqoriyası üçün
                 st.markdown("### 🔄 Digər Şəhərlər")
