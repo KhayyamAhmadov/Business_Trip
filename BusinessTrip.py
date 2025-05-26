@@ -18,51 +18,144 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. GİRİŞ MƏNTİQİ
-if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
-
-# Giriş üçün CSS
+# Dizayn
 st.markdown("""
 <style>
+    :root {
+        --primary-color: #6F4BFF;          /* Hostinger's primary purple */
+        --secondary-color: #2B1C8F;       /* Deep blue for gradients */
+        --accent-color: #FF7F5C;          /* Vibrant accent color */
+        --background-light: #F8F9FF;      /* Light background */
+        --text-dark: #2D2D3A;             /* Primary text color */
+        --text-light: #FFFFFF;            /* Light text */
+        --border-color: #E0E0F5;          /* Subtle borders */
+    }
+
+    .stApp {
+        background: var(--background-light) !important;
+    }
+
     .login-box {
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-        color: white;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        border-radius: 20px;
+        box-shadow: 0 12px 24px rgba(111, 75, 255, 0.2);
         padding: 2.5rem;
-        border-radius: 15px;
-        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        color: var(--text-light);
         max-width: 500px;
         margin: 5rem auto;
+        border: 1px solid rgba(255,255,255,0.15);
     }
-    .login-header {
-        text-align: center;
-        margin-bottom: 2rem;
+
+    .stTextInput input, .stSelectbox select, .stDateInput input, .stTextArea textarea {
+        background: rgba(255,255,255,0.95) !important;
+        border: 2px solid var(--border-color) !important;
+        border-radius: 12px !important;
+        padding: 12px 16px !important;
+        font-size: 16px !important;
+        color: var(--text-dark) !important;
+        transition: all 0.3s ease !important;
     }
-    .login-box .stTextInput {
-        width: 30%;
-        margin: 0 auto;
+
+    .stTextInput input:focus, .stSelectbox select:focus, 
+    .stDateInput input:focus, .stTextArea textarea:focus {
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 0 3px rgba(111, 75, 255, 0.2) !important;
     }
-    .stTextInput input {
-        background-color: rgba(255,255,255,0.2)!important;
-        color: white!important;
-        border: 1px solid rgba(255,255,255,0.3)!important;
-        border-radius: 8px!important;
-        padding: 8px 12px!important;
-        font-size: 14px!important;
+
+    .stButton>button {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%) !important;
+        border: none !important;
+        color: var(--text-light) !important;
+        padding: 12px 30px !important;
+        border-radius: 12px !important;
+        font-weight: 600 !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 6px rgba(111, 75, 255, 0.15) !important;
     }
-    .stTextInput input::placeholder {
-        color: rgba(255,255,255,0.7)!important;
+
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 12px rgba(111, 75, 255, 0.25) !important;
+        opacity: 0.9;
+    }
+
+    .stDataFrame {
+        border: 1px solid var(--border-color) !important;
+        border-radius: 16px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+    }
+
+    [data-baseweb="tab-list"] {
+        gap: 8px !important;
+        padding: 8px !important;
+        background: var(--background-light) !important;
+    }
+
+    [data-baseweb="tab"] {
+        padding: 12px 24px !important;
+        border-radius: 12px !important;
+        transition: all 0.3s ease !important;
+        background: rgba(111, 75, 255, 0.1) !important;
+        color: var(--text-dark) !important;
+    }
+
+    [data-baseweb="tab"]:hover {
+        background: rgba(111, 75, 255, 0.2) !important;
+    }
+
+    [aria-selected="true"] {
+        background: var(--primary-color) !important;
+        color: var(--text-light) !important;
+    }
+
+    .st-emotion-cache-1v0mbdj.e115fcil1 img {
+        border-radius: 16px !important;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1) !important;
+        border: 2px solid var(--border-color) !important;
+    }
+
+    .stTextInput input::placeholder, .stSelectbox select::placeholder {
+        color: rgba(45, 45, 58, 0.6) !important;
+        opacity: 1 !important;
+    }
+
+    [data-baseweb="calendar"] {
+        border-radius: 12px !important;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important;
     }
 </style>
 """, unsafe_allow_html=True)
+
+# 3.  BAŞLIQ TƏRTİBATI
+st.markdown("""
+<div class='main-header' style='
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    color: var(--text-light);
+    padding: 2rem 1rem;
+    border-radius: 0 0 30px 30px;
+    margin: -1rem -1rem 2rem -1rem;
+    box-shadow: 0 8px 24px rgba(111, 75, 255, 0.15);
+'>
+    <h1 style='
+        margin: 0;
+        font-size: 2.5rem;
+        font-weight: 700;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    '>✈️ Ezamiyyət İdarəetmə Sistemi</h1>
+</div>
+""", unsafe_allow_html=True)
+
+# 4. GİRİŞ 
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
 
 if not st.session_state.logged_in:
     with st.container():
         st.markdown('<div class="login-box"><div class="login-header"><h2>🔐 Sistemə Giriş</h2></div>', unsafe_allow_html=True)
         
         access_code = st.text_input("Giriş kodu", type="password", 
-                                  label_visibility="collapsed", 
-                                  placeholder="Giriş kodunu daxil edin...")
+                                 label_visibility="collapsed", 
+                                 placeholder="Giriş kodunu daxil edin...")
         
         cols = st.columns([1,2,1])
         with cols[1]:
@@ -75,56 +168,7 @@ if not st.session_state.logged_in:
         st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
 
-# 3. ƏSAS TƏRTİBAT VƏ PROQRAM MƏNTİQİ
-st.markdown("""
-<style>
-    :root {
-        --primary-color: #6366f1;
-        --secondary-color: #8b5cf6;
-        --background-color: #ffffff;
-    }
-    
-    .main-header {
-        text-align: center;
-        padding: 2rem 1rem;
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-        color: white;
-        margin: -1rem -1rem 2rem -1rem;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        border-radius: 0 0 20px 20px;
-    }
-    
-    .section-header {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-        color: white!important;
-        padding: 1.5rem;
-        border-radius: 12px;
-        margin: 1.5rem 0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border-left: none;
-    }
-    
-    .stButton>button {
-        border-radius: 8px!important;
-        padding: 0.5rem 1.5rem!important;
-        transition: all 0.3s ease!important;
-        border: 1px solid var(--primary-color)!important;
-        background: var(--secondary-color)!important;
-        color: white!important;
-    }
-    
-    .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 6px rgba(99,102,241,0.3)!important;
-        background: var(--primary-color)!important;
-    }
-    
-    .dataframe {
-        border-radius: 12px!important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05)!important;
-    }
-</style>
-""", unsafe_allow_html=True)
+
 
 # ============================== SABİTLƏR ==============================
 DEPARTMENTS = [
