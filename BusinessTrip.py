@@ -1047,14 +1047,55 @@ with tab1:
                 trip_type = st.radio("Növ", ["Ölkə daxili", "Ölkə xarici"])
                 
                 if trip_type == "Ölkə daxili":
-                    cols = st.columns(2)
-                    with cols[0]:
-                        from_city = st.selectbox("Haradan", CITIES, index=CITIES.index("Bakı"))
-                    with cols[1]:
-                        to_city = st.selectbox("Haraya", [c for c in CITIES if c != from_city])
-                    ticket_price = calculate_domestic_amount(from_city, to_city)
+                    # Çoxlu sefer üçün session state
+                    if 'trips' not in st.session_state:
+                        st.session_state.trips = []
+                    
+                    # Yeni sefer əlavə etmə
+                    with st.container(border=True):
+                        cols = st.columns(2)
+                        with cols[0]:
+                            from_city = st.selectbox("Haradan", CITIES, index=CITIES.index("Bakı"), key=f"from_city_{len(st.session_state.trips)}")
+                        with cols[1]:
+                            to_city = st.selectbox("Haraya", [c for c in CITIES if c != from_city], key=f"to_city_{len(st.session_state.trips)}")
+                        
+                        cols_dates = st.columns(2)
+                        with cols_dates[0]:
+                            start_date = st.date_input("Başlanğıc tarixi", key=f"start_date_{len(st.session_state.trips)}")
+                        with cols_dates[1]:
+                            end_date = st.date_input("Bitmə tarixi", key=f"end_date_{len(st.session_state.trips)}")
+                        
+                        ticket_price = st.number_input("Nəqliyyat xərci (AZN)", min_value=0.0, value=0.0, key=f"ticket_{len(st.session_state.trips)}")
+                        
+                        cols_buttons = st.columns([3,1])
+                        with cols_buttons[0]:
+                            if st.button("➕ Yeni sefer əlavə et", use_container_width=True):
+                                st.session_state.trips.append({
+                                    'from': from_city,
+                                    'to': to_city,
+                                    'start': start_date,
+                                    'end': end_date,
+                                    'price': ticket_price
+                                })
+                                st.rerun()
+                        with cols_buttons[1]:
+                            if st.button("➖ Son seferi sil", use_container_width=True, type="secondary"):
+                                if st.session_state.trips:
+                                    st.session_state.trips.pop()
+                                    st.rerun()
+                    
+                    # Əlavə edilmiş seferləri göstər
+                    if st.session_state.trips:
+                        st.markdown("**Əlavə edilmiş seferlər:**")
+                        for i, trip in enumerate(st.session_state.trips, 1):
+                            st.write(f"{i}. {trip['from']} → {trip['to']} | "
+                                    f"{trip['start']} - {trip['end']} | "
+                                    f"Nəqliyyat: {trip['price']} AZN")
+                    
                     domestic_allowances = load_domestic_allowances()
+                    to_city = st.selectbox("Müavinət tətbiq ediləcək şəhər", [c for c in CITIES], key="allowance_city")
                     daily_allowance = domestic_allowances.get(to_city, domestic_allowances['Digər'])
+
                 else:  # Ölkə xarici ezamiyyət
                     #  Dinamik yükləmə
                     countries_data = load_countries_data()
@@ -1120,24 +1161,41 @@ with tab1:
             with st.container():
                 st.markdown('<div class="section-header">💰 Hesablama</div>', unsafe_allow_html=True)
                 
-                if start_date and end_date and end_date >= start_date:
-                    trip_days = (end_date - start_date).days + 1
-                    trip_nights = trip_days - 1 if trip_days > 1 else 0
-        
-                    if trip_type == "Ölkə daxili":
-                        # Daxili ezamiyyət hesablamaları
-                        hotel_cost = 0.7 * daily_allowance * trip_nights
-                        daily_expenses = 0.3 * daily_allowance * trip_days
-                        total_amount = hotel_cost + daily_expenses + ticket_price
-        
-                        # Göstəricilər
-                        st.metric("📅 Günlük müavinət", f"{daily_allowance:.2f} AZN")
-                        st.metric("🚌 Nəqliyyat xərci", f"{ticket_price:.2f} AZN")
-                        st.metric("🏨 Mehmanxana xərcləri", f"{hotel_cost:.2f} AZN")
-                        st.metric("🍽️ Gündəlik xərclər", f"{daily_expenses:.2f} AZN")
-                        st.metric("⏳ Müddət", f"{trip_days} gün")
-                        st.metric("💳 Ümumi məbləğ", f"{total_amount:.2f} AZN")
+                if trip_type == "Ölkə daxili":
+                    total_amount = 0
+                    total_transport = 0
+                    total_days = 0
+                    
+                    if st.session_state.trips:
+                        for i, trip in enumerate(st.session_state.trips, 1):
+                            days = (trip['end'] - trip['start']).days + 1
+                            total_days += days
+                            
+                            hotel_cost = 0.7 * daily_allowance * (days-1)
+                            daily_expenses = 0.3 * daily_allowance * days
+                            trip_total = hotel_cost + daily_expenses + trip['price']
+                            total_amount += trip_total
+                            total_transport += trip['price']
+                            
+                            with st.expander(f"Sefer {i} ({trip['from']}→{trip['to']})"):
+                                st.metric("Günlər", days)
+                                st.metric("Mehmanxana xərcləri", f"{hotel_cost:.2f} AZN")
+                                st.metric("Gündəlik xərclər", f"{daily_expenses:.2f} AZN")
+                                st.metric("Nəqliyyat xərci", f"{trip['price']:.2f} AZN")
+                                st.metric("Sefer ümumi", f"{trip_total:.2f} AZN")
                         
+                        st.divider()
+                        cols_total = st.columns(2)
+                        with cols_total[0]:
+                            st.metric("Ümumi Günlər", total_days)
+                            st.metric("Ümumi Nəqliyyat Xərcləri", f"{total_transport:.2f} AZN")
+                        with cols_total[1]:
+                            st.metric("Günlük Müavinət", f"{daily_allowance:.2f} AZN")
+                            st.metric("Ümumi Məbləğ", f"{total_amount:.2f} AZN", delta="Bütün seferlər üçün ümumi")
+                    
+                    else:
+                        st.warning("Ən azı bir sefer əlavə edin!")
+                    
                     else:  # Xarici ezamiyyət hesablamaları
                         country_data = countries_data[country]  # COUNTRIES 
                         
@@ -1246,50 +1304,80 @@ with tab1:
         
                 # Yadda saxlama düyməsi
                 if st.button("✅ Yadda Saxla", use_container_width=True):
-                    if all([first_name, last_name, start_date, end_date]):
-                        # Valyuta məlumatlarını təyin et
+                    if all([first_name, last_name, purpose]):
                         if trip_type == "Ölkə daxili":
-                            currency = "AZN"
-                            exchange_rate = 1.0
-                            daily_allowance_foreign = daily_allowance
-                            total_amount_foreign = total_amount
-                            total_amount_azn = total_amount
-                        else:
-                            # Xarici ezamiyyət üçün yuxarıda hesablanmış dəyərləri istifadə et
-                            total_amount_azn = total_amount_foreign * exchange_rate
-        
-                        trip_data = {
-                            "Tarix": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            "Ad": first_name,
-                            "Soyad": last_name,
-                            "Ata adı": father_name,
-                            "Vəzifə": position,
-                            "Şöbə": department,
-                            "Ezamiyyət növü": trip_type,
-                            "Ödəniş rejimi": payment_mode if trip_type == "Ölkə xarici" else "Tətbiq edilmir",
-                            "Qonaqlama növü": accommodation if trip_type == "Ölkə xarici" else "Tətbiq edilmir",
-                            "Marşrut": f"{from_city} → {to_city}" if trip_type == "Ölkə daxili" else f"{country} - {selected_city}",
-                            "Bilet qiyməti": ticket_price if trip_type == "Ölkə daxili" else 0,
-                            # Valyuta məlumatları
-                            "Günlük müavinət (Valyuta)": f"{daily_allowance_foreign:.2f} {currency}",
-                            "Günlük müavinət (AZN)": daily_allowance_azn if trip_type == "Ölkə xarici" else daily_allowance,
-                            "Ümumi məbləğ (Valyuta)": f"{total_amount_foreign:.2f} {currency}",
-                            "Ümumi məbləğ (AZN)": total_amount_azn,
-                            "Valyuta": currency,
-                            "Məzənnə": exchange_rate,
-                            "Başlanğıc tarixi": start_date.strftime("%Y-%m-%d"),
-                            "Bitmə tarixi": end_date.strftime("%Y-%m-%d"),
-                            "Günlər": trip_days,
-                            "Gecələr": trip_nights,
-                            "Məqsəd": purpose
-                        }
+                            if st.session_state.trips:
+                                for trip in st.session_state.trips:
+                                    days = (trip['end'] - trip['start']).days + 1
+                                    nights = days - 1 if days > 1 else 0
+                                    
+                                    # Daxili ezamiyyət məlumatları
+                                    trip_data = {
+                                        "Tarix": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                        "Ad": first_name,
+                                        "Soyad": last_name,
+                                        "Ata adı": father_name,
+                                        "Vəzifə": position,
+                                        "Şöbə": department,
+                                        "Ezamiyyət növü": trip_type,
+                                        "Ödəniş rejimi": "Tətbiq edilmir",
+                                        "Qonaqlama növü": "Tətbiq edilmir",
+                                        "Marşrut": f"{trip['from']} → {trip['to']}",
+                                        "Bilet qiyməti": trip['price'],
+                                        "Günlük müavinət (Valyuta)": f"{daily_allowance} AZN",
+                                        "Günlük müavinət (AZN)": daily_allowance,
+                                        "Ümumi məbləğ (Valyuta)": "Tətbiq edilmir",
+                                        "Ümumi məbləğ (AZN)": 0.7*daily_allowance*nights + 0.3*daily_allowance*days + trip['price'],
+                                        "Valyuta": "AZN",
+                                        "Məzənnə": 1.0,
+                                        "Başlanğıc tarixi": trip['start'].strftime("%Y-%m-%d"),
+                                        "Bitmə tarixi": trip['end'].strftime("%Y-%m-%d"),
+                                        "Günlər": days,
+                                        "Gecələr": nights,
+                                        "Məqsəd": purpose
+                                    }
+                                    save_trip_data(trip_data)
+                                
+                                st.success(f"{len(st.session_state.trips)} sefer uğurla yadda saxlandı!")
+                                st.session_state.trips = []
+                                st.rerun()
+                            else:
+                                st.error("Ən azı bir sefer əlavə edin!")
                         
-                        if save_trip_data(trip_data):
-                            st.success("Məlumatlar yadda saxlandı!")
-                            # Formanı təmizlə (isteğe bağlı)
-                            st.rerun()
+                        else:  # Ölkə xarici
+                            if start_date and end_date and end_date >= start_date:
+                                # Xarici ezamiyyət məlumatları
+                                trip_data = {
+                                    "Tarix": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                    "Ad": first_name,
+                                    "Soyad": last_name,
+                                    "Ata adı": father_name,
+                                    "Vəzifə": position,
+                                    "Şöbə": department,
+                                    "Ezamiyyət növü": trip_type,
+                                    "Ödəniş rejimi": payment_mode,
+                                    "Qonaqlama növü": accommodation,
+                                    "Marşrut": f"{country} - {selected_city}",
+                                    "Bilet qiyməti": 0,
+                                    "Günlük müavinət (Valyuta)": f"{daily_allowance_foreign:.2f} {currency}",
+                                    "Günlük müavinət (AZN)": daily_allowance_azn,
+                                    "Ümumi məbləğ (Valyuta)": f"{total_amount_foreign:.2f} {currency}",
+                                    "Ümumi məbləğ (AZN)": total_amount_azn,
+                                    "Valyuta": currency,
+                                    "Məzənnə": exchange_rate,
+                                    "Başlanğıc tarixi": start_date.strftime("%Y-%m-%d"),
+                                    "Bitmə tarixi": end_date.strftime("%Y-%m-%d"),
+                                    "Günlər": trip_days,
+                                    "Gecələr": trip_nights,
+                                    "Məqsəd": purpose
+                                }
+                                if save_trip_data(trip_data):
+                                    st.success("Məlumatlar yadda saxlandı!")
+                                    st.rerun()
+                            else:
+                                st.error("Tarixləri düzgün daxil edin!")
                     else:
-                        st.error("Zəhmət olmasa bütün məcburi sahələri doldurun!")
+                        st.error("Zəhmət olmasa bütün məcburi sahələri doldurun: Ad, Soyad, Məqsəd")
 
 
 # ============================== ADMIN PANELİ ==============================
