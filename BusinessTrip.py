@@ -859,7 +859,7 @@ with tab2:
                     "Digər şəhərlər üçün müavinət (AZN)",
                     min_value=0,
                     value=int(other_allowance),
-                    key="domestic_other_allowance"  
+                    key="domestic_other_allowance")  
                     
                 
                 if new_other != other_allowance:
