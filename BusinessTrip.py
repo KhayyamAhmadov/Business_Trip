@@ -1190,7 +1190,10 @@ with tab1:
                         total_amount_azn = total_amount_foreign * exchange_rate
                         hotel_cost_azn = hotel_cost_foreign * exchange_rate
                         daily_expenses_azn = daily_expenses_foreign * exchange_rate
-                        
+
+                        # Valyuta məzənnəsi ilə günlük müavinətin AZN-ə çevrilməsi
+                        daily_allowance_azn = daily_allowance_foreign * exchange_rate 
+
                         # Göstəricilər ⚙️ YENİLƏNİB
                         st.metric("📅 Günlük müavinət", 
                                  f"{daily_allowance_azn:.2f} AZN", 
