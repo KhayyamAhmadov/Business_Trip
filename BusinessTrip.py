@@ -1044,9 +1044,12 @@ def calculate_international_trip(country, city, payment_mode, accommodation, sta
         'daily_allowance': daily_allowance,
         'trip_days': trip_days,
         'trip_nights': trip_nights,
+        'hotel_cost': hotel_cost,  # Əlavə edildi
+        'daily_cost': daily_cost,  # Əlavə edildi
         'total_foreign': total_foreign,
         'total_azn': total_azn
     }
+
 
 
 st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
@@ -1073,7 +1076,11 @@ with tab1:
 
             with st.expander("🧳 Ezamiyyət Detalları", expanded=True):
                 trip_type = st.radio("Növ", ["Ölkə daxili", "Ölkə xarici"])
-                
+
+                purpose = st.text_area("Ezamiyyət məqsədi", 
+                                     placeholder="Ezamiyyətin məqsədini qısaca izah edin...",
+                                     help="Məsələn: Təlim, konfrans, işgüzar görüş və s.")
+
                 if trip_type == "Ölkə daxili":
                     if 'trips' not in st.session_state:
                         st.session_state.trips = []
@@ -1395,15 +1402,17 @@ with tab1:
                               f"1 {country_data['currency']} = {exchange_rate:.4f} AZN")
                 
                 st.metric("📅 Ümumi müddət", f"{trip_days} gün ({trip_nights} gecə)")
-                
+
+                # sdasd
                 cost_cols = st.columns(2)
                 cost_cols[0].metric("🏨 Yaşayış xərcləri", 
-                                   f"{(daily_allowance_foreign * hotel_ratio * trip_nights):.2f} {country_data['currency']}")
+                                   f"{result['hotel_cost']:.2f} {result['currency']}")
                 cost_cols[1].metric("🍽️ Gündəlik xərclər", 
-                                   f"{(daily_allowance_foreign * daily_ratio * trip_days):.2f} {country_data['currency']}")
+                                   f"{result['daily_cost']:.2f} {result['currency']}")
+
                 
-                st.metric("💳 Ümumi məbləğ", 
-                         f"{total_foreign:.2f} {country_data['currency']} / {total_azn:.2f} AZN")
+                # st.metric("💳 Ümumi məbləğ", 
+                #          f"{total_foreign:.2f} {country_data['currency']} / {total_azn:.2f} AZN")
                         
                 # Əlavə məlumat  
                 if accommodation == "Adi Rejim":
