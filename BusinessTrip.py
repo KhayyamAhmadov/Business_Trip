@@ -1408,13 +1408,13 @@ with tab1:
                 st.metric("💳 Ümumi məbləğ", 
                          f"{total_foreign:.2f} {country_data['currency']} / {total_azn:.2f} AZN")
                         
-                        # Əlavə məlumat  
-                        if accommodation == "Adi Rejim":
-                            st.caption("ℹ️ Adi Rejim: Günlük müavinətin 60%-i mehmanxana xərclərinə, 40%-i gündəlik xərclərə ayrılır")
-                        elif accommodation == "Yalnız yaşayış yeri ilə təmin edir":
-                            st.caption("ℹ️ Yalnız gündəlik xərclər ödənilir (günlük müavinətin 40%-i)")
-                        elif accommodation == "Yalnız gündəlik xərcləri təmin edir":
-                            st.caption("ℹ️ Yalnız mehmanxana xərcləri ödənilir (günlük müavinətin 60%-i × gecə sayı)")
+                # Əlavə məlumat  
+                if accommodation == "Adi Rejim":
+                    st.caption("ℹ️ Adi Rejim: Günlük müavinətin 60%-i mehmanxana xərclərinə, 40%-i gündəlik xərclərə ayrılır")
+                elif accommodation == "Yalnız yaşayış yeri ilə təmin edir":
+                    st.caption("ℹ️ Yalnız gündəlik xərclər ödənilir (günlük müavinətin 40%-i)")
+                elif accommodation == "Yalnız gündəlik xərcləri təmin edir":
+                    st.caption("ℹ️ Yalnız mehmanxana xərcləri ödənilir (günlük müavinətin 60%-i × gecə sayı)")
 
                 
         
