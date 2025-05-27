@@ -986,7 +986,7 @@ def get_currency_rates(date):
 
 
 st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
-tab1, tab2, tab3 = st.tabs(["📋 Yeni Ezamiyyət", "📋 Məlumatlar və Qeydlər", "🔐 Admin Paneli"])
+tab1, tab2, tab3 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli", "📋 Məlumatlar və Qeydlər",])
 
 # YENİ EZAMİYYƏT HISSESI
 with tab1:
@@ -1256,26 +1256,9 @@ with tab1:
                         st.error("Zəhmət olmasa bütün məcburi sahələri doldurun!")
 
 
-# ====================================================================================================
-with tab2:
-    st.markdown('<div class="section-header">📋 Məlumatlar və Qeydlər</div>', unsafe_allow_html=True)
-    
-    try:
-        with open(MELUMATLAR_JSON, 'r', encoding='utf-8') as f:
-            sections = json.load(f)
-            
-            if not sections:
-                st.info("Hələ heç bir məlumat əlavə edilməyib")
-            else:
-                for section_id, section_data in sections.items():
-                    with st.expander(f"📌 {section_data.get('title', 'Başlıqsız')}", expanded=True):
-                        st.markdown(section_data.get('content', ''))
-    except Exception as e:
-        st.error(f"Məlumatlar yüklənərkən xəta: {str(e)}")
-
 
 # ============================== ADMIN PANELİ ==============================
-with tab3:
+with tab2:
     # Admin giriş statusunun yoxlanılması
     if 'admin_logged' not in st.session_state:
         st.session_state.admin_logged = False
@@ -1878,6 +1861,23 @@ with tab3:
                 key="unique_key_for_texts_tab"  # Unikalliq
             )
 
+
+# ====================================================================================================
+with tab3:
+    st.markdown('<div class="section-header">📋 Məlumatlar və Qeydlər</div>', unsafe_allow_html=True)
+    
+    try:
+        with open(MELUMATLAR_JSON, 'r', encoding='utf-8') as f:
+            sections = json.load(f)
+            
+            if not sections:
+                st.info("Hələ heç bir məlumat əlavə edilməyib")
+            else:
+                for section_id, section_data in sections.items():
+                    with st.expander(f"📌 {section_data.get('title', 'Başlıqsız')}", expanded=True):
+                        st.markdown(section_data.get('content', ''))
+    except Exception as e:
+        st.error(f"Məlumatlar yüklənərkən xəta: {str(e)}")
 
 
 
