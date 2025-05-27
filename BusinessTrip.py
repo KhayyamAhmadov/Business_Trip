@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
@@ -1269,8 +1268,8 @@ with tab1:
                             cols[1].metric("Gündəlik Xərclər", 
                                           f"{result['daily_cost']:.2f} {result['currency']}")
                             
-                            st.metric("Ümumi Məbləğ", 
-                                     f"{result['total_azn']:.2f} AZN")
+                            st.metric("💳 Ümumi məbləğ", 
+                                     f"{result['total_foreign']:.2f} {result['currency']} / {result['total_azn']:.2f} AZN")
                             
                             if accommodation == "Adi Rejim":
                                 st.info("Adi Rejim: Günlük müavinətin 60%-i mehmanxana xərclərinə, 40%-i gündəlik xərclərə ayrılır")
