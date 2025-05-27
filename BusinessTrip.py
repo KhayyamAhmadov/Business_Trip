@@ -400,22 +400,35 @@ with tab1:
                         total_transport = 0
                         total_days = 0
                         
-                        for trip in st.session_state.trips:
-                            # Müavinət təyini YALNIZ 'to_city' əsasında
+                        # Tripləri tarixə görə sırala
+                        sorted_trips = sorted(st.session_state.trips, key=lambda x: x['start'])
+                        
+                        for i in range(len(sorted_trips)):
+                            trip = sorted_trips[i]
+                            start = trip['start']
+                            end = trip['end']
+                            days = (end - start).days + 1
+                            
+                            # Növbəti trip ilə üst-üstə düşən günü yoxla
+                            if i < len(sorted_trips) - 1:
+                                next_trip = sorted_trips[i + 1]
+                                if end >= next_trip['start']:
+                                    overlap_days = (end - next_trip['start']).days + 1
+                                    days -= overlap_days  # Üst-üstə düşən günləri çıx
+                                    days = max(days, 0)  # Mənfi günləri əlavə etmə
+                            
                             daily_allowance = domestic_allowances.get(
                                 trip['to'], 
                                 domestic_allowances.get('Digər', 90)
                             )
                             
-                            days = (trip['end'] - trip['start']).days + 1
-                            total_days += days
-                            
-                            hotel_cost = 0.7 * daily_allowance * (days-1)
+                            hotel_cost = 0.7 * daily_allowance * (days - 1)
                             daily_expenses = 0.3 * daily_allowance * days
                             trip_total = hotel_cost + daily_expenses + trip['price']
                             total_amount += trip_total
                             total_transport += trip['price']
-        
+                            total_days += days
+                            
                             with st.expander(f"Sefer {trip['from']}→{trip['to']}"):
                                 st.metric("Hədəf şəhər", trip['to'])
                                 st.metric("Günlük müavinət", f"{daily_allowance} AZN")
@@ -424,7 +437,7 @@ with tab1:
                                 st.metric("Gündəlik xərclər", f"{daily_expenses:.2f} AZN")
                                 st.metric("Nəqliyyat xərci", f"{trip['price']:.2f} AZN")
                                 st.metric("Sefer ümumi", f"{trip_total:.2f} AZN")
-        
+                        
                         st.divider()
                         cols_total = st.columns(2)
                         with cols_total[0]:
@@ -435,12 +448,116 @@ with tab1:
                     
                     else:
                         st.warning("Ən azı bir sefer əlavə edin!")
+
+                else:  # Xarici ezamiyyət hesablamaları
+                    country_data = countries_data[country]  # COUNTRIES 
                     
+                    if selected_city == "digər":
+                        base_allowance = country_data['cities']['digər']['allowance']
+                        currency = country_data['currency']
+                    else:
+                        city_data = country_data['cities'][selected_city]
+                        base_allowance = city_data['allowance']
+                        currency = country_data['currency']
+                    
+                    # tarixe uygun
+                    try:
+                        # Cbar.az-dan məzənnə məlumatlarını çək
+                        currency_df = get_currency_rates(start_date)
+                        
+                        if currency_df.empty:
+                            st.error(f"{start_date.strftime('%d.%m.%Y')} tarixi üçün məzənnə məlumatı tapılmadı!")
+                            st.stop()
+                            
+                        # Valyuta koduna görə məzənnəni seç
+                        exchange_rate = currency_df.loc[currency_df['Valyuta'] == currency, '1 vahid üçün AZN'].values[0]
+                        
+                        # Salam . 
+                        exchange_date = start_date.strftime("%d.%m.%Y")
+                        
+                    except IndexError:
+                        st.error(f"{currency} valyutası üçün məzənnə tapılmadı!")
+                        st.stop()
+                    except Exception as e:
+                        st.error(f"Məzənnə alınarkən xəta: {str(e)}")
+                        st.stop()
+
+                    
+                    # Qonaqlama növünə görə hesablama
+                    if accommodation == "Adi Rejim":
+                        hotel_cost_foreign = 0.6 * daily_allowance_foreign * trip_nights
+                        daily_expenses_foreign = 0.4 * daily_allowance_foreign * trip_days
+                        total_amount_foreign = hotel_cost_foreign + daily_expenses_foreign
+                    elif accommodation == "Yalnız yaşayış yeri ilə təmin edir":
+                        daily_expenses_foreign = daily_allowance_foreign * 0.4 * trip_days
+                        hotel_cost_foreign = 0
+                        total_amount_foreign = daily_expenses_foreign
+                    else:  # "Yalnız gündəlik xərcləri təmin edir"
+                        hotel_cost_foreign = daily_allowance_foreign * 0.6 * trip_nights if trip_nights > 0 else 0
+                        daily_expenses_foreign = 0
+                        total_amount_foreign = hotel_cost_foreign
+    
+                    # AZN-ə çevir
+                    total_amount_azn = total_amount_foreign * exchange_rate
+                    hotel_cost_azn = hotel_cost_foreign * exchange_rate
+                    daily_expenses_azn = daily_expenses_foreign * exchange_rate
+
+                    # Valyuta məzənnəsi ilə günlük müavinətin AZN-ə çevrilməsi
+                    daily_allowance_azn = daily_allowance_foreign * exchange_rate 
+
+                    # Göstəricilər ⚙️ YENİLƏNİB
+                    st.metric("📅 Günlük müavinət", 
+                             f"{daily_allowance_azn:.2f} AZN", 
+                             delta=f"{daily_allowance_foreign:.2f} {currency}")
+                    
+                    # Adi Rejim üçün hər iki xərc növü ⚙️
+                    if accommodation == "Adi Rejim":
+                        cols_metrics = st.columns(2)
+                        with cols_metrics[0]:
+                            st.metric("🏨 Mehmanxana xərcləri", 
+                                     f"{hotel_cost_azn:.2f} AZN",
+                                     delta=f"{hotel_cost_foreign:.2f} {currency}",
+                                     help=f"Günlük müavinətin 60%-i × {trip_nights} gecə")
+                        with cols_metrics[1]:
+                            st.metric("🍽️ Gündəlik xərclər", 
+                                     f"{daily_expenses_azn:.2f} AZN", 
+                                     delta=f"{daily_expenses_foreign:.2f} {currency}",
+                                     help=f"Günlük müavinətin 40%-i × {trip_days} gün")
+                    else:
+                        # Digər hallar üçün ⚙️
+                        if accommodation == "Yalnız yaşayış yeri ilə təmin edir":
+                            st.metric("🍽️ Gündəlik xərclər", 
+                                     f"{daily_expenses_azn:.2f} AZN", 
+                                     delta=f"{daily_expenses_foreign:.2f} {currency}")
+                        elif accommodation == "Yalnız gündəlik xərcləri təmin edir" and trip_nights > 0:
+                            st.metric("🏨 Mehmanxana xərcləri", 
+                                     f"{hotel_cost_azn:.2f} AZN",
+                                     delta=f"{hotel_cost_foreign:.2f} {currency}")
+                    #Butun kodlari ozum bir bir el ile yazmisam.
+                    st.metric("⏳ Müddət", f"{trip_days} gün")
+                    st.metric("💳 Ümumi məbləğ", 
+                             f"{total_amount_azn:.2f} AZN", 
+                             delta=f"{total_amount_foreign:.2f} {currency}",
+                             help="Delta orijinal valyutada məbləği göstərir")
+                    st.info(
+                    f"💱 İstifadə edilən məzənnə ({exchange_date}): "
+                    f"1 {currency} = {exchange_rate:.4f} AZN"
+                    )
+
+                    
+                    # Əlavə məlumat  
+                    if accommodation == "Adi Rejim":
+                        st.caption("ℹ️ Adi Rejim: Günlük müavinətin 60%-i mehmanxana xərclərinə, 40%-i gündəlik xərclərə ayrılır")
+                    elif accommodation == "Yalnız yaşayış yeri ilə təmin edir":
+                        st.caption("ℹ️ Yalnız gündəlik xərclər ödənilir (günlük müavinətin 40%-i)")
+                    elif accommodation == "Yalnız gündəlik xərcləri təmin edir":
+                        st.caption("ℹ️ Yalnız mehmanxana xərcləri ödənilir (günlük müavinətin 60%-i × gecə sayı)")
+
+                
                 if st.button("✅ Yadda Saxla", use_container_width=True):
                     if all([first_name, last_name]):
                         if trip_type == "Ölkə daxili" and st.session_state.trips:
                             for trip in st.session_state.trips:
-                                days = (trip['end'] - trip['start']).days + 1
                                 trip_data = {
                                     "Tarix": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                     "Ad": first_name,
@@ -454,13 +571,46 @@ with tab1:
                                     "Günlük müavinət": domestic_allowances.get(trip['to'], 90),
                                     "Başlanğıc tarixi": trip['start'].strftime("%Y-%m-%d"),
                                     "Bitmə tarixi": trip['end'].strftime("%Y-%m-%d"),
-                                    "Günlər": days,
-                                    "Ümumi məbləğ": 0.7*domestic_allowances.get(trip['to'], 90)*(days-1) + 0.3*domestic_allowances.get(trip['to'], 90)*days + trip['price'],
-                                    "Məqsəd": purpose
+                                    "Günlər": (trip['end'] - trip['start']).days + 1,
+                                    "Ümumi məbləğ": 0.7*domestic_allowances.get(trip['to'],90)*(days-1) + 0.3*domestic_allowances.get(trip['to'],90)*days + trip['price'],
+                                    "Məqsəd": purpose,
+                                    # Xarici üçün boş qalan sütunlar
+                                    "Ölkə": None,
+                                    "Şəhər (xarici)": None,
+                                    "Valyuta": None,
+                                    "Məzənnə": None,
+                                    "Qonaqlama növü": None
                                 }
                                 save_trip_data(trip_data)
                             st.success("Məlumatlar yadda saxlandı!")
                             st.session_state.trips = []
+                            st.rerun()
+                        elif trip_type == "Ölkə xarici":
+                            trip_data = {
+                                "Tarix": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                "Ad": first_name,
+                                "Soyad": last_name,
+                                "Ata adı": father_name,
+                                "Vəzifə": position,
+                                "Şöbə": department,
+                                "Ezamiyyət növü": trip_type,
+                                "Marşrut": f"{country} - {selected_city}",
+                                "Bilet qiyməti": 0,  # Xarici üçün əlavə edilməyib
+                                "Günlük müavinət": base_allowance,
+                                "Başlanğıc tarixi": start_date.strftime("%Y-%m-%d"),
+                                "Bitmə tarixi": end_date.strftime("%Y-%m-%d"),
+                                "Günlər": trip_days,
+                                "Ümumi məbləğ": total_amount_azn,
+                                "Məqsəd": purpose,
+                                # Xarici xüsusi sütunlar
+                                "Ölkə": country,
+                                "Şəhər (xarici)": selected_city,
+                                "Valyuta": currency,
+                                "Məzənnə": exchange_rate,
+                                "Qonaqlama növü": accommodation
+                            }
+                            save_trip_data(trip_data)
+                            st.success("Məlumatlar yadda saxlandı!")
                             st.rerun()
 
 
@@ -522,15 +672,25 @@ with tab2:
             ["📊 Məlumatlar", "📥 İdxal", "⚙️ Parametrlər", "💱 Valyuta Məzənnələri", "📝 Yazılar"]
         )
 
-        
-        # Məlumatlar sekmesi
+
+        # Məlumatlar 
         with tab_manage:
             try:
                 df = load_trip_data()
                 if not df.empty:
+                    # Sütunları yenidən təşkil et
+                    new_column_order = [
+                        'Tarix', 'Ad', 'Soyad', 'Ata adı', 'Vəzifə', 'Şöbə',
+                        'Ezamiyyət növü', 'Marşrut', 'Ölkə', 'Şəhər (xarici)',
+                        'Başlanğıc tarixi', 'Bitmə tarixi', 'Günlər',
+                        'Günlük müavinət', 'Bilet qiyməti', 'Ümumi məbləğ',
+                        'Valyuta', 'Məzənnə', 'Qonaqlama növü', 'Məqsəd'
+                    ]
+                    df = df[new_column_order]
+                    
                     # Sütun tip konvertasiyaları
                     datetime_cols = ['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']
-                    numeric_cols = ['Ümumi məbləğ', 'Günlük müavinət', 'Bilet qiyməti', 'Günlər']
+                    numeric_cols = ['Ümumi məbləğ', 'Günlük müavinət', 'Bilet qiyməti', 'Günlər', 'Məzənnə']
                     
                     for col in datetime_cols:
                         if col in df.columns:
@@ -547,7 +707,7 @@ with tab2:
             except Exception as e:
                 st.error(f"Məlumatlar yüklənərkən xəta: {str(e)}")
                 df = pd.DataFrame()
-
+        
             if not df.empty:
                 # Statistik kartlar
                 cols = st.columns(4)
@@ -559,7 +719,7 @@ with tab2:
                     st.metric("Orta Müddət", f"{df['Günlər'].mean():.1f} gün")
                 with cols[3]:
                     st.metric("Aktiv İstifadəçilər", df['Ad'].nunique())
-
+        
                 # Qrafiklər
                 cols = st.columns(2)
                 with cols[0]:
@@ -575,7 +735,7 @@ with tab2:
                                 color=department_stats.values,
                                 color_continuous_scale='Bluered')
                     st.plotly_chart(fig, use_container_width=True)
-
+        
                 # Məlumat cədvəli
                 with st.expander("🔍 Bütün Qeydlər", expanded=True):
                     column_config = {
@@ -585,7 +745,18 @@ with tab2:
                         'Ümumi məbləğ': st.column_config.NumberColumn(format="%.2f AZN"),
                         'Günlük müavinət': st.column_config.NumberColumn(format="%.2f AZN"),
                         'Bilet qiyməti': st.column_config.NumberColumn(format="%.2f AZN"),
-                        'Günlər': st.column_config.NumberColumn(format="%.0f")
+                        'Günlər': st.column_config.NumberColumn(format="%.0f"),
+                        'Ölkə': st.column_config.TextColumn(width="medium"),
+                        'Şəhər (xarici)': st.column_config.TextColumn(width="medium"),
+                        'Valyuta': st.column_config.TextColumn(width="small"),
+                        'Məzənnə': st.column_config.NumberColumn(format="%.4f"),
+                        'Qonaqlama növü': st.column_config.SelectboxColumn(
+                            options=[
+                                "Adi Rejim", 
+                                "Yalnız yaşayış yeri ilə təmin edir",
+                                "Yalnız gündəlik xərcləri təmin edir"
+                            ]
+                        )
                     }
                     
                     edited_df = st.data_editor(
@@ -597,10 +768,10 @@ with tab2:
                         hide_index=True,
                         key="main_data_editor"
                     )
-
+        
                     # Silinmə əməliyyatı
-                    display_options = [f"{row['Ad']} {row['Soyad']} - {row['Marşrut']} ({row['Tarix'].date() if pd.notnull(row['Tarix']) else 'N/A'})" 
-                                      for _, row in df.iterrows()]
+                    display_options = [f"{row['Ad']} {row['Soyad']} - {row.get('Marşrut', '')} ({row['Tarix'].date() if pd.notnull(row['Tarix']) else 'N/A'})" 
+                                     for _, row in df.iterrows()]
                     
                     selected_indices = st.multiselect(
                         "Silinəcək qeydləri seçin",
@@ -616,7 +787,7 @@ with tab2:
                             st.rerun()
                         except Exception as e:
                             st.error(f"Silinmə xətası: {str(e)}")
-
+        
                 # İxrac funksiyaları
                 try:
                     csv_df = df.fillna('').astype(str)
@@ -628,7 +799,7 @@ with tab2:
                         file_name=f"ezamiyyet_{datetime.now().strftime('%Y%m%d')}.csv",
                         mime="text/csv"
                     )
-
+        
                     buffer = BytesIO()
                     with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
                         df.to_excel(writer, index=False)
@@ -644,7 +815,8 @@ with tab2:
                     st.error(f"İxrac xətası: {str(e)}")
             else:
                 st.warning("Hələ heç bir məlumat yoxdur")
-
+        
+        
         # İdxal sekmesi
         with tab_import:
             st.markdown("### Excel Fayl İdxalı")
@@ -1126,12 +1298,14 @@ with tab2:
 
 if __name__ == "__main__":
     if not os.path.exists("ezamiyyet_melumatlari.xlsx"):
-        pd.DataFrame(columns=[
-            'Tarix', 'Ad', 'Soyad', 'Ata adı', 'Vəzifə', 'Şöbə', 
-            'Ezamiyyət növü', 'Marşrut', 'Bilet qiyməti', 
-            'Günlük müavinət', 'Başlanğıc tarixi', 'Bitmə tarixi', 
-            'Günlər', 'Ümumi məbləğ', 'Məqsəd'
-        ]).to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+        columns = [
+            'Tarix', 'Ad', 'Soyad', 'Ata adı', 'Vəzifə', 'Şöbə',
+            'Ezamiyyət növü', 'Marşrut', 'Bilet qiyməti', 'Günlük müavinət',
+            'Başlanğıc tarixi', 'Bitmə tarixi', 'Günlər', 'Ümumi məbləğ', 'Məqsəd',
+            'Ölkə', 'Şəhər (xarici)', 'Valyuta', 'Məzənnə', 'Qonaqlama növü'
+        ]
+        pd.DataFrame(columns=columns).to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+
 
     # # Köhnə valyuta faylını sil
     # if os.path.exists("currency_rates.xlsx"):
