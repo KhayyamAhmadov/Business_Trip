@@ -1078,7 +1078,6 @@ with tab1:
                     if 'trips' not in st.session_state:
                         st.session_state.trips = []
                     
-                    # Yeni səfər əlavə etmə interfeysi
                     cols = st.columns([3,1])
                     with cols[0]:
                         st.subheader("Səfər Planı")
@@ -1091,17 +1090,20 @@ with tab1:
                                 'end_date': datetime.now().date(),
                                 'ticket_price': 0
                             })
+
                     
                     # Səfərlərin siyahısı
-                    for i, trip in enumerate(st.session_state.trips):
-                        with st.expander(f"Səfər #{i+1}", expanded=True):
-                            cols = st.columns([2,2,2,2,1])
-                            with cols[0]:
-                                trip['from_city'] = st.selectbox(
-                                    f"Haradan #{i+1}", 
-                                    CITIES,
-                                    key=f'from_{i}'
-                                )
+                    if trip_type == "Ölkə daxili":
+                        for i, trip in enumerate(st.session_state.trips):
+                            with st.expander(f"Səfər #{i+1}", expanded=True):  # <-- Bu artıq əsas konteynerdədir
+                                cols = st.columns([2,2,2,2,1])
+                                with cols[0]:
+                                    trip['from_city'] = st.selectbox(
+                                        f"Haradan #{i+1}", 
+                                        CITIES,
+                                        key=f'from_{i}'
+                                    )
+
                             with cols[1]:
                                 trip['to_city'] = st.selectbox(
                                     f"Haraya #{i+1}", 
