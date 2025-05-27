@@ -1008,8 +1008,6 @@ def calculate_international_trip(country, city, payment_mode, accommodation, sta
         st.error(f"Məzənnə xətası: {str(e)}")
         return None
 
-
-    
     # Əsas müavinətin təyin edilməsi
     if city == "digər":
         base_allowance = country_data['cities']['digər']['allowance']
