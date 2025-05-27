@@ -986,7 +986,7 @@ def get_currency_rates(date):
 
 
 st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
-tab1, tab2 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli"])
+tab1, tab2, tab3 = st.tabs(["📋 Yeni Ezamiyyət", "📋 Məlumatlar və Qeydlər", "🔐 Admin Paneli"])
 
 # YENİ EZAMİYYƏT HISSESI
 with tab1:
