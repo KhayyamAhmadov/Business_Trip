@@ -1429,11 +1429,11 @@ with tab1:
                     return
 
                             # fdasfsadf
-                        total_azn = result['total_azn']
-                        daily_allowance_foreign = result['daily_allowance']
-                        currency = result['currency']
-                        exchange_rate = result['exchange_rate']
-                        total_foreign = result['total_foreign']
+                            total_azn = result['total_azn']
+                            daily_allowance_foreign = result['daily_allowance']
+                            currency = result['currency']
+                            exchange_rate = result['exchange_rate']
+                            total_foreign = result['total_foreign']
 
 
         
