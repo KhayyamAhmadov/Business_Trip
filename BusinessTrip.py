@@ -373,12 +373,16 @@ with tab1:
 
                 else:
                     countries_data = load_countries_data()
-                    country = st.selectbox("Ölkə", list(countries_data.keys()))
+                    country = st.selectbox("Ölkə", list(countries_data.keys()), key="main_country_select")
                     
                     if country in countries_data:
                         city_options = [c for c in countries_data[country]['cities'].keys() if c != 'digər']
                         city_options.append("digər")
-                        selected_city = st.selectbox("Şəhər", city_options)
+                        selected_city = st.selectbox(
+                            "Şəhər", 
+                            city_options,
+                            key=f"admin_city_select_{selected_country}"  # Unikal key üçün ölkə adını istifadə et
+                        )
                         
                         cols = st.columns(2)
                         with cols[0]:
@@ -909,8 +913,9 @@ with tab2:
                 selected_country = st.selectbox(
                     "Redaktə ediləcək ölkəni seçin",
                     list(countries_data.keys()),
-                    key="country_selector"
+                    key="admin_country_selector"
                 )
+
 
                 # Seçilmiş ölkənin redaktəsi
                 if selected_country:
@@ -940,7 +945,7 @@ with tab2:
                         new_allowance = st.number_input("Gündəlik müavinət", min_value=0, value=100, 
                                                     key=f"new_allowance_{selected_country}")
                     with cols[2]:
-                        if st.button("Əlavə et", key=f"add_city_{selected_country}") and new_city:
+                        if st.button("Əlavə et", key=f"add_city_btn_{selected_country}") and new_city:
                             country['cities'][new_city] = {
                                 "allowance": new_allowance,
                                 "currency": country['currency']
@@ -964,7 +969,7 @@ with tab2:
                                 save_countries_data(countries_data)
                                 st.rerun()
                         with cols[2]:
-                            if city != 'digər' and st.button("🗑️", key=f"delete_{selected_country}_{city}"):
+                            if city != 'digər' and st.button("🗑️", key=f"delete_city_btn_{selected_country}_{city}"):
                                 del country['cities'][city]
                                 save_countries_data(countries_data)
                                 st.rerun()
