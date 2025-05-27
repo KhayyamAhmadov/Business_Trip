@@ -386,8 +386,19 @@ with tab1:
                         with cols[1]:
                             end_date = st.date_input("Bitmə tarixi")
                         
+                        # Əlavə edilmiş hissə
+                        accommodation = st.radio("Qonaqlama növü", 
+                                                ["Adi Rejim", 
+                                                 "Yalnız yaşayış yeri ilə təmin edir",
+                                                 "Yalnız gündəlik xərcləri təmin edir"])
+                        
                         purpose = st.text_area("Ezamiyyət məqsədi")
 
+                        # Tarix hesablamaları
+                        trip_days = (end_date - start_date).days + 1
+                        trip_nights = trip_days - 1  # Gecə sayı
+
+        
         with col2:
             with st.container():
                 st.markdown('<div class="section-header">💰 Hesablama</div>', unsafe_allow_html=True)
