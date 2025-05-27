@@ -376,13 +376,13 @@ with tab1:
                     country = st.selectbox("Ölkə", list(countries_data.keys()), key="main_country_select")
                     
                     if country in countries_data:
-                        city_options = [c for c in countries_data[country]['cities'].keys() if c != 'digər']
-                        city_options.append("digər")
-                        selected_city = st.selectbox(
-                            "Şəhər", 
-                            city_options,
-                            key=f"admin_city_select_{selected_country}"  # Unikal key üçün ölkə adını istifadə et
-                        )
+                        city_options = [c for c in country['cities'].keys() if c != 'digər']
+                            city_options.append("digər")
+                            selected_city = st.selectbox(
+                                "Şəhər", 
+                                city_options,
+                                key=f"admin_city_select_{selected_country}"  # <-- Artıq təhlükəsiz
+                            )
                         
                         cols = st.columns(2)
                         with cols[0]:
@@ -910,16 +910,18 @@ with tab2:
                             st.rerun()
 
                 # Ölkə seçimi
-                selected_country = st.selectbox(
+                selected_country = st.selectbox(  
                     "Redaktə ediləcək ölkəni seçin",
                     list(countries_data.keys()),
                     key="admin_country_selector"
                 )
 
 
+
                 # Seçilmiş ölkənin redaktəsi
-                if selected_country:
+                if selected_country:  # <-- Bu blokda selected_country artıq təyin olunub
                     country = countries_data[selected_country]
+
                     
                     # Valyuta yeniləmə
                     new_currency = st.selectbox(
