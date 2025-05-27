@@ -983,48 +983,47 @@ def get_currency_rates(date):
 
 def calculate_international_trip(country, city, payment_mode, accommodation, start_date, end_date):
     countries_data = load_countries_data()
-    country_data = countries_data[country]
     
-    # Gün və gecə sayının hesablanması
-    trip_days = (end_date - start_date).days + 1
-    trip_nights = max(trip_days - 1, 0)
-    
-    # Məzənnənin alınması
+    try:
+        country_data = countries_data[country]
+    except KeyError:
+        st.error(f"{country} ölkəsi siyahıda yoxdur!")
+        return None
+
+    # Günlərin hesablanması
+    try:
+        trip_days = (end_date - start_date).days + 1
+        trip_nights = max(trip_days - 1, 0)
+    except TypeError:
+        st.error("Tarixlər düzgün daxil edilməyib!")
+        return None
+
+    # Valyuta məzənnəsinin alınması
     try:
         currency_df = get_currency_rates(start_date)
-        if currency_df.empty:
-            st.error("Valyuta məlumatları yoxdur!")
-            return None
-            
         exchange_rate = currency_df.loc[
             currency_df['Valyuta'] == country_data['currency'], 
             '1 vahid üçün AZN'
         ].values[0]
-        
-    except IndexError:
+    except (IndexError, AttributeError):
         st.error(f"{country_data['currency']} valyutası tapılmadı!")
         return None
-    except Exception as e:
-        st.error(f"Məzənnə xətası: {str(e)}")
-        return None
 
-    # Əsas müavinətin təyin edilməsi
-    if city == "digər":
-        base_allowance = country_data['cities']['digər']['allowance']
-    else:
-        base_allowance = country_data['cities'][city]['allowance']
-    
-    # Ödəniş rejimi
+    # Müavinət hesablamaları
+    city_data = country_data['cities'].get(city, country_data['cities']['digər'])
+    base_allowance = city_data['allowance']
+
+    # Ödəniş rejimi əmsalı
     payment_multiplier = 1.0
     if payment_mode == "Günlük Normaya 50% əlavə":
         payment_multiplier = 1.5
     elif payment_mode == "Günlük Normaya 30% əlavə":
         payment_multiplier = 1.3
-    
+
     daily_allowance = base_allowance * payment_multiplier
-    
-    # Qonaqlama növü
-    hotel_ratio = 0.6
+
+    # Qonaqlama növünə görə nisbətlər
+    hotel_ratio = 0.6 
     daily_ratio = 0.4
     if accommodation == "Yalnız yaşayış yeri ilə təmin edir":
         hotel_ratio = 0.0
@@ -1032,21 +1031,19 @@ def calculate_international_trip(country, city, payment_mode, accommodation, sta
     elif accommodation == "Yalnız gündəlik xərcləri təmin edir":
         hotel_ratio = 1.0
         daily_ratio = 0.0
-    
+
     # Ümumi məbləğin hesablanması
     hotel_cost = daily_allowance * hotel_ratio * trip_nights
     daily_cost = daily_allowance * daily_ratio * trip_days
     total_foreign = hotel_cost + daily_cost
     total_azn = total_foreign * exchange_rate
-    
+
     return {
         'currency': country_data['currency'],
         'exchange_rate': exchange_rate,
         'daily_allowance': daily_allowance,
         'trip_days': trip_days,
         'trip_nights': trip_nights,
-        'hotel_cost': hotel_cost,
-        'daily_cost': daily_cost,
         'total_foreign': total_foreign,
         'total_azn': total_azn
     }
