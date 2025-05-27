@@ -1431,7 +1431,7 @@ with tab1:
                         else:
                             if 'result' not in locals():
                                 st.error("Zəhmət olmasa əvvəlcə tarixləri düzgün daxil edin!")
-                        return
+                                return
 
                             # fdasfsadf
                             total_azn = result['total_azn']
