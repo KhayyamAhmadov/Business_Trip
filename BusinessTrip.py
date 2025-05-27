@@ -1426,17 +1426,13 @@ with tab1:
                         else:
                             if 'result' not in locals():
                                 st.error("Zəhmət olmasa əvvəlcə tarixləri düzgün daxil edin!")
-                    return
-
-                            # fdasfsadf
-                            total_azn = result['total_azn']
-                            daily_allowance_foreign = result['daily_allowance']
-                            currency = result['currency']
-                            exchange_rate = result['exchange_rate']
-                            total_foreign = result['total_foreign']
-
-
-        
+                            else:
+                                total_azn = result['total_azn']
+                                daily_allowance_foreign = result['daily_allowance']
+                                currency = result['currency']
+                                exchange_rate = result['exchange_rate']
+                                total_foreign = result['total_foreign']
+                
                         trip_data = {
                             "Tarix": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                             "Ad": first_name,
@@ -1449,11 +1445,10 @@ with tab1:
                             "Qonaqlama növü": accommodation if trip_type == "Ölkə xarici" else "Tətbiq edilmir",
                             "Marşrut": f"{from_city} → {to_city}" if trip_type == "Ölkə daxili" else f"{country} - {selected_city}",
                             "Bilet qiyməti": ticket_price if trip_type == "Ölkə daxili" else 0,
-                            # Valyuta məlumatları
                             "Günlük müavinət (Valyuta)": f"{daily_allowance_foreign:.2f} {currency}",
                             "Günlük müavinət (AZN)": daily_allowance_foreign * exchange_rate,
-                            "Ümumi məbləğ (Valyuta)": f"{total_amount_foreign:.2f} {currency}",
-                            "Ümumi məbləğ (AZN)": total_amount_azn,
+                            "Ümumi məbləğ (Valyuta)": f"{total_foreign:.2f} {currency}",
+                            "Ümumi məbləğ (AZN)": total_azn,
                             "Valyuta": currency,
                             "Məzənnə": exchange_rate,
                             "Başlanğıc tarixi": start_date.strftime("%Y-%m-%d"),
@@ -1468,6 +1463,7 @@ with tab1:
                             st.rerun()
                     else:
                         st.error("Zəhmət olmasa bütün məcburi sahələri doldurun!")
+
 
 
 
