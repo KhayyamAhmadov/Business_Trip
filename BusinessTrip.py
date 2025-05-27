@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
@@ -8,6 +9,7 @@ import xml.etree.ElementTree as ET
 import os
 from bs4 import BeautifulSoup
 import json
+
 
 # 1. İLK STREAMLIT ƏMRİ OLMALIDIR!
 st.set_page_config(
@@ -167,8 +169,668 @@ CITIES = [
 ]
 
 COUNTRIES = {
-    # ... (COUNTRIES məlumatları eyni qalır)
+    "Rusiya Federasiyası": {
+        "currency": "USD",
+        "cities": {
+            "Moskva": {"allowance": 260, "currency": "USD"},
+            "Sankt-Peterburq": {"allowance": 260, "currency": "USD"},
+            "digər": {"allowance": 170, "currency": "USD"}
+        }
+    },
+    "Tacikistan": {
+        "currency": "USD",
+        "cities": {
+            "Düşənbə": {"allowance": 165, "currency": "USD"},
+            "digər": {"allowance": 140, "currency": "USD"}
+        }
+    },
+    "Özbəkistan": {
+        "currency": "USD",
+        "cities": {
+            "Daşkənd": {"allowance": 180, "currency": "USD"},
+            "digər": {"allowance": 140, "currency": "USD"}
+        }
+    },
+    "Belarus": {
+        "currency": "USD",
+        "cities": {
+            "Minsk": {"allowance": 180, "currency": "USD"},
+            "digər": {"allowance": 140, "currency": "USD"}
+        }
+    },
+    "Ukrayna": {
+        "currency": "USD",
+        "cities": {
+            "Kiyev": {"allowance": 210, "currency": "USD"},
+            "digər": {"allowance": 160, "currency": "USD"}
+        }
+    },
+    "Moldova": {
+        "currency": "USD",
+        "cities": {
+            "Kişineu": {"allowance": 150, "currency": "USD"},
+            "digər": {"allowance": 150, "currency": "USD"}
+        }
+    },
+    "Qazaxıstan": {
+        "currency": "USD",
+        "cities": {
+            "Almatı": {"allowance": 200, "currency": "USD"},
+            "Astana": {"allowance": 200, "currency": "USD"},
+            "digər": {"allowance": 150, "currency": "USD"}
+        }
+    },
+    "Qırğızıstan": {
+        "currency": "USD",
+        "cities": {
+            "Bişkek": {"allowance": 160, "currency": "USD"},
+            "digər": {"allowance": 130, "currency": "USD"}
+        }
+    },
+    "Gürcüstan": {
+        "currency": "USD",
+        "cities": {
+            "Tbilisi": {"allowance": 200, "currency": "USD"},
+            "digər": {"allowance": 155, "currency": "USD"}
+        }
+    },
+    "Türkmənistan": {
+        "currency": "USD",
+        "cities": {
+            "Aşqabad": {"allowance": 150, "currency": "USD"},
+            "digər": {"allowance": 125, "currency": "USD"}
+        }
+    },
+    "Latviya": {
+        "currency": "EUR",
+        "cities": {
+            "Riqa": {"allowance": 180, "currency": "EUR"},
+            "digər": {"allowance": 150, "currency": "EUR"}
+        }
+    },
+    "Litva": {
+        "currency": "EUR",
+        "cities": {
+            "Vilnüs": {"allowance": 180, "currency": "EUR"},
+            "digər": {"allowance": 150, "currency": "EUR"}
+        }
+    },
+    "Estoniya": {
+        "currency": "EUR",
+        "cities": {
+            "Tallin": {"allowance": 180, "currency": "EUR"},
+            "digər": {"allowance": 150, "currency": "EUR"}
+        }
+    },
+    "Böyük Britaniya": {
+        "currency": "GBP",
+        "cities": {
+            "London": {"allowance": 280, "currency": "GBP"},
+            "digər": {"allowance": 250, "currency": "GBP"}
+        }
+    },
+    "Lixtenşteyn": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 250, "currency": "EUR"}
+        }
+    },
+    "Avstriya": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 250, "currency": "EUR"}
+        }
+    },
+    "Almaniya": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 250, "currency": "EUR"}
+        }
+    },
+    "Belçika": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 250, "currency": "EUR"}
+        }
+    },
+    "İrlandiya": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 250, "currency": "EUR"}
+        }
+    },
+    "Monako": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 250, "currency": "EUR"}
+        }
+    },
+    "Norveç": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 280, "currency": "EUR"}
+        }
+    },
+    "Niderland": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 270, "currency": "EUR"}
+        }
+    },
+    "San-Marino": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 240, "currency": "EUR"}
+        }
+    },
+    "Fransa": {
+        "currency": "EUR",
+        "cities": {
+            "Paris": {"allowance": 300, "currency": "EUR"},
+            "digər": {"allowance": 250, "currency": "EUR"}
+        }
+    },
+    "Türkiyə": {
+        "currency": "EUR",
+        "cities": {
+            "Ankara": {"allowance": 200, "currency": "EUR"},
+            "İstanbul": {"allowance": 220, "currency": "EUR"},
+            "digər": {"allowance": 180, "currency": "EUR"}
+        }
+    },
+    "İtaliya": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 250, "currency": "EUR"}
+        }
+    },
+    "Xorvatiya": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 250, "currency": "EUR"}
+        }
+    },
+    "Bosniya və Herseqovina": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 200, "currency": "EUR"}
+        }
+    },
+    "Danimarka": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 250, "currency": "EUR"}
+        }
+    },
+    "İsveçrə": {
+        "currency": "EUR",
+        "cities": {
+            "Bern": {"allowance": 330, "currency": "EUR"},
+            "Cenevrə": {"allowance": 330, "currency": "EUR"},
+            "Sürix": {"allowance": 330, "currency": "EUR"},
+            "digər": {"allowance": 310, "currency": "EUR"}
+        }
+    },
+    "Lüksemburq": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 290, "currency": "EUR"}
+        }
+    },
+    "Makedoniya": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 190, "currency": "EUR"}
+        }
+    },
+    "Kipr": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 200, "currency": "EUR"}
+        }
+    },
+    "Macarıstan": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 200, "currency": "EUR"}
+        }
+    },
+    "Malta": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 230, "currency": "EUR"}
+        }
+    },
+    "Portuqaliya": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 250, "currency": "EUR"}
+        }
+    },
+    "Slovakiya": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 200, "currency": "EUR"}
+        }
+    },
+    "Finlandiya": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 250, "currency": "EUR"}
+        }
+    },
+    "Çexiya": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 200, "currency": "EUR"}
+        }
+    },
+    "Serbiya": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 200, "currency": "EUR"}
+        }
+    },
+    "Monteneqro": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 200, "currency": "EUR"}
+        }
+    },
+    "Andorra": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 200, "currency": "EUR"}
+        }
+    },
+    "Albaniya": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 180, "currency": "EUR"}
+        }
+    },
+    "Yunanıstan": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 230, "currency": "EUR"}
+        }
+    },
+    "İslandiya": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 250, "currency": "EUR"}
+        }
+    },
+    "İspaniya": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 260, "currency": "EUR"}
+        }
+    },
+    "Polşa": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 220, "currency": "EUR"}
+        }
+    },
+    "İsveç": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 300, "currency": "EUR"}
+        }
+    },
+    "Bolqarıstan": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 185, "currency": "EUR"}
+        }
+    },
+    "Rumıniya": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 220, "currency": "EUR"}
+        }
+    },
+    "Sloveniya": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 220, "currency": "EUR"}
+        }
+    },
+    "ABŞ": {
+        "currency": "USD",
+        "cities": {
+            "Nyu-York": {"allowance": 450, "currency": "USD"},
+            "digər": {"allowance": 350, "currency": "USD"}
+        }
+    },
+    "Argentina": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 220, "currency": "USD"}
+        }
+    },
+    "Braziliya": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 250, "currency": "USD"}
+        }
+    },
+    "Kanada": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 300, "currency": "USD"}
+        }
+    },
+    "Meksika": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 220, "currency": "USD"}
+        }
+    },
+    "Amerika qitəsi üzrə digər ölkələr": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 200, "currency": "USD"}
+        }
+    },
+    "Bəhreyn": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 220, "currency": "USD"}
+        }
+    },
+    "Səudiyyə Ərəbistanı": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 250, "currency": "USD"}
+        }
+    },
+    "Birləşmiş Ərəb Əmirlikləri": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 280, "currency": "USD"}
+        }
+    },
+    "İordaniya": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 180, "currency": "USD"}
+        }
+    },
+    "İran": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 160, "currency": "USD"}
+        }
+    },
+    "Qətər": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 250, "currency": "USD"}
+        }
+    },
+    "Küveyt": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 220, "currency": "USD"}
+        }
+    },
+    "Oman": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 220, "currency": "USD"}
+        }
+    },
+    "Suriya": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 200, "currency": "USD"}
+        }
+    },
+    "İraq": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 190, "currency": "USD"}
+        }
+    },
+    "İsrail": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 250, "currency": "USD"}
+        }
+    },
+    "Fələstin": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 200, "currency": "USD"}
+        }
+    },
+    "Livan": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 200, "currency": "USD"}
+        }
+    },
+    "Liviya": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 200, "currency": "USD"}
+        }
+    },
+    "Bruney": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 190, "currency": "USD"}
+        }
+    },
+    "Yəmən": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 190, "currency": "USD"}
+        }
+    },
+    "Əlcəzair": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 190, "currency": "USD"}
+        }
+    },
+    "Mərakeş": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 200, "currency": "USD"}
+        }
+    },
+    "Misir": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 220, "currency": "USD"}
+        }
+    },
+    "Tunis": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 180, "currency": "USD"}
+        }
+    },
+    "Seneqal": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 200, "currency": "USD"}
+        }
+    },
+    "Cənubi Afrika Respublikası": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 200, "currency": "USD"}
+        }
+    },
+    "Afrika qitəsi üzrə digər ölkələr": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 180, "currency": "USD"}
+        }
+    },
+    "Çin Xalq Respublikası": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 250, "currency": "USD"}
+        }
+    },
+    "Sinqapur": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 320, "currency": "USD"}
+        }
+    },
+    "Tailand": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 220, "currency": "USD"}
+        }
+    },
+    "Malayziya": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 220, "currency": "USD"}
+        }
+    },
+    "Şri-Lanka": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 180, "currency": "USD"}
+        }
+    },
+    "Hindistan": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 180, "currency": "USD"}
+        }
+    },
+    "Nepal": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 180, "currency": "USD"}
+        }
+    },
+    "Banqladeş": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 170, "currency": "USD"}
+        }
+    },
+    "Pakistan": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 200, "currency": "USD"}
+        }
+    },
+    "Butan": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 145, "currency": "USD"}
+        }
+    },
+    "Myanma": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 155, "currency": "USD"}
+        }
+    },
+    "Monqolustan": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 180, "currency": "USD"}
+        }
+    },
+    "Laos": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 170, "currency": "USD"}
+        }
+    },
+    "Vyetnam": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 180, "currency": "USD"}
+        }
+    },
+    "İndoneziya": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 220, "currency": "USD"}
+        }
+    },
+    "Əfqanıstan": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 180, "currency": "USD"}
+        }
+    },
+    "Kamboca": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 180, "currency": "USD"}
+        }
+    },
+    "Mali": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 200, "currency": "USD"}
+        }
+    },
+    "Maldiv adaları": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 200, "currency": "USD"}
+        }
+    },
+    "Hibraltar": {
+        "currency": "EUR",
+        "cities": {
+            "digər": {"allowance": 180, "currency": "EUR"}
+        }
+    },
+    "Koreya Xalq Demokratik Respublikası (KXDR)": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 230, "currency": "USD"}
+        }
+    },
+    "Koreya Respublikası": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 250, "currency": "USD"}
+        }
+    },
+    "Yaponiya": {
+        "currency": "JPY",
+        "cities": {
+            "digər": {"allowance": 40000, "currency": "JPY"}
+        }
+    },
+    "Filippin": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 220, "currency": "USD"}
+        }
+    },
+    "Yeni Zelandiya": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 250, "currency": "USD"}
+        }
+    },
+    "Avstraliya və Okeaniya": {
+        "currency": "USD",
+        "cities": {
+            "digər": {"allowance": 270, "currency": "USD"}
+        }
+    }
 }
+
+
 
 DOMESTIC_ALLOWANCES = {
     "Bakı": 125,
@@ -178,24 +840,28 @@ DOMESTIC_ALLOWANCES = {
     "Digər": 90
 }
 
+# currency_rates.xlsx faylı üçün nümunə məlumatlar
 CURRENCY_RATES = {
     "USD": 1.7,
     "EUR": 1.9,
-    "GBP": 2.2,
-    "JPY": 0.015
+    "TRY": 0.2,
+    "RUB": 0.02,
+    "GEL": 0.7
 }
 
-# Fayl yoxlamaları
+# Fayl yoxlamaları ən başda
 if not os.path.exists("countries_data.json"):
     with open('countries_data.json', 'w', encoding='utf-8') as f:
         json.dump(COUNTRIES, f, ensure_ascii=False, indent=4)
 
+# Valyuta məzənnələri faylı
 if not os.path.exists("currency_rates.xlsx"):
     pd.DataFrame({
         'Valyuta': list(CURRENCY_RATES.keys()),
         'Məzənnə': list(CURRENCY_RATES.values())
     }).to_excel("currency_rates.xlsx", index=False)
 
+# Əsas məlumatlar faylı
 if not os.path.exists("ezamiyyet_melumatlari.xlsx"):
     pd.DataFrame(columns=[
         'Tarix', 'Ad', 'Soyad', 'Ata adı', 'Vəzifə', 'Şöbə', 
@@ -220,8 +886,14 @@ def load_trip_data():
     except FileNotFoundError:
         return pd.DataFrame()
 
+def calculate_domestic_amount(from_city, to_city):
+    return DOMESTIC_ROUTES.get((from_city, to_city), 70)
+
 def calculate_days(start_date, end_date):
     return (end_date - start_date).days + 1
+
+def calculate_total_amount(daily_allowance, days, payment_type, ticket_price=0):
+    return (daily_allowance * days + ticket_price) * PAYMENT_TYPES[payment_type]
 
 def save_trip_data(data):
     try:
@@ -256,11 +928,13 @@ def save_domestic_allowances(data):
     })
     df.to_excel("domestic_allowances.xlsx", index=False)
 
+
 def load_countries_data():
     try:
         with open('countries_data.json', 'r', encoding='utf-8') as f:
             return json.load(f)
     except FileNotFoundError:
+        # Default məlumatları yadda saxla
         with open('countries_data.json', 'w', encoding='utf-8') as f:
             json.dump(COUNTRIES, f, ensure_ascii=False, indent=4)
         return COUNTRIES
@@ -269,8 +943,12 @@ def save_countries_data(data):
     with open('countries_data.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
+
 @st.cache_data(ttl=3600)
 def get_currency_rates(date):
+    """
+    Cbar.az-dan konkret tarix üçün valyuta məzənnələrini çəkərək DataFrame qaytarır
+    """
     try:
         formatted_date = date.strftime("%d.%m.%Y")
         url = f"https://cbar.az/currencies/{formatted_date}.xml"
@@ -278,8 +956,8 @@ def get_currency_rates(date):
         response.raise_for_status()
         
         root = ET.fromstring(response.content)
-        currencies = []
         
+        currencies = []
         for val_type in root.findall('.//ValType'):
             if val_type.get('Type') == 'Xarici valyutalar':
                 for valute in val_type.findall('Valute'):
@@ -303,15 +981,19 @@ def get_currency_rates(date):
         st.error(f"Məzənnələr alınarkən xəta: {str(e)}")
         return pd.DataFrame()
 
-# ============================== ƏSAS İNTERFEYS ==============================
+
+
+
+
 st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
-tab1, tab2, tab3 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli", "📰 Məlumatlar"])
+tab1, tab2 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli"])
 
-
+# YENİ EZAMİYYƏT HISSESI
 with tab1:
     with st.container():
         col1, col2 = st.columns([2, 1], gap="large")
         
+        # Sol Sütun
         with col1:
             with st.expander("👤 Şəxsi Məlumatlar", expanded=True):
                 cols = st.columns(2)
@@ -329,170 +1011,99 @@ with tab1:
                 trip_type = st.radio("Növ", ["Ölkə daxili", "Ölkə xarici"])
                 
                 if trip_type == "Ölkə daxili":
-                    if 'trips' not in st.session_state:
-                        st.session_state.trips = []
-                    
-                    with st.container(border=True):
-                        cols = st.columns(2)
-                        with cols[0]:
-                            from_city = st.selectbox("Haradan", CITIES, index=CITIES.index("Bakı"))
-                        with cols[1]:
-                            to_city = st.selectbox("Haraya", [c for c in CITIES if c != from_city])
-                        
-                        cols_dates = st.columns(2)
-                        with cols_dates[0]:
-                            start_date = st.date_input("Başlanğıc tarixi")
-                        with cols_dates[1]:
-                            end_date = st.date_input("Bitmə tarixi")
-                        
-                        ticket_price = st.number_input("Nəqliyyat xərci (AZN)", min_value=0.0, value=0.0)
-                        
-                        cols_buttons = st.columns([3,1])
-                        with cols_buttons[0]:
-                            if st.button("➕ Yeni sefer əlavə et", use_container_width=True):
-                                st.session_state.trips.append({
-                                    'from': from_city,
-                                    'to': to_city,
-                                    'start': start_date,
-                                    'end': end_date,
-                                    'price': ticket_price
-                                })
-                                st.rerun()
-                        with cols_buttons[1]:
-                            if st.button("➖ Son seferi sil", use_container_width=True, type="secondary"):
-                                if st.session_state.trips:
-                                    st.session_state.trips.pop()
-                                    st.rerun()
-                        
-                    if st.session_state.trips:
-                        st.markdown("**Əlavə edilmiş seferlər:**")
-                        for i, trip in enumerate(st.session_state.trips, 1):
-                            st.write(f"{i}. {trip['from']} → {trip['to']} | "
-                                    f"{trip['start']} - {trip['end']} | "
-                                    f"Nəqliyyat: {trip['price']} AZN")
-
-                else:
-                    countries_data = load_countries_data()
-                    country = st.selectbox("Ölkə", list(countries_data.keys()), key="main_country_select")
-                    
-                    if country in countries_data:
-                        city_options = [c for c in country['cities'].keys() if c != 'digər']
-                        city_options.append("digər")
-                        selected_city = st.selectbox(
-                            "Şəhər", 
-                            city_options,
-                            key=f"admin_city_select_{country}"  # selected_country əvəzinə country istifadə edin
-                        )
-
-                        
-                        cols = st.columns(2)
-                        with cols[0]:
-                            start_date = st.date_input("Başlanğıc tarixi")
-                        with cols[1]:
-                            end_date = st.date_input("Bitmə tarixi")
-                        
-                        # Əlavə edilmiş hissə
-                        accommodation = st.radio("Qonaqlama növü", 
-                                                ["Adi Rejim", 
-                                                 "Yalnız yaşayış yeri ilə təmin edir",
-                                                 "Yalnız gündəlik xərcləri təmin edir"])
-                        
-                        purpose = st.text_area("Ezamiyyət məqsədi")
-
-                        # Tarix hesablamaları
-                        trip_days = (end_date - start_date).days + 1
-                        trip_nights = trip_days - 1  # Gecə sayı
-
-        
-        with col2:
-            with st.container():
-                st.markdown('<div class="section-header">💰 Hesablama</div>', unsafe_allow_html=True)
-                
-                if trip_type == "Ölkə daxili":
+                    cols = st.columns(2)
+                    with cols[0]:
+                        from_city = st.selectbox("Haradan", CITIES, index=CITIES.index("Bakı"))
+                    with cols[1]:
+                        to_city = st.selectbox("Haraya", [c for c in CITIES if c != from_city])
+                    ticket_price = calculate_domestic_amount(from_city, to_city)
                     domestic_allowances = load_domestic_allowances()
-                    
-                    if st.session_state.trips:
-                        total_amount = 0
-                        total_transport = 0
-                        total_days = 0
-                        
-                        # Tripləri tarixə görə sırala
-                        sorted_trips = sorted(st.session_state.trips, key=lambda x: x['start'])
-                        
-                        for i in range(len(sorted_trips)):
-                            trip = sorted_trips[i]
-                            start = trip['start']
-                            end = trip['end']
-                            days = (end - start).days + 1
-                            
-                            # Növbəti trip ilə üst-üstə düşən günü yoxla
-                            if i < len(sorted_trips) - 1:
-                                next_trip = sorted_trips[i + 1]
-                                if end >= next_trip['start']:
-                                    overlap_days = (end - next_trip['start']).days + 1
-                                    days -= overlap_days  # Üst-üstə düşən günləri çıx
-                                    days = max(days, 0)  # Mənfi günləri əlavə etmə
-                            
-                            daily_allowance = domestic_allowances.get(
-                                trip['to'], 
-                                domestic_allowances.get('Digər', 90)
-                            )
-                            
-                            hotel_cost = 0.7 * daily_allowance * (days - 1)
-                            daily_expenses = 0.3 * daily_allowance * days
-                            trip_total = hotel_cost + daily_expenses + trip['price']
-                            total_amount += trip_total
-                            total_transport += trip['price']
-                            total_days += days
-                            
-                            with st.expander(f"Sefer {trip['from']}→{trip['to']}"):
-                                st.metric("Hədəf şəhər", trip['to'])
-                                st.metric("Günlük müavinət", f"{daily_allowance} AZN")
-                                st.metric("Günlər", days)
-                                st.metric("Mehmanxana xərcləri", f"{hotel_cost:.2f} AZN")
-                                st.metric("Gündəlik xərclər", f"{daily_expenses:.2f} AZN")
-                                st.metric("Nəqliyyat xərci", f"{trip['price']:.2f} AZN")
-                                st.metric("Sefer ümumi", f"{trip_total:.2f} AZN")
-                        
-                        st.divider()
-                        cols_total = st.columns(2)
-                        with cols_total[0]:
-                            st.metric("Ümumi Günlər", total_days)
-                            st.metric("Ümumi Nəqliyyat Xərcləri", f"{total_transport:.2f} AZN")
-                        with cols_total[1]:
-                            st.metric("Ümumi Məbləğ", f"{total_amount:.2f} AZN")
-                    
-                    else:
-                        st.warning("Ən azı bir sefer əlavə edin!")
-
-                else:  # Xarici ezamiyyət hesablamaları
+                    daily_allowance = domestic_allowances.get(to_city, domestic_allowances['Digər'])
+                else:  # Ölkə xarici ezamiyyət
+                    #  Dinamik yükləmə
                     countries_data = load_countries_data()
+                    try:
+                        currency_rates = pd.read_excel("currency_rates.xlsx").set_index('Valyuta')['Məzənnə'].to_dict()
+                    except FileNotFoundError:
+                        currency_rates = CURRENCY_RATES.copy()
+                        st.warning("Valyuta məzənnələri faylı tapılmadı, standart dəyərlər istifadə olunur!")
+                    
                     country = st.selectbox("Ölkə", list(countries_data.keys()))
                     
                     if country in countries_data:
+                        #  Dinamik şəhər siyahısı
                         city_options = [c for c in countries_data[country]['cities'].keys() if c != 'digər']
                         city_options.append("digər")
                         selected_city = st.selectbox("Şəhər", city_options)
                         
-                        cols = st.columns(2)
-                        with cols[0]:
-                            start_date = st.date_input("Başlanğıc tarixi")
-                        with cols[1]:
-                            end_date = st.date_input("Bitmə tarixi")
+                        if selected_city == "digər":
+                            base_allowance = countries_data[country]['cities']['digər']['allowance']
+                            currency = countries_data[country]['currency']
+                        else:
+                            base_allowance = countries_data[country]['cities'][selected_city]['allowance']
+                            currency = countries_data[country]['currency']
                         
-                        # Yeni əlavə edilmiş hissə
-                        accommodation = st.radio("Qonaqlama növü", 
-                                                ["Adi Rejim", 
-                                                 "Yalnız yaşayış yeri ilə təmin edir",
-                                                 "Yalnız gündəlik xərcləri təmin edir"])
+                        # YENİLİK 3: Dinamik valyuta məzənnəsi
+                        exchange_rate = currency_rates.get(currency, 1.0)
                         
-                        purpose = st.text_area("Ezamiyyət məqsədi")
+                        # Ödəniş rejimi seçimi
+                        payment_mode = st.selectbox(
+                            "Ödəniş rejimi",
+                            options=["Adi rejim", "Günlük Normaya 50% əlavə", "Günlük Normaya 30% əlavə"]
+                        )
+                        
+                        # Günlük müavinətin hesablanması (ORİJİNAL VALYUTADA)
+                        if payment_mode == "Adi rejim":
+                            daily_allowance_foreign = float(base_allowance)
+                        elif payment_mode == "Günlük Normaya 50% əlavə":
+                            daily_allowance_foreign = float(base_allowance * 1.5)
+                        else:
+                            daily_allowance_foreign = float(base_allowance * 1.3)
+                        
+                        # Qonaqlama növünün seçimi
+                        accommodation = st.radio(
+                            "Qonaqlama növü",
+                            options=[
+                                "Adi Rejim",
+                                "Yalnız yaşayış yeri ilə təmin edir", 
+                                "Yalnız gündəlik xərcləri təmin edir"
+                            ]
+                        )
 
-                        # Tarix hesablamaları
-                        trip_days = (end_date - start_date).days + 1
-                        trip_nights = trip_days - 1  # Gecə sayı
+                cols = st.columns(2)
+                with cols[0]:
+                    start_date = st.date_input("Başlanğıc tarixi")
+                with cols[1]:
+                    end_date = st.date_input("Bitmə tarixi")
+                
+                purpose = st.text_area("Ezamiyyət məqsədi")
 
-                        country_data = countries_data[country]
+
+        # Sağ Sütun (Hesablama)
+        with col2:
+            with st.container():
+                st.markdown('<div class="section-header">💰 Hesablama</div>', unsafe_allow_html=True)
+                
+                if start_date and end_date and end_date >= start_date:
+                    trip_days = (end_date - start_date).days + 1
+                    trip_nights = trip_days - 1 if trip_days > 1 else 0
+        
+                    if trip_type == "Ölkə daxili":
+                        # Daxili ezamiyyət hesablamaları
+                        hotel_cost = 0.7 * daily_allowance * trip_nights
+                        daily_expenses = 0.3 * daily_allowance * trip_days
+                        total_amount = hotel_cost + daily_expenses + ticket_price
+        
+                        # Göstəricilər
+                        st.metric("📅 Günlük müavinət", f"{daily_allowance:.2f} AZN")
+                        st.metric("🚌 Nəqliyyat xərci", f"{ticket_price:.2f} AZN")
+                        st.metric("🏨 Mehmanxana xərcləri", f"{hotel_cost:.2f} AZN")
+                        st.metric("🍽️ Gündəlik xərclər", f"{daily_expenses:.2f} AZN")
+                        st.metric("⏳ Müddət", f"{trip_days} gün")
+                        st.metric("💳 Ümumi məbləğ", f"{total_amount:.2f} AZN")
+                        
+                    else:  # Xarici ezamiyyət hesablamaları
+                        country_data = countries_data[country]  # COUNTRIES 
                         
                         if selected_city == "digər":
                             base_allowance = country_data['cities']['digər']['allowance']
@@ -501,121 +1112,152 @@ with tab1:
                             city_data = country_data['cities'][selected_city]
                             base_allowance = city_data['allowance']
                             currency = country_data['currency']
-
+                        
+                        # tarixe uygun
                         try:
+                            # Cbar.az-dan məzənnə məlumatlarını çək
                             currency_df = get_currency_rates(start_date)
+                            
+                            if currency_df.empty:
+                                st.error(f"{start_date.strftime('%d.%m.%Y')} tarixi üçün məzənnə məlumatı tapılmadı!")
+                                st.stop()
+                                
+                            # Valyuta koduna görə məzənnəni seç
                             exchange_rate = currency_df.loc[currency_df['Valyuta'] == currency, '1 vahid üçün AZN'].values[0]
+                            
+                            # Salam . 
                             exchange_date = start_date.strftime("%d.%m.%Y")
+                            
+                        except IndexError:
+                            st.error(f"{currency} valyutası üçün məzənnə tapılmadı!")
+                            st.stop()
                         except Exception as e:
-                            st.error(f"Məzənnə xətası: {str(e)}")
+                            st.error(f"Məzənnə alınarkən xəta: {str(e)}")
                             st.stop()
 
-                        # Hesablamalar
+                        
+                        # Qonaqlama növünə görə hesablama
                         if accommodation == "Adi Rejim":
-                            hotel_cost = 0.6 * base_allowance * trip_nights
-                            daily_expenses = 0.4 * base_allowance * trip_days
+                            hotel_cost_foreign = 0.6 * daily_allowance_foreign * trip_nights
+                            daily_expenses_foreign = 0.4 * daily_allowance_foreign * trip_days
+                            total_amount_foreign = hotel_cost_foreign + daily_expenses_foreign
                         elif accommodation == "Yalnız yaşayış yeri ilə təmin edir":
-                            hotel_cost = 0
-                            daily_expenses = 0.4 * base_allowance * trip_days
+                            daily_expenses_foreign = daily_allowance_foreign * 0.4 * trip_days
+                            hotel_cost_foreign = 0
+                            total_amount_foreign = daily_expenses_foreign
+                        else:  # "Yalnız gündəlik xərcləri təmin edir"
+                            hotel_cost_foreign = daily_allowance_foreign * 0.6 * trip_nights if trip_nights > 0 else 0
+                            daily_expenses_foreign = 0
+                            total_amount_foreign = hotel_cost_foreign
+        
+                        # AZN-ə çevir
+                        total_amount_azn = total_amount_foreign * exchange_rate
+                        hotel_cost_azn = hotel_cost_foreign * exchange_rate
+                        daily_expenses_azn = daily_expenses_foreign * exchange_rate
+
+                        # Valyuta məzənnəsi ilə günlük müavinətin AZN-ə çevrilməsi
+                        daily_allowance_azn = daily_allowance_foreign * exchange_rate 
+
+                        # Göstəricilər ⚙️ YENİLƏNİB
+                        st.metric("📅 Günlük müavinət", 
+                                 f"{daily_allowance_azn:.2f} AZN", 
+                                 delta=f"{daily_allowance_foreign:.2f} {currency}")
+                        
+                        # Adi Rejim üçün hər iki xərc növü ⚙️
+                        if accommodation == "Adi Rejim":
+                            cols_metrics = st.columns(2)
+                            with cols_metrics[0]:
+                                st.metric("🏨 Mehmanxana xərcləri", 
+                                         f"{hotel_cost_azn:.2f} AZN",
+                                         delta=f"{hotel_cost_foreign:.2f} {currency}",
+                                         help=f"Günlük müavinətin 60%-i × {trip_nights} gecə")
+                            with cols_metrics[1]:
+                                st.metric("🍽️ Gündəlik xərclər", 
+                                         f"{daily_expenses_azn:.2f} AZN", 
+                                         delta=f"{daily_expenses_foreign:.2f} {currency}",
+                                         help=f"Günlük müavinətin 40%-i × {trip_days} gün")
                         else:
-                            hotel_cost = 0.6 * base_allowance * trip_nights if trip_nights > 0 else 0
-                            daily_expenses = 0
+                            # Digər hallar üçün ⚙️
+                            if accommodation == "Yalnız yaşayış yeri ilə təmin edir":
+                                st.metric("🍽️ Gündəlik xərclər", 
+                                         f"{daily_expenses_azn:.2f} AZN", 
+                                         delta=f"{daily_expenses_foreign:.2f} {currency}")
+                            elif accommodation == "Yalnız gündəlik xərcləri təmin edir" and trip_nights > 0:
+                                st.metric("🏨 Mehmanxana xərcləri", 
+                                         f"{hotel_cost_azn:.2f} AZN",
+                                         delta=f"{hotel_cost_foreign:.2f} {currency}")
+                        #Butun kodlari ozum bir bir el ile yazmisam.
+                        st.metric("⏳ Müddət", f"{trip_days} gün")
+                        st.metric("💳 Ümumi məbləğ", 
+                                 f"{total_amount_azn:.2f} AZN", 
+                                 delta=f"{total_amount_foreign:.2f} {currency}",
+                                 help="Delta orijinal valyutada məbləği göstərir")
+                        st.info(
+                        f"💱 İstifadə edilən məzənnə ({exchange_date}): "
+                        f"1 {currency} = {exchange_rate:.4f} AZN"
+                        )
 
-                        total_amount = (hotel_cost + daily_expenses) * exchange_rate
-                        daily_allowance_azn = base_allowance * exchange_rate
-
-                        # Göstəricilər
-                        with st.container(border=True):
-                            cols = st.columns(2)
-                            cols[0].metric("💰 Günlük müavinət", f"{daily_allowance_azn:.2f} AZN")
-                            cols[1].metric("📅 Müddət", f"{trip_days} gün")
-                            
-                            st.divider()
-                            
-                            if accommodation == "Adi Rejim":
-                                cols_costs = st.columns(2)
-                                cols_costs[0].metric("🏨 Mehmanxana", f"{hotel_cost * exchange_rate:.2f} AZN")
-                                cols_costs[1].metric("🍽️ Gündəlik xərclər", f"{daily_expenses * exchange_rate:.2f} AZN")
-                            else:
-                                cost_type = "Mehmanxana" if accommodation == "Yalnız gündəlik xərcləri təmin edir" else "Gündəlik xərclər"
-                                cost_value = hotel_cost if accommodation == "Yalnız gündəlik xərcləri təmin edir" else daily_expenses
-                                st.metric(f"💸 {cost_type}", f"{cost_value * exchange_rate:.2f} AZN")
-                            
-                            st.divider()
-                            st.metric("💳 ÜMUMİ MƏBLƏĞ", f"{total_amount:.2f} AZN")
-                            st.info(f"💱 Məzənnə ({exchange_date}): 1 {currency} = {exchange_rate:.4f} AZN")
-
-                    
-                    # Əlavə məlumat  
-                    if accommodation == "Adi Rejim":
-                        st.caption("ℹ️ Adi Rejim: Günlük müavinətin 60%-i mehmanxana xərclərinə, 40%-i gündəlik xərclərə ayrılır")
-                    elif accommodation == "Yalnız yaşayış yeri ilə təmin edir":
-                        st.caption("ℹ️ Yalnız gündəlik xərclər ödənilir (günlük müavinətin 40%-i)")
-                    elif accommodation == "Yalnız gündəlik xərcləri təmin edir":
-                        st.caption("ℹ️ Yalnız mehmanxana xərcləri ödənilir (günlük müavinətin 60%-i × gecə sayı)")
+                        
+                        # Əlavə məlumat  
+                        if accommodation == "Adi Rejim":
+                            st.caption("ℹ️ Adi Rejim: Günlük müavinətin 60%-i mehmanxana xərclərinə, 40%-i gündəlik xərclərə ayrılır")
+                        elif accommodation == "Yalnız yaşayış yeri ilə təmin edir":
+                            st.caption("ℹ️ Yalnız gündəlik xərclər ödənilir (günlük müavinətin 40%-i)")
+                        elif accommodation == "Yalnız gündəlik xərcləri təmin edir":
+                            st.caption("ℹ️ Yalnız mehmanxana xərcləri ödənilir (günlük müavinətin 60%-i × gecə sayı)")
 
                 
+        
+                # Yadda saxlama düyməsi
                 if st.button("✅ Yadda Saxla", use_container_width=True):
-                    if all([first_name, last_name]):
-                        if trip_type == "Ölkə daxili" and st.session_state.trips:
-                            for trip in st.session_state.trips:
-                                trip_data = {
-                                    "Tarix": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                    "Ad": first_name,
-                                    "Soyad": last_name,
-                                    "Ata adı": father_name,
-                                    "Vəzifə": position,
-                                    "Şöbə": department,
-                                    "Ezamiyyət növü": trip_type,
-                                    "Marşrut": f"{trip['from']} → {trip['to']}",
-                                    "Bilet qiyməti": trip['price'],
-                                    "Günlük müavinət": domestic_allowances.get(trip['to'], 90),
-                                    "Başlanğıc tarixi": trip['start'].strftime("%Y-%m-%d"),
-                                    "Bitmə tarixi": trip['end'].strftime("%Y-%m-%d"),
-                                    "Günlər": (trip['end'] - trip['start']).days + 1,
-                                    "Ümumi məbləğ": 0.7*domestic_allowances.get(trip['to'],90)*(days-1) + 0.3*domestic_allowances.get(trip['to'],90)*days + trip['price'],
-                                    "Məqsəd": purpose,
-                                    # Xarici üçün boş qalan sütunlar
-                                    "Ölkə": None,
-                                    "Şəhər (xarici)": None,
-                                    "Valyuta": None,
-                                    "Məzənnə": None,
-                                    "Qonaqlama növü": None
-                                }
-                                save_trip_data(trip_data)
+                    if all([first_name, last_name, start_date, end_date]):
+                        # Valyuta məlumatlarını təyin et
+                        if trip_type == "Ölkə daxili":
+                            currency = "AZN"
+                            exchange_rate = 1.0
+                            daily_allowance_foreign = daily_allowance
+                            total_amount_foreign = total_amount
+                            total_amount_azn = total_amount
+                        else:
+                            # Xarici ezamiyyət üçün yuxarıda hesablanmış dəyərləri istifadə et
+                            total_amount_azn = total_amount_foreign * exchange_rate
+        
+                        trip_data = {
+                            "Tarix": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            "Ad": first_name,
+                            "Soyad": last_name,
+                            "Ata adı": father_name,
+                            "Vəzifə": position,
+                            "Şöbə": department,
+                            "Ezamiyyət növü": trip_type,
+                            "Ödəniş rejimi": payment_mode if trip_type == "Ölkə xarici" else "Tətbiq edilmir",
+                            "Qonaqlama növü": accommodation if trip_type == "Ölkə xarici" else "Tətbiq edilmir",
+                            "Marşrut": f"{from_city} → {to_city}" if trip_type == "Ölkə daxili" else f"{country} - {selected_city}",
+                            "Bilet qiyməti": ticket_price if trip_type == "Ölkə daxili" else 0,
+                            # Valyuta məlumatları
+                            "Günlük müavinət (Valyuta)": f"{daily_allowance_foreign:.2f} {currency}",
+                            "Günlük müavinət (AZN)": daily_allowance_azn if trip_type == "Ölkə xarici" else daily_allowance,
+                            "Ümumi məbləğ (Valyuta)": f"{total_amount_foreign:.2f} {currency}",
+                            "Ümumi məbləğ (AZN)": total_amount_azn,
+                            "Valyuta": currency,
+                            "Məzənnə": exchange_rate,
+                            "Başlanğıc tarixi": start_date.strftime("%Y-%m-%d"),
+                            "Bitmə tarixi": end_date.strftime("%Y-%m-%d"),
+                            "Günlər": trip_days,
+                            "Gecələr": trip_nights,
+                            "Məqsəd": purpose
+                        }
+                        
+                        if save_trip_data(trip_data):
                             st.success("Məlumatlar yadda saxlandı!")
-                            st.session_state.trips = []
+                            # Formanı təmizlə (isteğe bağlı)
                             st.rerun()
-                        elif trip_type == "Ölkə xarici":
-                            trip_data = {
-                                "Tarix": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                "Ad": first_name,
-                                "Soyad": last_name,
-                                "Ata adı": father_name,
-                                "Vəzifə": position,
-                                "Şöbə": department,
-                                "Ezamiyyət növü": trip_type,
-                                "Marşrut": f"{country} - {selected_city}",
-                                "Bilet qiyməti": 0,  # Xarici üçün əlavə edilməyib
-                                "Günlük müavinət": base_allowance,
-                                "Başlanğıc tarixi": start_date.strftime("%Y-%m-%d"),
-                                "Bitmə tarixi": end_date.strftime("%Y-%m-%d"),
-                                "Günlər": trip_days,
-                                "Ümumi məbləğ": total_amount_azn,
-                                "Məqsəd": purpose,
-                                # Xarici xüsusi sütunlar
-                                "Ölkə": country,
-                                "Şəhər (xarici)": selected_city,
-                                "Valyuta": currency,
-                                "Məzənnə": exchange_rate,
-                                "Qonaqlama növü": accommodation
-                            }
-                            save_trip_data(trip_data)
-                            st.success("Məlumatlar yadda saxlandı!")
-                            st.rerun()
+                    else:
+                        st.error("Zəhmət olmasa bütün məcburi sahələri doldurun!")
 
 
-with tab3:
+# ====================================================================================================
+with tab2:
     st.markdown('<div class="section-header">📋 Məlumatlar və Qeydlər</div>', unsafe_allow_html=True)
     
     try:
@@ -633,7 +1275,7 @@ with tab3:
 
 
 # ============================== ADMIN PANELİ ==============================
-with tab2:
+with tab3:
     # Admin giriş statusunun yoxlanılması
     if 'admin_logged' not in st.session_state:
         st.session_state.admin_logged = False
@@ -669,29 +1311,18 @@ with tab2:
             st.rerun()
         
         # Sekmələrin yaradılması
-        tab_manage, tab_import, tab_settings, tab_currency, tab_texts = st.tabs(
-            ["📊 Məlumatlar", "📥 İdxal", "⚙️ Parametrlər", "💱 Valyuta Məzənnələri", "📝 Yazılar"]
+        tab_manage, tab_import, tab_settings, tab_currency = st.tabs(
+            ["📊 Məlumatlar", "📥 İdxal", "⚙️ Parametrlər", "💱 Valyuta Məzənnələri"]
         )
-
-
-        # Məlumatlar 
+        
+        # Məlumatlar sekmesi
         with tab_manage:
             try:
                 df = load_trip_data()
                 if not df.empty:
-                    # Sütunları yenidən təşkil et
-                    new_column_order = [
-                        'Tarix', 'Ad', 'Soyad', 'Ata adı', 'Vəzifə', 'Şöbə',
-                        'Ezamiyyət növü', 'Marşrut', 'Ölkə', 'Şəhər (xarici)',
-                        'Başlanğıc tarixi', 'Bitmə tarixi', 'Günlər',
-                        'Günlük müavinət', 'Bilet qiyməti', 'Ümumi məbləğ',
-                        'Valyuta', 'Məzənnə', 'Qonaqlama növü', 'Məqsəd'
-                    ]
-                    df = df[new_column_order]
-                    
                     # Sütun tip konvertasiyaları
                     datetime_cols = ['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']
-                    numeric_cols = ['Ümumi məbləğ', 'Günlük müavinət', 'Bilet qiyməti', 'Günlər', 'Məzənnə']
+                    numeric_cols = ['Ümumi məbləğ', 'Günlük müavinət', 'Bilet qiyməti', 'Günlər']
                     
                     for col in datetime_cols:
                         if col in df.columns:
@@ -708,7 +1339,7 @@ with tab2:
             except Exception as e:
                 st.error(f"Məlumatlar yüklənərkən xəta: {str(e)}")
                 df = pd.DataFrame()
-        
+
             if not df.empty:
                 # Statistik kartlar
                 cols = st.columns(4)
@@ -720,7 +1351,7 @@ with tab2:
                     st.metric("Orta Müddət", f"{df['Günlər'].mean():.1f} gün")
                 with cols[3]:
                     st.metric("Aktiv İstifadəçilər", df['Ad'].nunique())
-        
+
                 # Qrafiklər
                 cols = st.columns(2)
                 with cols[0]:
@@ -736,7 +1367,7 @@ with tab2:
                                 color=department_stats.values,
                                 color_continuous_scale='Bluered')
                     st.plotly_chart(fig, use_container_width=True)
-        
+
                 # Məlumat cədvəli
                 with st.expander("🔍 Bütün Qeydlər", expanded=True):
                     column_config = {
@@ -746,18 +1377,7 @@ with tab2:
                         'Ümumi məbləğ': st.column_config.NumberColumn(format="%.2f AZN"),
                         'Günlük müavinət': st.column_config.NumberColumn(format="%.2f AZN"),
                         'Bilet qiyməti': st.column_config.NumberColumn(format="%.2f AZN"),
-                        'Günlər': st.column_config.NumberColumn(format="%.0f"),
-                        'Ölkə': st.column_config.TextColumn(width="medium"),
-                        'Şəhər (xarici)': st.column_config.TextColumn(width="medium"),
-                        'Valyuta': st.column_config.TextColumn(width="small"),
-                        'Məzənnə': st.column_config.NumberColumn(format="%.4f"),
-                        'Qonaqlama növü': st.column_config.SelectboxColumn(
-                            options=[
-                                "Adi Rejim", 
-                                "Yalnız yaşayış yeri ilə təmin edir",
-                                "Yalnız gündəlik xərcləri təmin edir"
-                            ]
-                        )
+                        'Günlər': st.column_config.NumberColumn(format="%.0f")
                     }
                     
                     edited_df = st.data_editor(
@@ -769,10 +1389,10 @@ with tab2:
                         hide_index=True,
                         key="main_data_editor"
                     )
-        
+
                     # Silinmə əməliyyatı
-                    display_options = [f"{row['Ad']} {row['Soyad']} - {row.get('Marşrut', '')} ({row['Tarix'].date() if pd.notnull(row['Tarix']) else 'N/A'})" 
-                                     for _, row in df.iterrows()]
+                    display_options = [f"{row['Ad']} {row['Soyad']} - {row['Marşrut']} ({row['Tarix'].date() if pd.notnull(row['Tarix']) else 'N/A'})" 
+                                      for _, row in df.iterrows()]
                     
                     selected_indices = st.multiselect(
                         "Silinəcək qeydləri seçin",
@@ -788,7 +1408,7 @@ with tab2:
                             st.rerun()
                         except Exception as e:
                             st.error(f"Silinmə xətası: {str(e)}")
-        
+
                 # İxrac funksiyaları
                 try:
                     csv_df = df.fillna('').astype(str)
@@ -800,7 +1420,7 @@ with tab2:
                         file_name=f"ezamiyyet_{datetime.now().strftime('%Y%m%d')}.csv",
                         mime="text/csv"
                     )
-        
+
                     buffer = BytesIO()
                     with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
                         df.to_excel(writer, index=False)
@@ -816,8 +1436,7 @@ with tab2:
                     st.error(f"İxrac xətası: {str(e)}")
             else:
                 st.warning("Hələ heç bir məlumat yoxdur")
-        
-        
+
         # İdxal sekmesi
         with tab_import:
             st.markdown("### Excel Fayl İdxalı")
@@ -911,18 +1530,15 @@ with tab2:
                             st.rerun()
 
                 # Ölkə seçimi
-                selected_country = st.selectbox(  
+                selected_country = st.selectbox(
                     "Redaktə ediləcək ölkəni seçin",
                     list(countries_data.keys()),
-                    key="admin_country_selector"
+                    key="country_selector"
                 )
 
-
-
                 # Seçilmiş ölkənin redaktəsi
-                if selected_country:  # <-- Bu blokda selected_country artıq təyin olunub
+                if selected_country:
                     country = countries_data[selected_country]
-
                     
                     # Valyuta yeniləmə
                     new_currency = st.selectbox(
@@ -948,7 +1564,7 @@ with tab2:
                         new_allowance = st.number_input("Gündəlik müavinət", min_value=0, value=100, 
                                                     key=f"new_allowance_{selected_country}")
                     with cols[2]:
-                        if st.button("Əlavə et", key=f"add_city_btn_{selected_country}") and new_city:
+                        if st.button("Əlavə et", key=f"add_city_{selected_country}") and new_city:
                             country['cities'][new_city] = {
                                 "allowance": new_allowance,
                                 "currency": country['currency']
@@ -972,7 +1588,7 @@ with tab2:
                                 save_countries_data(countries_data)
                                 st.rerun()
                         with cols[2]:
-                            if city != 'digər' and st.button("🗑️", key=f"delete_city_btn_{selected_country}_{city}"):
+                            if city != 'digər' and st.button("🗑️", key=f"delete_{selected_country}_{city}"):
                                 del country['cities'][city]
                                 save_countries_data(countries_data)
                                 st.rerun()
@@ -980,108 +1596,75 @@ with tab2:
             # Yeni hisse
             with st.expander("🏙️ Daxili Ezamiyyət Müavinətləri (Ətraflı)", expanded=True):
                 st.markdown("""
-                **İstifadə qaydası:**
-                1. Yeni şəhər əlavə etmək üçün sol sahədən ad daxil edin
-                2. Müvafiq müavinət məbləğini AZN ilə təyin edin
-                3. "Əlavə et" düyməsinə basın
-                4. Mövcud şəhərlərin məbləğlərini dəyişdirmək üçün sütunlarda redaktə edin
-                5. "Digər" kateqoriyası üçün standart dəyəri təyin edin
+                **Təlimat:**
+                - Mövcud şəhərlərin müavinətlərini dəyişə bilərsiniz
+                - Yeni şəhərlər əlavə edə bilərsiniz
+                - "Digər" kateqoriyası siyahıda olmayan bütün şəhərlər üçün əsas götürülür
                 """)
                 
                 # Yeni şəhər əlavə etmə paneli
+                st.markdown("### ➕ Yeni Şəhər Əlavə Et")
                 cols = st.columns([2, 1, 1])
                 with cols[0]:
                     new_city = st.text_input("Şəhər adı", key="new_city")
                 with cols[1]:
-                    new_city_allowance = st.number_input("Müavinət (AZN)", 
-                                                       min_value=0, 
-                                                       value=90, 
-                                                       step=5,
-                                                       key="new_city_allowance")
+                    new_city_allowance = st.number_input("Müavinət (AZN)", min_value=0, value=90, key="new_city_allowance")
                 with cols[2]:
                     if st.button("Əlavə et", key="add_new_city"):
-                        try:
-                            allowances = load_domestic_allowances()
-                            # Əgər fayl korrupsiya olubsa
-                            if not isinstance(allowances, dict):
-                                st.warning("Müavinət məlumatları yenidən yaradılır...")
-                                allowances = {'Digər': 90}
-                            
-                            if new_city and new_city not in allowances:
-                                allowances[new_city] = new_city_allowance
-                                save_domestic_allowances(allowances)
-                                st.success(f"{new_city} üçün {new_city_allowance} AZN müavinət təyin edildi!")
-                                st.rerun()
-                            else:
-                                st.error("Zəhmət olmasa unikal şəhər adı daxil edin!")
-                        except Exception as e:
-                            st.error(f"Xəta baş verdi: {str(e)}")
-            
-                # Mövcud məlumatların yüklənməsi
-                try:
-                    allowances = load_domestic_allowances()
-                    # Əgər faylda 'Digər' yoxdursa
-                    if 'Digər' not in allowances:
-                        allowances['Digər'] = 90
-                        save_domestic_allowances(allowances)
-                except Exception as e:
-                    st.error(f"Müavinət məlumatları yüklənmədi: {str(e)}")
-                    allowances = {'Digər': 90}
-                    save_domestic_allowances(allowances)
-            
-                # Digər kateqoriyası üçün tənzimləmə
+                        allowances = load_domestic_allowances()
+                        if new_city and new_city not in allowances:
+                            allowances[new_city] = new_city_allowance
+                            save_domestic_allowances(allowances)
+                            st.success(f"{new_city} əlavə edildi!")
+                            st.rerun()
+                        else:
+                            st.error("Zəhmət olmasa etibarlı şəhər adı daxil edin!")
+
+                # Mövcud şəhərlərin idarə edilməsi
+                st.markdown("### 📋 Mövcud Şəhər Müavinətləri")
+                allowances = load_domestic_allowances()
+                
+                # Default 'Digər' sütununu qorumaq üçün
                 other_allowance = allowances.get('Digər', 90)
+                
+                # Şəhərləri düzəlt
+                cities = [city for city in allowances if city != 'Digər']
+                cities.sort()
+                
+                for city in cities:
+                    cols = st.columns([3, 2, 1])
+                    with cols[0]:
+                        st.write(f"🏙️ {city}")
+                    with cols[1]:
+                        new_allowance = st.number_input(
+                            "Müavinət",
+                            min_value=0,
+                            value=int(allowances[city]),
+                            key=f"allowance_{city}"
+                        )
+                    with cols[2]:
+                        if city != 'Digər' and st.button("🗑️", key=f"del_{city}"):
+                            del allowances[city]
+                            save_domestic_allowances(allowances)
+                            st.rerun()
+                    
+                    if new_allowance != allowances[city]:
+                        allowances[city] = new_allowance
+                        save_domestic_allowances(allowances)
+                        st.rerun()
+
+                # Digər kateqoriyası üçün
+                st.markdown("### 🔄 Digər Şəhərlər")
                 new_other = st.number_input(
                     "Digər şəhərlər üçün müavinət (AZN)",
                     min_value=0,
                     value=int(other_allowance),
-                    key="domestic_other_allowance")  
-                    
-                
+                    key="other_allowance"
+                )
                 if new_other != other_allowance:
                     allowances['Digər'] = new_other
                     save_domestic_allowances(allowances)
                     st.rerun()
-            
-                # Mövcud şəhərlərin idarə edilməsi
-                st.markdown("### 📋 Mövcud Şəhər Müavinətləri")
-                try:
-                    # DataFrame yaratmaq
-                    df = pd.DataFrame({
-                        'Şəhər': allowances.keys(),
-                        'Müavinət (AZN)': allowances.values()
-                    })
-                    
-                    # Data Editor ilə redaktə
-                    edited_df = st.data_editor(
-                        df,
-                        column_config={
-                            "Şəhər": st.column_config.TextColumn(
-                                width="medium",
-                                disabled=True
-                            ),
-                            "Müavinət (AZN)": st.column_config.NumberColumn(
-                                min_value=0,
-                                step=5,
-                                format="%d AZN"
-                            )
-                        },
-                        hide_index=True,
-                        use_container_width=True
-                    )
-                    
-                    if st.button("💾 Bütün dəyişiklikləri saxla", key="save_all_changes"):
-                        new_allowances = pd.Series(
-                            edited_df['Müavinət (AZN)'].values, 
-                            index=edited_df['Şəhər']
-                        ).to_dict()
-                        save_domestic_allowances(new_allowances)
-                        st.success("Bütün dəyişikliklər uğurla yadda saxlanıldı!")
-                        st.rerun()
-                        
-                except Exception as e:
-                    st.error(f"Cədvəl yaradılarkən xəta: {str(e)}")            
-                
 
 
             # Sistem məlumatları
@@ -1220,97 +1803,95 @@ with tab2:
                 st.warning("Seçilmiş tarix üçün məlumat tapılmadı!")    
 
 
-
-            # YENİ YAZILAR İDARƏETMƏ SEKMESİ
-    with tab_texts:
-        st.markdown('<div class="section-header">📝 Məlumatların İdarə Edilməsi</div>', unsafe_allow_html=True)
-        
-        try:
-            with open(MELUMATLAR_JSON, 'r', encoding='utf-8') as f:
-                sections = json.load(f)
-        except Exception as e:
-            st.error(f"Fayl oxuma xətası: {str(e)}")
-            sections = {}
-
-        # Yeni bölmə əlavə et
-        with st.expander("➕ Yeni Bölmə Əlavə Et", expanded=True):
-            new_title = st.text_input("Başlıq", key="new_section_title")
-            new_content = st.text_area("Məzmun (Markdown dəstəklənir)", height=300, key="new_section_content")
+        # YENİ YAZILAR İDARƏETMƏ SEKMESİ
+        with tab_texts:
+            st.markdown('<div class="section-header">📝 Məlumatların İdarə Edilməsi</div>', unsafe_allow_html=True)
             
-            if st.button("Yadda Saxla", key="save_new_section"):
-                if new_title.strip():
-                    new_id = f"section_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-                    sections[new_id] = {
-                        "title": new_title,
-                        "content": new_content,
-                        "created_at": datetime.now().isoformat()
-                    }
-                    with open(MELUMATLAR_JSON, 'w', encoding='utf-8') as f:
-                        json.dump(sections, f, ensure_ascii=False, indent=4)
-                    st.success("Yeni bölmə əlavə edildi!")
-                    st.rerun()
-                else:
-                    st.error("Başlıq daxil edilməlidir!")
-
-        # Mövcud bölmələrin redaktəsi
-        st.markdown("### 📋 Mövcud Bölmələr")
-        if not sections:
-            st.info("Hələ heç bir bölmə yoxdur")
-        else:
-            for section_id in list(sections.keys()):
-                section_data = sections[section_id]
-                with st.expander(f"✏️ {section_data.get('title', 'Başlıqsız')}", expanded=False):
-                    edited_title = st.text_input(
-                        "Başlıq", 
-                        value=section_data.get('title', ''),
-                        key=f"title_{section_id}"
-                    )
-                    edited_content = st.text_area(
-                        "Məzmun", 
-                        value=section_data.get('content', ''),
-                        height=300,
-                        key=f"content_{section_id}"
-                    )
-                    
-                    cols = st.columns([4,1,1])
-                    with cols[0]:
-                        if st.button("💾 Saxla", key=f"save_{section_id}"):
-                            sections[section_id]['title'] = edited_title
-                            sections[section_id]['content'] = edited_content
-                            with open(MELUMATLAR_JSON, 'w', encoding='utf-8') as f:
-                                json.dump(sections, f, ensure_ascii=False, indent=4)
-                            st.success("Dəyişikliklər yadda saxlanıldı!")
-                    with cols[1]:
-                        if st.button("🗑️ Sil", key=f"delete_{section_id}"):
-                            del sections[section_id]
-                            with open(MELUMATLAR_JSON, 'w', encoding='utf-8') as f:
-                                json.dump(sections, f, ensure_ascii=False, indent=4)
-                            st.success("Bölmə silindi!")
-                            st.rerun()
-                    with cols[2]:
-                        created_at = section_data.get('created_at', 'Tarix bilinmir')
-                        st.caption(f"Yaradılma tarixi: {created_at[:10]}")
-
-        new_other = st.number_input(
-            "Digər parametr", 
-            key="unique_key_for_texts_tab"  # Unikalliq
-        )
-
+            try:
+                with open(MELUMATLAR_JSON, 'r', encoding='utf-8') as f:
+                    sections = json.load(f)
+            except Exception as e:
+                st.error(f"Fayl oxuma xətası: {str(e)}")
+                sections = {}
+    
+            # Yeni bölmə əlavə et
+            with st.expander("➕ Yeni Bölmə Əlavə Et", expanded=True):
+                new_title = st.text_input("Başlıq", key="new_section_title")
+                new_content = st.text_area("Məzmun (Markdown dəstəklənir)", height=300, key="new_section_content")
+                
+                if st.button("Yadda Saxla", key="save_new_section"):
+                    if new_title.strip():
+                        new_id = f"section_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                        sections[new_id] = {
+                            "title": new_title,
+                            "content": new_content,
+                            "created_at": datetime.now().isoformat()
+                        }
+                        with open(MELUMATLAR_JSON, 'w', encoding='utf-8') as f:
+                            json.dump(sections, f, ensure_ascii=False, indent=4)
+                        st.success("Yeni bölmə əlavə edildi!")
+                        st.rerun()
+                    else:
+                        st.error("Başlıq daxil edilməlidir!")
+    
+            # Mövcud bölmələrin redaktəsi
+            st.markdown("### 📋 Mövcud Bölmələr")
+            if not sections:
+                st.info("Hələ heç bir bölmə yoxdur")
+            else:
+                for section_id in list(sections.keys()):
+                    section_data = sections[section_id]
+                    with st.expander(f"✏️ {section_data.get('title', 'Başlıqsız')}", expanded=False):
+                        edited_title = st.text_input(
+                            "Başlıq", 
+                            value=section_data.get('title', ''),
+                            key=f"title_{section_id}"
+                        )
+                        edited_content = st.text_area(
+                            "Məzmun", 
+                            value=section_data.get('content', ''),
+                            height=300,
+                            key=f"content_{section_id}"
+                        )
+                        
+                        cols = st.columns([4,1,1])
+                        with cols[0]:
+                            if st.button("💾 Saxla", key=f"save_{section_id}"):
+                                sections[section_id]['title'] = edited_title
+                                sections[section_id]['content'] = edited_content
+                                with open(MELUMATLAR_JSON, 'w', encoding='utf-8') as f:
+                                    json.dump(sections, f, ensure_ascii=False, indent=4)
+                                st.success("Dəyişikliklər yadda saxlanıldı!")
+                        with cols[1]:
+                            if st.button("🗑️ Sil", key=f"delete_{section_id}"):
+                                del sections[section_id]
+                                with open(MELUMATLAR_JSON, 'w', encoding='utf-8') as f:
+                                    json.dump(sections, f, ensure_ascii=False, indent=4)
+                                st.success("Bölmə silindi!")
+                                st.rerun()
+                        with cols[2]:
+                            created_at = section_data.get('created_at', 'Tarix bilinmir')
+                            st.caption(f"Yaradılma tarixi: {created_at[:10]}")
+    
+            new_other = st.number_input(
+                "Digər parametr", 
+                key="unique_key_for_texts_tab"  # Unikalliq
+            )
 
 
 
 
 if __name__ == "__main__":
+    # İlkin fayl yoxlamaları
     if not os.path.exists("ezamiyyet_melumatlari.xlsx"):
-        columns = [
-            'Tarix', 'Ad', 'Soyad', 'Ata adı', 'Vəzifə', 'Şöbə',
-            'Ezamiyyət növü', 'Marşrut', 'Bilet qiyməti', 'Günlük müavinət',
-            'Başlanğıc tarixi', 'Bitmə tarixi', 'Günlər', 'Ümumi məbləğ', 'Məqsəd',
-            'Ölkə', 'Şəhər (xarici)', 'Valyuta', 'Məzənnə', 'Qonaqlama növü'
-        ]
-        pd.DataFrame(columns=columns).to_excel("ezamiyyet_melumatlari.xlsx", index=False)
-
-
-    # # Köhnə valyuta faylını sil
-    # if os.path.exists("currency_rates.xlsx"):
-    #     os.remove("currency_rates.xlsx")
+        pd.DataFrame(columns=[
+            'Tarix', 'Ad', 'Soyad', 'Ata adı', 'Vəzifə', 'Şöbə', 
+            'Ezamiyyət növü', 'Ödəniş növü', 'Qonaqlama növü',
+            'Marşrut', 'Bilet qiyməti', 'Günlük müavinət', 
+            'Başlanğıc tarixi', 'Bitmə tarixi', 'Günlər', 
+            'Ümumi məbləğ', 'Məqsəd'
+        ]).to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+    
+    # Köhnə valyuta faylını sil
+    if os.path.exists("currency_rates.xlsx"):
+        os.remove("currency_rates.xlsx")
