@@ -1300,9 +1300,13 @@ with tab1:
                         if prev_end and trip['start_date'] <= prev_end:
                             overlap = (prev_end - trip['start_date']).days + 1
                             days = max(0, days - overlap)
-                        
-                        allowance = domestic_allowances.get(trip['to_city'], domestic_allowances['Digər'])
-                        daily_allowances.append(f"{trip['to_city']}: {allowance} AZN/gün")
+
+                        # hdsajdhsajdkha
+                        domestic_allowances = load_domestic_allowances()  # <-- ƏLAVƏ EDİN
+                        allowance = domestic_allowances.get(  # <-- ƏVVƏLKI DOMESTIC_ALLOWANCES əvəz edin
+                            trip['to_city'], 
+                            domestic_allowances['Digər']
+                        )
                         
                         trip_amount = allowance * days
                         total_amount += trip_amount
