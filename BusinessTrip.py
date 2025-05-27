@@ -1077,9 +1077,9 @@ with tab1:
             with st.expander("🧳 Ezamiyyət Detalları", expanded=True):
                 trip_type = st.radio("Növ", ["Ölkə daxili", "Ölkə xarici"])
 
-                purpose = st.text_area("Ezamiyyət məqsədi", 
-                                     placeholder="Ezamiyyətin məqsədini qısaca izah edin...",
-                                     help="Məsələn: Təlim, konfrans, işgüzar görüş və s.")
+                purpose = st.text_area("Sual", 
+                                     placeholder="Ezamiyyətlə bağlı suallarınızı qeyd edin.",
+                                     help="Məlumatlar və Qeydlər hissəsindən məlumatlarla tanış ola bilərsiniz.")
 
                 if trip_type == "Ölkə daxili":
                     if 'trips' not in st.session_state:
