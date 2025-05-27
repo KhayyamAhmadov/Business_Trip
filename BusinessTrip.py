@@ -1013,35 +1013,35 @@ with tab1:
                 if trip_type == "Ölkə daxili":
                     if 'trips' not in st.session_state:
                         st.session_state.trips = []
-                        
+                    
+                    # Yeni səfər əlavə etmə interfeysi
                     cols = st.columns([3,1])
                     with cols[0]:
-                        st.subheader("Səfərlər")
+                        st.subheader("Səfər Planı")
                     with cols[1]:
-                        if st.button("➕ Yeni səfər əlavə et", use_container_width=True):
+                        if st.button("➕ Yeni səfər əlavə et"):
                             st.session_state.trips.append({
                                 'from_city': 'Bakı',
                                 'to_city': 'Bakı',
-                                'start_date': datetime.now(),
-                                'end_date': datetime.now(),
+                                'start_date': datetime.now().date(),
+                                'end_date': datetime.now().date(),
                                 'ticket_price': 0
                             })
                     
+                    # Səfərlərin siyahısı
                     for i, trip in enumerate(st.session_state.trips):
-                        with st.container(border=True):
+                        with st.expander(f"Səfər #{i+1}", expanded=True):
                             cols = st.columns([2,2,2,2,1])
                             with cols[0]:
                                 trip['from_city'] = st.selectbox(
                                     f"Haradan #{i+1}", 
-                                    CITIES, 
-                                    index=CITIES.index(trip['from_city']),
+                                    CITIES,
                                     key=f'from_{i}'
                                 )
                             with cols[1]:
                                 trip['to_city'] = st.selectbox(
                                     f"Haraya #{i+1}", 
                                     [c for c in CITIES if c != trip['from_city']],
-                                    index=0,
                                     key=f'to_{i}'
                                 )
                             with cols[2]:
@@ -1059,18 +1059,75 @@ with tab1:
                                 )
                             with cols[4]:
                                 trip['ticket_price'] = st.number_input(
-                                    "Nəqliyyat (AZN)",
+                                    "Nəqliyyat xərci (AZN)",
                                     min_value=0,
                                     value=trip['ticket_price'],
                                     key=f'ticket_{i}'
                                 )
                             
-                            if st.button(f"🗑️ Səfəri sil #{i+1}", key=f'del_{i}'):
+                            if st.button(f"Səfəri sil #{i+1}", key=f'del_{i}'):
                                 del st.session_state.trips[i]
                                 st.rerun()
-                    
-                    domestic_allowances = load_domestic_allowances()
-                else:  # Ölkə xarici ezamiyyət
+                
+                    # Hesablama hissəsi
+                    if st.session_state.trips:
+                        total_days = 0
+                        total_amount = 0
+                        total_transport = 0
+                        daily_allowances = []
+                        
+                        # Tarixləri sırala və üst-üstə düşən günləri tənzimlə
+                        sorted_trips = sorted(st.session_state.trips, key=lambda x: x['start_date'])
+                        prev_end = None
+                        
+                        for trip in sorted_trips:
+                            days = (trip['end_date'] - trip['start_date']).days + 1
+                            
+                            # Üst-üstə düşən günləri çıx
+                            if prev_end and trip['start_date'] <= prev_end:
+                                overlap = (prev_end - trip['start_date']).days + 1
+                                days = max(0, days - overlap)
+                            
+                            allowance = DOMESTIC_ALLOWANCES.get(
+                                trip['to_city'], 
+                                DOMESTIC_ALLOWANCES['Digər']
+                            )
+                            
+                            total_amount += allowance * days
+                            total_transport += trip['ticket_price']
+                            total_days += days
+                            prev_end = trip['end_date']
+                            
+                            daily_allowances.append({
+                                'Şəhər': trip['to_city'],
+                                'Günlər': days,
+                                'Müavinət': allowance,
+                                'Ümumi': allowance * days
+                            })
+                
+                        # Nəticələrin göstərilməsi
+                        st.subheader("Hesablama Nəticələri")
+                        
+                        col1, col2, col3 = st.columns(3)
+                        col1.metric("Ümumi Günlər", total_days)
+                        col2.metric("Ümumi Müavinət", f"{total_amount} AZN")
+                        col3.metric("Ümumi Xərc", f"{total_amount + total_transport} AZN")
+                        
+                        # Detal cədvəli
+                        df_details = pd.DataFrame(daily_allowances)
+                        st.dataframe(
+                            df_details,
+                            column_config={
+                                "Şəhər": "Hedef şəhər",
+                                "Günlər": st.column_config.NumberColumn(format="%d gün"),
+                                "Müavinət": st.column_config.NumberColumn(format="%.2f AZN/gün"),
+                                "Ümumi": st.column_config.NumberColumn(format="%.2f AZN")
+                            },
+                            hide_index=True
+                        )
+                    else:
+                        st.warning("Ən azı bir səfər əlavə edin!")
+                                else:  # Ölkə xarici ezamiyyət
                     #  Dinamik yükləmə
                     countries_data = load_countries_data()
                     try:
