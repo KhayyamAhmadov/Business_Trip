@@ -991,11 +991,25 @@ def calculate_international_trip(country, city, payment_mode, accommodation, sta
     trip_nights = max(trip_days - 1, 0)
     
     # Məzənnənin alınması
-    currency_df = get_currency_rates(start_date)
-    exchange_rate = currency_df.loc[
-        currency_df['Valyuta'] == country_data['currency'], 
-        '1 vahid üçün AZN'
-    ].values[0]
+    try:
+        currency_df = get_currency_rates(start_date)
+        if currency_df.empty:
+            st.error("Valyuta məlumatları yoxdur!")
+            return None
+            
+        exchange_rate = currency_df.loc[
+            currency_df['Valyuta'] == country_data['currency'], 
+            '1 vahid üçün AZN'
+        ].values[0]
+        
+    except IndexError:
+        st.error(f"{country_data['currency']} valyutası tapılmadı!")
+        return None
+    except Exception as e:
+        st.error(f"Məzənnə xətası: {str(e)}")
+        return None
+
+
     
     # Əsas müavinətin təyin edilməsi
     if city == "digər":
@@ -1412,8 +1426,18 @@ with tab1:
                             total_amount_foreign = total_amount
                             total_amount_azn = total_amount
                         else:
-                            # Xarici ezamiyyət üçün yuxarıda hesablanmış dəyərləri istifadə et
-                            total_amount_azn = total_amount_foreign * exchange_rate
+                            if 'result' not in locals():
+                                st.error("Zəhmət olmasa əvvəlcə tarixləri düzgün daxil edin!")
+                                return
+
+                            # fdasfsadf
+                            total_azn = result['total_azn']
+                            daily_allowance_foreign = result['daily_allowance']
+                            currency = result['currency']
+                            exchange_rate = result['exchange_rate']
+                            total_foreign = result['total_foreign']
+
+
         
                         trip_data = {
                             "Tarix": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -1429,7 +1453,7 @@ with tab1:
                             "Bilet qiyməti": ticket_price if trip_type == "Ölkə daxili" else 0,
                             # Valyuta məlumatları
                             "Günlük müavinət (Valyuta)": f"{daily_allowance_foreign:.2f} {currency}",
-                            "Günlük müavinət (AZN)": daily_allowance_azn if trip_type == "Ölkə xarici" else daily_allowance,
+                            "Günlük müavinət (AZN)": daily_allowance_foreign * exchange_rate,
                             "Ümumi məbləğ (Valyuta)": f"{total_amount_foreign:.2f} {currency}",
                             "Ümumi məbləğ (AZN)": total_amount_azn,
                             "Valyuta": currency,
@@ -1443,7 +1467,6 @@ with tab1:
                         
                         if save_trip_data(trip_data):
                             st.success("Məlumatlar yadda saxlandı!")
-                            # Formanı təmizlə (isteğe bağlı)
                             st.rerun()
                     else:
                         st.error("Zəhmət olmasa bütün məcburi sahələri doldurun!")
@@ -1546,18 +1569,27 @@ with tab2:
                 with st.expander("🔍 Bütün Qeydlər", expanded=True):
                     column_config = {
                         'Tarix': st.column_config.DatetimeColumn(format="DD.MM.YYYY HH:mm"),
-                        'Başlanğıc tarixi': st.column_config.DateColumn(format="YYYY-MM-DD"),
-                        'Bitmə tarixi': st.column_config.DateColumn(format="YYYY-MM-DD"),
-                        'Ümumi məbləğ': st.column_config.NumberColumn(format="%.2f AZN"),
-                        'Günlük müavinət': st.column_config.NumberColumn(format="%.2f AZN"),
-                        'Bilet qiyməti': st.column_config.NumberColumn(format="%.2f AZN"),
-                        'Günlər': st.column_config.NumberColumn(format="%.0f")
+                        'Ad': st.column_config.TextColumn("Ad"),
+                        'Soyad': st.column_config.TextColumn("Soyad"),
+                        'Ata adı': st.column_config.TextColumn("Ata adı"),
+                        'Vəzifə': st.column_config.TextColumn("Vəzifə"),
+                        'Şöbə': st.column_config.TextColumn("Şöbə"),
+                        'Ezamiyyət növü': st.column_config.TextColumn("Növ"),
+                        'Ödəniş rejimi': st.column_config.TextColumn("Ödəniş rejimi"),
+                        'Qonaqlama növü': st.column_config.TextColumn("Qonaqlama növü"),
                         'Marşrut': st.column_config.TextColumn(width="medium"),
                         'Bilet qiyməti': st.column_config.NumberColumn(format="%.2f AZN"),
+                        'Günlük müavinət (Valyuta)': st.column_config.TextColumn("Gündəlik müavinət (Valyuta)"),
+                        'Günlük müavinət (AZN)': st.column_config.NumberColumn(format="%.2f AZN"),
+                        'Ümumi məbləğ (Valyuta)': st.column_config.TextColumn("Ümumi məbləğ (Valyuta)"),
+                        'Ümumi məbləğ (AZN)': st.column_config.NumberColumn(format="%.2f AZN"),
+                        'Valyuta': st.column_config.TextColumn("Valyuta"),
+                        'Məzənnə': st.column_config.NumberColumn(format="%.4f"),
                         'Başlanğıc tarixi': st.column_config.DateColumn(format="DD.MM.YYYY"),
                         'Bitmə tarixi': st.column_config.DateColumn(format="DD.MM.YYYY"),
                         'Günlər': st.column_config.NumberColumn(format="%d"),
-                        'Ümumi məbləğ': st.column_config.NumberColumn(format="%.2f AZN")
+                        'Gecələr': st.column_config.NumberColumn(format="%d"),
+                        'Məqsəd': st.column_config.TextColumn("Məqsəd")
                     }
                     
                     edited_df = st.data_editor(
@@ -1569,6 +1601,7 @@ with tab2:
                         hide_index=True,
                         key="main_data_editor"
                     )
+
 
                     # Silinmə əməliyyatı
                     display_options = [f"{row['Ad']} {row['Soyad']} - {row['Marşrut']} ({row['Tarix'].date() if pd.notnull(row['Tarix']) else 'N/A'})" 
