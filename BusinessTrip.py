@@ -377,12 +377,13 @@ with tab1:
                     
                     if country in countries_data:
                         city_options = [c for c in country['cities'].keys() if c != 'digər']
-                            city_options.append("digər")
-                            selected_city = st.selectbox(
-                                "Şəhər", 
-                                city_options,
-                                key=f"admin_city_select_{selected_country}"  # <-- Artıq təhlükəsiz
-                            )
+                        city_options.append("digər")
+                        selected_city = st.selectbox(
+                            "Şəhər", 
+                            city_options,
+                            key=f"admin_city_select_{country}"  # selected_country əvəzinə country istifadə edin
+                        )
+
                         
                         cols = st.columns(2)
                         with cols[0]:
