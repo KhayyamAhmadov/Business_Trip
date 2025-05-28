@@ -1497,7 +1497,7 @@ with tab2:
         
         # Sekmələrin yaradılması
         tab_manage, tab_import, tab_settings, tab_currency, tab_info = st.tabs(
-            ["📊 Məlumatlar", "📥 İdxal", "⚙️ Parametrlər", "💱 Valyuta Məzənnələri", "Qeydlər"]
+            ["📊 Məlumatlar", "📥 İdxal", "⚙️ Parametrlər", "💱 Valyuta Məzənnələri", "📚 Ezamiyyət Qaydaları və Məlumatlar"]
         )
 
         
