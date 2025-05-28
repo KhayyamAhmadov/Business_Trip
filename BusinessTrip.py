@@ -936,7 +936,7 @@ def save_countries_data(data):
 @st.cache_data(ttl=3600)
 def get_currency_rates(date):
     """
-    Cbar.az-dan konkret tarix üçün valyuta məzənnələrini çəkərək DataFrame qaytarır
+    Fetch currency rates from Cbar.az for a specific date and return as DataFrame
     """
     try:
         formatted_date = date.strftime("%d.%m.%Y")
@@ -967,7 +967,7 @@ def get_currency_rates(date):
         return df.sort_values('Valyuta')
     
     except Exception as e:
-        st.error(f"Məzənnələr alınarkən xəta: {str(e)}")
+        st.error(f"Error fetching currency rates: {str(e)}")
         return pd.DataFrame()
 
 
@@ -1069,7 +1069,7 @@ with tab1:
                                 'purpose': purpose,
                                 'trip_days': trip_days,
                                 'trip_nights': trip_nights,
-                                'ticket_price': transport_cost
+                                'ticket_price': transport_cost,
                                 'daily_allowance': daily_allowance
                             }
                             
