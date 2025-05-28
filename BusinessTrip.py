@@ -1056,7 +1056,6 @@ with tab1:
                         if submitted and start_date and end_date and end_date >= start_date:
                             trip_days = (end_date - start_date).days + 1
                             trip_nights = trip_days - 1 if trip_days > 1 else 0
-                            ticket_price = calculate_domestic_amount(from_city, to_city)
                             domestic_allowances = load_domestic_allowances()
                             daily_allowance = domestic_allowances.get(to_city, domestic_allowances['Digər'])
                             
