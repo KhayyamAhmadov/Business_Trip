@@ -2038,47 +2038,47 @@ with tab2:
 
 
 
-            with tab_info:
-                st.markdown("### Məlumat Sektiyalarının İdarə Edilməsi")
-                sections = load_info_sections()
-                
-                new_title = st.text_input("Yeni bölmə başlığı")
-                new_content = st.text_area("Yeni bölmə məzmunu", height=200)
-                
-                if st.button("Yeni bölmə əlavə et"):
-                    if new_title.strip() and new_content.strip():
-                        section_id = f"section_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-                        sections[section_id] = {
-                            "title": new_title,
-                            "content": new_content,
-                            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        }
-                        save_info_sections(sections)
-                        st.success("Yeni bölmə əlavə edildi!")
-                    else:
-                        st.error("Başlıq və məzmun tələb olunur")
-                
-                st.markdown("### Mövcud Bölmələr")
-                for section_id, section_data in sections.items():
-                    with st.expander(section_data['title'], expanded=False):
-                        edited_title = st.text_input("Başlıq", value=section_data['title'], key=f"title_{section_id}")
-                        edited_content = st.text_area("Məzmun", value=section_data['content'], height=300, key=f"content_{section_id}")
-                        
-                        cols = st.columns(3)
-                        with cols[0]:
-                            if st.button("💾 Saxla", key=f"save_{section_id}"):
-                                sections[section_id]['title'] = edited_title
-                                sections[section_id]['content'] = edited_content
-                                save_info_sections(sections)
-                                st.success("Dəyişikliklər yadda saxlanıldı!")
-                        with cols[1]:
-                            if st.button("🗑️ Sil", key=f"delete_{section_id}"):
-                                del sections[section_id]
-                                save_info_sections(sections)
-                                st.success("Bölmə silindi!")
-                                st.rerun()
-                        with cols[2]:
-                            st.caption(f"Yaradılma tarixi: {section_data['created_at']}")
+        with tab_info:
+            st.markdown("### Məlumat Sektiyalarının İdarə Edilməsi")
+            sections = load_info_sections()
+            
+            new_title = st.text_input("Yeni bölmə başlığı")
+            new_content = st.text_area("Yeni bölmə məzmunu", height=200)
+            
+            if st.button("Yeni bölmə əlavə et"):
+                if new_title.strip() and new_content.strip():
+                    section_id = f"section_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                    sections[section_id] = {
+                        "title": new_title,
+                        "content": new_content,
+                        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    }
+                    save_info_sections(sections)
+                    st.success("Yeni bölmə əlavə edildi!")
+                else:
+                    st.error("Başlıq və məzmun tələb olunur")
+            
+            st.markdown("### Mövcud Bölmələr")
+            for section_id, section_data in sections.items():
+                with st.expander(section_data['title'], expanded=False):
+                    edited_title = st.text_input("Başlıq", value=section_data['title'], key=f"title_{section_id}")
+                    edited_content = st.text_area("Məzmun", value=section_data['content'], height=300, key=f"content_{section_id}")
+                    
+                    cols = st.columns(3)
+                    with cols[0]:
+                        if st.button("💾 Saxla", key=f"save_{section_id}"):
+                            sections[section_id]['title'] = edited_title
+                            sections[section_id]['content'] = edited_content
+                            save_info_sections(sections)
+                            st.success("Dəyişikliklər yadda saxlanıldı!")
+                    with cols[1]:
+                        if st.button("🗑️ Sil", key=f"delete_{section_id}"):
+                            del sections[section_id]
+                            save_info_sections(sections)
+                            st.success("Bölmə silindi!")
+                            st.rerun()
+                    with cols[2]:
+                        st.caption(f"Yaradılma tarixi: {section_data['created_at']}")
 
 
 # ========================================================================================
