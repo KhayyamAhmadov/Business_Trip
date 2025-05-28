@@ -830,6 +830,15 @@ COUNTRIES = {
 }
 
 
+# currency_rates.xlsx faylı üçün nümunə məlumatlar
+CURRENCY_RATES = {
+    "USD": 1.7,
+    "EUR": 1.9,
+    "TRY": 0.2,
+    "RUB": 0.02,
+    "GEL": 0.7
+}
+
 DOMESTIC_ALLOWANCES = {
     "Bakı": 125,
     "Naxçıvan": 100,
