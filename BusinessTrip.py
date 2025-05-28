@@ -878,9 +878,6 @@ def load_trip_data():
     except FileNotFoundError:
         return pd.DataFrame()
 
-def calculate_domestic_amount(from_city, to_city):
-    return DOMESTIC_ROUTES.get((from_city, to_city), 70)
-
 def calculate_days(start_date, end_date):
     return (end_date - start_date).days + 1
 
@@ -1072,9 +1069,8 @@ with tab1:
                                 'purpose': purpose,
                                 'trip_days': trip_days,
                                 'trip_nights': trip_nights,
-                                'ticket_price': ticket_price,
                                 'ticket_price': transport_cost
-                                # 'daily_allowance': daily_allowance
+                                'daily_allowance': daily_allowance
                             }
                             
                             st.session_state.domestic_trips.append(new_trip)
