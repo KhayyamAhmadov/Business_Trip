@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
@@ -1121,7 +1120,8 @@ with tab1:
                         st.markdown("### 📋 Əlavə Edilmiş Səfərlər")
                         
                         for i, trip in enumerate(st.session_state.domestic_trips):
-                            with st.expander(f"Səfər {trip['id']}: {trip['from_city']} → {trip['to_city']}", expanded=False):
+                            with st.container(border=True):  # DÜZƏLDİ
+                                st.subheader(f"Səfər {trip['id']}: {trip['from_city']} → {trip['to_city']}")
                                 col_a, col_b, col_c = st.columns([2, 2, 1])
                                 
                                 with col_a:
