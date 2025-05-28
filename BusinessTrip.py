@@ -22,19 +22,30 @@ st.set_page_config(
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
-# Modern və cazibədar giriş üçün CSS
-st.markdown("""
+# Streamlit elementlərini gizlətmək
+hide_streamlit_style = """
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    
-    /* Global Styles */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+.stDeployButton {display: none;}
+header {visibility: hidden;}
+.stApp > header {display: none;}
+</style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+if not st.session_state.logged_in:
+    # Giriş səhifəsi üçün tam CSS
+    st.markdown("""
+    <style>
+    /* Ana container */
     .stApp {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        font-family: 'Inter', sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%) !important;
+        min-height: 100vh;
     }
     
-    /* Login Container */
-    .login-container {
+    /* Giriş kartı */
+    .login-wrapper {
         display: flex;
         justify-content: center;
         align-items: center;
@@ -42,176 +53,25 @@ st.markdown("""
         padding: 20px;
     }
     
-    .login-card {
+    .login-box {
         background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(20px);
-        border-radius: 24px;
-        padding: 3rem 2.5rem;
+        border-radius: 25px;
+        padding: 3rem;
         box-shadow: 
-            0 25px 50px rgba(0, 0, 0, 0.15),
-            0 0 0 1px rgba(255, 255, 255, 0.2);
+            0 25px 50px rgba(0, 0, 0, 0.25),
+            0 0 0 1px rgba(255, 255, 255, 0.3);
         max-width: 450px;
         width: 100%;
         position: relative;
-        overflow: hidden;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        animation: slideUp 0.8s ease-out;
     }
     
-    .login-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
-        background-size: 200% 100%;
-        animation: gradientShift 3s ease infinite;
-    }
-    
-    @keyframes gradientShift {
-        0%, 100% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-    }
-    
-    /* Header */
-    .login-header {
-        text-align: center;
-        margin-bottom: 2.5rem;
-    }
-    
-    .login-title {
-        font-size: 2rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        margin: 0.5rem 0;
-    }
-    
-    .login-subtitle {
-        color: #6b7280;
-        font-size: 0.95rem;
-        font-weight: 400;
-        margin: 0;
-    }
-    
-    .login-icon {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-        display: block;
-        background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-    
-    /* Input Styling */
-    .stTextInput > div > div > input {
-        background: rgba(255, 255, 255, 0.8) !important;
-        border: 2px solid rgba(102, 126, 234, 0.1) !important;
-        border-radius: 12px !important;
-        padding: 16px 20px !important;
-        font-size: 16px !important;
-        font-weight: 500 !important;
-        color: #374151 !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05) !important;
-    }
-    
-    .stTextInput > div > div > input:focus {
-        border-color: #667eea !important;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05) !important;
-        transform: translateY(-1px) !important;
-    }
-    
-    .stTextInput > div > div > input::placeholder {
-        color: #9ca3af !important;
-        font-weight: 400 !important;
-    }
-    
-    /* Button Styling */
-    .login-button {
-        width: 100%;
-        margin-top: 1.5rem;
-    }
-    
-    .stButton > button {
-        width: 100% !important;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 12px !important;
-        padding: 16px 24px !important;
-        font-size: 16px !important;
-        font-weight: 600 !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.5px !important;
-    }
-    
-    .stButton > button:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6) !important;
-        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
-    }
-    
-    .stButton > button:active {
-        transform: translateY(0px) !important;
-    }
-    
-    /* Error Message */
-    .stAlert {
-        border-radius: 12px !important;
-        margin-top: 1rem !important;
-        border: none !important;
-        background: linear-gradient(135deg, #ff6b6b, #ee5a52) !important;
-        color: white !important;
-    }
-    
-    /* Features Section */
-    .features-section {
-        margin-top: 2rem;
-        padding-top: 2rem;
-        border-top: 1px solid rgba(107, 114, 128, 0.1);
-    }
-    
-    .feature-item {
-        display: flex;
-        align-items: center;
-        margin-bottom: 0.75rem;
-        color: #6b7280;
-        font-size: 0.875rem;
-    }
-    
-    .feature-icon {
-        margin-right: 0.75rem;
-        font-size: 1.2rem;
-        color: #667eea;
-    }
-    
-    /* Responsive */
-    @media (max-width: 768px) {
-        .login-card {
-            margin: 1rem;
-            padding: 2rem 1.5rem;
-        }
-        
-        .login-title {
-            font-size: 1.75rem;
-        }
-    }
-    
-    /* Animation */
-    .login-card {
-        animation: slideInUp 0.6s ease-out;
-    }
-    
-    @keyframes slideInUp {
+    @keyframes slideUp {
         from {
             opacity: 0;
-            transform: translateY(30px);
+            transform: translateY(50px);
         }
         to {
             opacity: 1;
@@ -219,64 +79,219 @@ st.markdown("""
         }
     }
     
-    /* Hide Streamlit Elements */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    .stDeployButton {display:none;}
-</style>
-""", unsafe_allow_html=True)
-
-if not st.session_state.logged_in:
-    # Login səhifəsi
+    /* Rəngli üst xətt */
+    .login-box::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+        background-size: 300% 100%;
+        animation: rainbow 3s ease infinite;
+        border-radius: 25px 25px 0 0;
+    }
+    
+    @keyframes rainbow {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+    }
+    
+    /* Başlıq */
+    .login-header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+    }
+    
+    .login-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        display: block;
+        background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    }
+    
+    .login-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0.5rem 0;
+        font-family: 'Arial', sans-serif;
+    }
+    
+    .login-subtitle {
+        color: #6b7280;
+        font-size: 1rem;
+        margin: 0;
+        font-weight: 400;
+    }
+    
+    /* Input sahələri */
+    .stTextInput > div > div > input {
+        background: rgba(255, 255, 255, 0.9) !important;
+        border: 2px solid rgba(102, 126, 234, 0.2) !important;
+        border-radius: 15px !important;
+        padding: 18px 24px !important;
+        font-size: 16px !important;
+        font-weight: 500 !important;
+        color: #374151 !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08) !important;
+    }
+    
+    .stTextInput > div > div > input:focus {
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15), 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+        transform: translateY(-2px) !important;
+        background: rgba(255, 255, 255, 1) !important;
+    }
+    
+    .stTextInput > div > div > input::placeholder {
+        color: #9ca3af !important;
+        font-weight: 400 !important;
+    }
+    
+    /* Düymələr */
+    .stButton > button {
+        width: 100% !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 15px !important;
+        padding: 18px 32px !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        margin-top: 1.5rem !important;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-4px) scale(1.02) !important;
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6) !important;
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
+    }
+    
+    .stButton > button:active {
+        transform: translateY(-2px) scale(0.98) !important;
+    }
+    
+    /* Xətalar */
+    .stAlert {
+        border-radius: 12px !important;
+        margin-top: 1rem !important;
+        border: none !important;
+        background: linear-gradient(135deg, #ff6b6b, #ee5a52) !important;
+        color: white !important;
+        box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3) !important;
+    }
+    
+    /* Uğur mesajı */
+    .stSuccess {
+        border-radius: 12px !important;
+        background: linear-gradient(135deg, #96ceb4, #4ecdc4) !important;
+        color: white !important;
+        border: none !important;
+        box-shadow: 0 8px 25px rgba(150, 206, 180, 0.3) !important;
+    }
+    
+    /* Xüsusiyyətlər */
+    .features {
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 2px solid rgba(107, 114, 128, 0.1);
+    }
+    
+    .feature {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        color: #4a5568;
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+    
+    .feature-icon {
+        margin-right: 1rem;
+        font-size: 1.3rem;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    /* Mobil uyğunlaşma */
+    @media (max-width: 768px) {
+        .login-box {
+            margin: 1rem;
+            padding: 2rem 1.5rem;
+        }
+        
+        .login-title {
+            font-size: 1.8rem;
+        }
+        
+        .login-icon {
+            font-size: 3rem;
+        }
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # HTML struktur
     st.markdown("""
-    <div class="login-container">
-        <div class="login-card">
+    <div class="login-wrapper">
+        <div class="login-box">
             <div class="login-header">
-                <span class="login-icon">🚀</span>
+                <div class="login-icon">🚀</div>
                 <h1 class="login-title">Ezamiyyət İdarəetmə</h1>
                 <p class="login-subtitle">Sistemə daxil olmaq üçün giriş kodunuzu daxil edin</p>
             </div>
     """, unsafe_allow_html=True)
     
-    # Giriş formu
+    # Giriş inputu
     access_code = st.text_input(
         "Giriş kodu", 
         type="password", 
         label_visibility="collapsed", 
         placeholder="🔐 Giriş kodunuzu daxil edin...",
-        key="login_input"
+        key="access_code_input"
     )
     
     # Giriş düyməsi
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        if st.button("🚀 Sistemə Daxil Ol", key="login_btn", help="Sisteme giriş üçün klikləyin"):
-            if access_code == "admin":
-                st.session_state.logged_in = True
-                st.success("✅ Uğurla daxil oldunuz!")
-                time.sleep(1)
-                st.rerun()
-            else:
-                st.error("❌ Yanlış giriş kodu! Yenidən cəhd edin.")
+    if st.button("🚀 Sistemə Daxil Ol", key="login_button", type="primary"):
+        if access_code == "admin":
+            st.session_state.logged_in = True
+            st.success("✅ Uğurla daxil oldunuz! Sistem yüklənir...")
+            time.sleep(1.5)
+            st.rerun()
+        else:
+            st.error("❌ Yanlış giriş kodu! Zəhmət olmasa yenidən cəhd edin.")
     
-    # Xüsusiyyətlər bölməsi
+    # Xüsusiyyətlər
     st.markdown("""
-            <div class="features-section">
-                <div class="feature-item">
+            <div class="features">
+                <div class="feature">
                     <span class="feature-icon">✈️</span>
                     <span>Ezamiyyət planlaması və izləmə</span>
                 </div>
-                <div class="feature-item">
+                <div class="feature">
                     <span class="feature-icon">📊</span>
-                    <span>Xərc hesabatları və analitika</span>
+                    <span>Xərc hesabatları və detallı analitika</span>
                 </div>
-                <div class="feature-item">
+                <div class="feature">
                     <span class="feature-icon">🔒</span>
-                    <span>Təhlükəsiz və etibarlı sistem</span>
+                    <span>Yüksək təhlükəsizlik və məlumat mühafizəsi</span>
                 </div>
-                <div class="feature-item">
+                <div class="feature">
                     <span class="feature-icon">⚡</span>
-                    <span>Sürətli və asan istifadə</span>
+                    <span>Sürətli proseslər və asan istifadə</span>
                 </div>
             </div>
         </div>
@@ -285,130 +300,77 @@ if not st.session_state.logged_in:
     
     st.stop()
 
-# 3. ƏSAS TƏRTİBAT VƏ PROQRAM MƏNTİQİ (Giriş edildiyi halda)
+# 3. ƏSAS SISTEM (Login olduqdan sonra)
+# Ana sistem üçün CSS
 st.markdown("""
 <style>
-    :root {
-        --primary-color: #667eea;
-        --secondary-color: #764ba2;
-        --accent-color: #4ecdc4;
-        --success-color: #96ceb4;
-        --warning-color: #feca57;
-        --danger-color: #ff6b6b;
-        --background-color: #ffffff;
-        --text-primary: #2d3748;
-        --text-secondary: #4a5568;
-        --border-color: #e2e8f0;
-    }
-    
-    .main-header {
-        text-align: center;
-        padding: 3rem 2rem;
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-        color: white;
-        margin: -1rem -1rem 3rem -1rem;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        border-radius: 0 0 30px 30px;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .main-header::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><defs><pattern id="grain" width="100" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="20" fill="url(%23grain)"/></svg>');
-        opacity: 0.1;
-    }
-    
-    .section-header {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-        color: white !important;
-        padding: 2rem;
-        border-radius: 16px;
-        margin: 2rem 0;
-        box-shadow: 0 8px 32px rgba(102, 126, 234, 0.15);
-        border: none;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .section-header::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, var(--accent-color), var(--success-color), var(--warning-color));
-    }
-    
-    .stButton > button {
-        border-radius: 12px !important;
-        padding: 0.75rem 2rem !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        border: 2px solid var(--primary-color) !important;
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%) !important;
-        color: white !important;
-        font-weight: 600 !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.5px !important;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
-    }
-    
-    .stButton > button:hover {
-        transform: translateY(-3px) scale(1.02) !important;
-        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4) !important;
-        background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%) !important;
-    }
-    
-    .stButton > button:active {
-        transform: translateY(-1px) scale(0.98) !important;
-    }
-    
-    .dataframe {
-        border-radius: 16px !important;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.08) !important;
-        border: 1px solid var(--border-color) !important;
-        overflow: hidden !important;
-    }
-    
-    /* Logout button */
-    .logout-container {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 1000;
-    }
-    
-    .logout-btn {
-        background: linear-gradient(135deg, var(--danger-color), #ee5a52) !important;
-        border: none !important;
-        border-radius: 50px !important;
-        padding: 12px 24px !important;
-        color: white !important;
-        font-weight: 600 !important;
-        font-size: 14px !important;
-        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3) !important;
-        transition: all 0.3s ease !important;
-    }
-    
-    .logout-btn:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4) !important;
-    }
+.main-container {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    padding: 2rem;
+}
+
+.header-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 3rem 2rem;
+    border-radius: 25px;
+    margin-bottom: 2rem;
+    box-shadow: 0 15px 35px rgba(102, 126, 234, 0.3);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.header-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+    background-size: 200% 100%;
+    animation: headerShift 4s ease infinite;
+}
+
+@keyframes headerShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+.logout-section {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.stButton[data-testid="baseButton-secondary"] > button {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 25px !important;
+    padding: 12px 24px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4) !important;
+    transition: all 0.3s ease !important;
+}
+
+.stButton[data-testid="baseButton-secondary"] > button:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 12px 30px rgba(255, 107, 107, 0.5) !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
 # Logout düyməsi
-st.markdown('<div class="logout-container">', unsafe_allow_html=True)
-if st.button("🚪 Çıxış", key="logout", help="Sistemdən çıxış"):
-    st.session_state.logged_in = False
-    st.rerun()
-st.markdown('</div>', unsafe_allow_html=True)
+with st.container():
+    st.markdown('<div class="logout-section">', unsafe_allow_html=True)
+    if st.button("🚪 Çıxış", key="logout_btn", type="secondary"):
+        st.session_state.logged_in = False
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ============================== SABİTLƏR ==============================
 DEPARTMENTS = [
