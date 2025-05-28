@@ -830,51 +830,6 @@ COUNTRIES = {
 }
 
 
-DOMESTIC_ROUTES = {
-    ("Bakı", "Ağcabədi"): 10.50,
-    ("Bakı", "Ağdam"): 13.50,
-    ("Bakı", "Ağdaş"): 10.30,
-    ("Bakı", "Astara"): 10.40,
-    ("Bakı", "Şuşa"): 28.90,
-    ("Bakı", "Balakən"): 17.30,
-    ("Bakı", "Beyləqan"): 10.00,
-    ("Bakı", "Bərdə"): 11.60,
-    ("Bakı", "Biləsuvar"): 6.50,
-    ("Bakı", "Cəlilabad"): 7.10,
-    ("Bakı", "Füzuli"): 10.80,
-    ("Bakı", "Gədəbəy"): 16.50,
-    ("Bakı", "Gəncə"): 13.10,
-    ("Bakı", "Goranboy"): 9.40,
-    ("Bakı", "Göyçay"): 9.20,
-    ("Bakı", "Göygöl"): 13.50,
-    ("Bakı", "İmişli"): 8.10,
-    ("Bakı", "İsmayıllı"): 7.00,
-    ("Bakı", "Kürdəmir"): 7.10,
-    ("Bakı", "Lənkəran"): 8.80,
-    ("Bakı", "Masallı"): 7.90,
-    ("Bakı", "Mingəçevir"): 11.40,
-    ("Bakı", "Naftalan"): 12.20,
-    ("Bakı", "Oğuz"): 13.10,
-    ("Bakı", "Qax"): 14.60,
-    ("Bakı", "Qazax"): 17.60,
-    ("Bakı", "Qəbələ"): 11.50,
-    ("Bakı", "Quba"): 5.90,
-    ("Bakı", "Qusar"): 6.40,
-    ("Bakı", "Saatlı"): 7.10,
-    ("Bakı", "Sabirabad"): 6.10,
-    ("Bakı", "Şəki"): 13.20,
-    ("Bakı", "Şəmkir"): 15.00,
-    ("Bakı", "Siyəzən"): 3.60,
-    ("Bakı", "Tərtər"): 12.20,
-    ("Bakı", "Tovuz"): 16.40,
-    ("Bakı", "Ucar"): 8.90,
-    ("Bakı", "Xaçmaz"): 5.50,
-    ("Bakı", "Nabran"): 7.20,
-    ("Bakı", "Xudat"): 6.30,
-    ("Bakı", "Zaqatala"): 15.60,
-    ("Bakı", "Zərdab"): 9.30
-}
-
 DOMESTIC_ALLOWANCES = {
     "Bakı": 125,
     "Naxçıvan": 100,
@@ -883,14 +838,14 @@ DOMESTIC_ALLOWANCES = {
     "Digər": 90
 }
 
-# currency_rates.xlsx faylı üçün nümunə məlumatlar
-CURRENCY_RATES = {
-    "USD": 1.7,
-    "EUR": 1.9,
-    "TRY": 0.2,
-    "RUB": 0.02,
-    "GEL": 0.7
-}
+# # currency_rates.xlsx faylı üçün nümunə məlumatlar
+# CURRENCY_RATES = {
+#     "USD": 1.7,
+#     "EUR": 1.9,
+#     "TRY": 0.2,
+#     "RUB": 0.02,
+#     "GEL": 0.7
+# }
 
 # Fayl yoxlamaları ən başda
 if not os.path.exists("countries_data.json"):
@@ -1088,6 +1043,15 @@ with tab1:
                             end_date = st.date_input("Bitmə tarixi")
                         
                         purpose = st.text_area("Səfər məqsədi")
+
+                        transport_cost = st.number_input(
+                            "Nəqliyyat xərci (AZN)", 
+                            min_value=0.0, 
+                            value=0.0,
+                            step=1.0,
+                            help="Nəqliyyat xərclərini manual daxil edin. Boş buraxılsa 0 qəbul ediləcək"
+                        )
+
                         
                         submitted = st.form_submit_button("➕ Səfər Əlavə Et")
                         
@@ -1108,6 +1072,7 @@ with tab1:
                                 'trip_days': trip_days,
                                 'trip_nights': trip_nights,
                                 'ticket_price': ticket_price,
+                                'ticket_price': transport_cost
                                 'daily_allowance': daily_allowance
                             }
                             
@@ -2172,6 +2137,6 @@ if __name__ == "__main__":
             'Ümumi məbləğ', 'Məqsəd'
         ]).to_excel("ezamiyyet_melumatlari.xlsx", index=False)
     
-    # Köhnə valyuta faylını sil
-    if os.path.exists("currency_rates.xlsx"):
-        os.remove("currency_rates.xlsx")
+    # # Köhnə valyuta faylını sil
+    # if os.path.exists("currency_rates.xlsx"):
+    #     os.remove("currency_rates.xlsx")
