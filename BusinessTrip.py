@@ -1019,11 +1019,21 @@ def get_currency_rates(date):
         return pd.DataFrame()
 
 
+def load_info_sections():
+    try:
+        with open(MELUMATLAR_JSON, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        st.error(f"Məlumatlar yüklənərkən xəta: {str(e)}")
+        return {}
 
+def save_info_sections(sections):
+    with open(MELUMATLAR_JSON, 'w', encoding='utf-8') as f:
+        json.dump(sections, f, ensure_ascii=False, indent=4)
 
 
 st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
-tab1, tab2 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli"])
+tab1, tab2, tab3 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli", "📚 Məlumatlar və Qeydlər"])
 
 # YENİ EZAMİYYƏT HISSESI
 # YENİ EZAMİYYƏT HISSESI
@@ -2024,7 +2034,65 @@ with tab2:
                 )
             
             else:
-                st.warning("Seçilmiş tarix üçün məlumat tapılmadı!")    
+                st.warning("Seçilmiş tarix üçün məlumat tapılmadı!")   
+
+
+
+            with tab_info:
+                st.markdown("### Məlumat Sektiyalarının İdarə Edilməsi")
+                sections = load_info_sections()
+                
+                new_title = st.text_input("Yeni bölmə başlığı")
+                new_content = st.text_area("Yeni bölmə məzmunu", height=200)
+                
+                if st.button("Yeni bölmə əlavə et"):
+                    if new_title.strip() and new_content.strip():
+                        section_id = f"section_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                        sections[section_id] = {
+                            "title": new_title,
+                            "content": new_content,
+                            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        }
+                        save_info_sections(sections)
+                        st.success("Yeni bölmə əlavə edildi!")
+                    else:
+                        st.error("Başlıq və məzmun tələb olunur")
+                
+                st.markdown("### Mövcud Bölmələr")
+                for section_id, section_data in sections.items():
+                    with st.expander(section_data['title'], expanded=False):
+                        edited_title = st.text_input("Başlıq", value=section_data['title'], key=f"title_{section_id}")
+                        edited_content = st.text_area("Məzmun", value=section_data['content'], height=300, key=f"content_{section_id}")
+                        
+                        cols = st.columns(3)
+                        with cols[0]:
+                            if st.button("💾 Saxla", key=f"save_{section_id}"):
+                                sections[section_id]['title'] = edited_title
+                                sections[section_id]['content'] = edited_content
+                                save_info_sections(sections)
+                                st.success("Dəyişikliklər yadda saxlanıldı!")
+                        with cols[1]:
+                            if st.button("🗑️ Sil", key=f"delete_{section_id}"):
+                                del sections[section_id]
+                                save_info_sections(sections)
+                                st.success("Bölmə silindi!")
+                                st.rerun()
+                        with cols[2]:
+                            st.caption(f"Yaradılma tarixi: {section_data['created_at']}")
+
+
+# ========================================================================================
+# MƏLUMATLAR VƏ QEYDLƏR
+with tab3:
+    st.markdown("## 📚 Ezamiyyət Qaydaları və Məlumatlar")
+    sections = load_info_sections()
+    
+    if not sections:
+        st.info("Hələ heç bir məlumat əlavə edilməyib")
+    else:
+        for section_id, section_data in sections.items():
+            with st.expander(f"📌 {section_data.get('title', 'Başlıqsız')}", expanded=True):
+                st.markdown(section_data.get('content', ''))
 
 
 
