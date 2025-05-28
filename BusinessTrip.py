@@ -18,99 +18,113 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# 2. GİRİŞ MƏNTİQİ
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+
+# Giriş üçün CSS
 st.markdown("""
 <style>
-    .auth-box {
+    .login-box {
         background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
         color: white;
         padding: 2.5rem;
         border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
         max-width: 500px;
         margin: 5rem auto;
+    }
+    .login-header {
         text-align: center;
-        border: 2px solid rgba(255,255,255,0.2);
-    }
-    .auth-header {
         margin-bottom: 2rem;
-        font-size: 1.8rem;
-        font-weight: 600;
     }
-    .auth-input {
-        background-color: rgba(255,255,255,0.15) !important;
-        color: white !important;
-        border: 1px solid rgba(255,255,255,0.3) !important;
-        border-radius: 12px !important;
-        padding: 14px 20px !important;
-        font-size: 16px !important;
-        margin: 15px 0;
-        width: 100%;
-        transition: all 0.3s;
+    .login-box .stTextInput {
+        width: 30%;
+        margin: 0 auto;
     }
-    .auth-input::placeholder {
-        color: rgba(255,255,255,0.7) !important;
+    .stTextInput input {
+        background-color: rgba(255,255,255,0.2)!important;
+        color: white!important;
+        border: 1px solid rgba(255,255,255,0.3)!important;
+        border-radius: 8px!important;
+        padding: 8px 12px!important;
+        font-size: 14px!important;
     }
-    .auth-input:focus {
-        background-color: rgba(255,255,255,0.25) !important;
-        border-color: rgba(255,255,255,0.5) !important;
-        box-shadow: 0 0 0 3px rgba(255,255,255,0.2);
-    }
-    .auth-button {
-        background: white !important;
-        color: #6366f1 !important;
-        border-radius: 12px !important;
-        padding: 14px 30px !important;
-        font-size: 16px !important;
-        font-weight: 600;
-        border: none !important;
-        margin-top: 1rem;
-        transition: all 0.3s;
-        width: 100%;
-    }
-    .auth-button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    .stTextInput input::placeholder {
+        color: rgba(255,255,255,0.7)!important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# 2. GİRİŞ MƏNTİQİ (YENİ DİZAYN)
-if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
-
 if not st.session_state.logged_in:
     with st.container():
-        st.markdown(
-            """
-            <div class="auth-box">
-                <div class="auth-header">
-                    <div style="font-size: 3rem; margin-bottom: 1rem;">🔐</div>
-                    <h2>Ezamiyyət İdarəetmə Sistemi</h2>
-                </div>
-                <div style="margin-bottom: 1.5rem; opacity: 0.8;">
-                    Xahiş edirik giriş kodunu daxil edin
-                </div>
-            """,
-            unsafe_allow_html=True
-        )
+        st.markdown('<div class="login-box"><div class="login-header"><h2>🔐 Sistemə Giriş</h2></div>', unsafe_allow_html=True)
         
-        access_code = st.text_input(
-            "Giriş kodu", 
-            type="password", 
-            label_visibility="collapsed", 
-            placeholder="Giriş kodunu daxil edin...",
-            key="login_input"
-        )
+        access_code = st.text_input("Giriş kodu", type="password", 
+                                  label_visibility="collapsed", 
+                                  placeholder="Giriş kodunu daxil edin...")
         
-        if st.button("🔓 Sistemə daxil ol", key="login_btn"):
-            if access_code == "admin":
-                st.session_state.logged_in = True
-                st.rerun()
-            else:
-                st.error("⚠️ Yanlış giriş kodu! Zəhmət olmasa yenidən cəhd edin")
-        
+        cols = st.columns([1,2,1])
+        with cols[1]:
+            if st.button("Daxil ol", use_container_width=True):
+                if access_code == "admin":
+                    st.session_state.logged_in = True
+                    st.rerun()
+                else:
+                    st.error("Yanlış giriş kodu!")
         st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
+
+# 3. ƏSAS TƏRTİBAT VƏ PROQRAM MƏNTİQİ
+st.markdown("""
+<style>
+    :root {
+        --primary-color: #6366f1;
+        --secondary-color: #8b5cf6;
+        --background-color: #ffffff;
+    }
+    
+    .main-header {
+        text-align: center;
+        padding: 2rem 1rem;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        margin: -1rem -1rem 2rem -1rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-radius: 0 0 20px 20px;
+    }
+    
+    .section-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white!important;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin: 1.5rem 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-left: none;
+    }
+    
+    .stButton>button {
+        border-radius: 8px!important;
+        padding: 0.5rem 1.5rem!important;
+        transition: all 0.3s ease!important;
+        border: 1px solid var(--primary-color)!important;
+        background: var(--secondary-color)!important;
+        color: white!important;
+    }
+    
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(99,102,241,0.3)!important;
+        background: var(--primary-color)!important;
+    }
+    
+    .dataframe {
+        border-radius: 12px!important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05)!important;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # ============================== SABİTLƏR ==============================
 DEPARTMENTS = [
@@ -992,32 +1006,20 @@ with tab1:
         
         # Sol Sütun
         with col1:
-            with st.container(border=True):
-                st.subheader("👤 Şəxsi Məlumatlar", divider="blue")
+            with st.expander("👤 Şəxsi Məlumatlar", expanded=True):
                 cols = st.columns(2)
                 with cols[0]:
-                    first_name = st.text_input("Ad", help="İşçinin adını daxil edin")
-                    father_name = st.text_input("Ata adı", help="İşçinin ata adını daxil edin")
+                    first_name = st.text_input("Ad")
+                    father_name = st.text_input("Ata adı")
                 with cols[1]:
-                    last_name = st.text_input("Soyad", help="İşçinin soyadını daxil edin")
-                    position = st.text_input("Vəzifə", help="İşçinin vəzifəsini daxil edin")
-    
-            with st.container(border=True):
-                st.subheader("🏢 Təşkilat Məlumatları", divider="blue")
-                department = st.selectbox(
-                    "Şöbə", 
-                    DEPARTMENTS,
-                    help="İşçinin işlədiyi şöbəni seçin"
-                )
-    
-            with st.expander("🧳 Ezamiyyət Detalları", expanded=True):
-                st.info("📌 Növbəti addım: Ezamiyyət növünü seçin")
-                trip_type = st.radio(
-                    "Ezamiyyət növü", 
-                    ["Ölkə daxili", "Ölkə xarici"],
-                    horizontal=True,
-                    help="Ezamiyyətin ölkə daxilində və ya xaricində olmasını seçin"
-                )
+                    last_name = st.text_input("Soyad")
+                    position = st.text_input("Vəzifə")
+
+            with st.expander("🏢 Təşkilat Məlumatları"):
+                department = st.selectbox("Şöbə", DEPARTMENTS)
+
+            with st.expander("🧳 Ezamiyyət Detalları"):
+                trip_type = st.radio("Növ", ["Ölkə daxili", "Ölkə xarici"])
                 
                 if trip_type == "Ölkə daxili":
                     # Session state-də səfərləri saxlamaq
@@ -1438,47 +1440,23 @@ with tab2:
     # Giriş edilməyibsə
     if not st.session_state.admin_logged:
         with st.container():
-            st.markdown(
-                """
-                <div class="auth-box">
-                    <div class="auth-header">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">🔒</div>
-                        <h2>Admin İdarəetmə Paneli</h2>
-                    </div>
-                    <div style="margin-bottom: 1.5rem; opacity: 0.8;">
-                        Xahiş edirik admin məlumatlarını daxil edin
-                    </div>
-                """,
-                unsafe_allow_html=True
-            )
+            st.markdown('<div class="login-box"><div class="login-header"><h2>🔐 Admin Girişi</h2></div>', unsafe_allow_html=True)
             
             cols = st.columns(2)
             with cols[0]:
-                admin_user = st.text_input(
-                    "İstifadəçi adı", 
-                    label_visibility="collapsed", 
-                    placeholder="İstifadəçi adı...",
-                    key="admin_user_input"
-                )
+                admin_user = st.text_input("İstifadəçi adı", key="admin_user")
             with cols[1]:
-                admin_pass = st.text_input(
-                    "Şifrə", 
-                    type="password", 
-                    label_visibility="collapsed", 
-                    placeholder="Şifrə...",
-                    key="admin_pass_input"
-                )
+                admin_pass = st.text_input("Şifrə", type="password", key="admin_pass")
             
-            if st.button("🔓 Admin panelinə daxil ol", key="admin_login_btn"):
+            if st.button("Giriş et", key="admin_login_btn"):
                 if admin_user == "admin" and admin_pass == "admin123":
                     st.session_state.admin_logged = True
                     st.rerun()
                 else:
-                    st.error("⚠️ Yanlış giriş məlumatları! Zəhmət olmasa yenidən cəhd edin")
+                    st.error("Yanlış giriş məlumatları!")
             
             st.markdown('</div>', unsafe_allow_html=True)
         st.stop()
-
 
     # Giriş edildikdə
     if st.session_state.admin_logged:
