@@ -1036,14 +1036,14 @@ with tab1:
                         
                         purpose = st.text_area("Səfər məqsədi")
 
+                        # MANUAL NƏQLİYYAT XƏRCİ
                         transport_cost = st.number_input(
-                            "Nəqliyyat xərci (AZN)", 
+                            "🚌 Nəqliyyat xərci (AZN)", 
                             min_value=0.0, 
                             value=0.0,
-                            step=1.0,
+                            step=10.0,
                             help="Nəqliyyat xərclərini manual daxil edin. Boş buraxılsa 0 qəbul ediləcək"
                         )
-
                         
                         submitted = st.form_submit_button("➕ Səfər Əlavə Et")
                         
