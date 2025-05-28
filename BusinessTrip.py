@@ -1065,7 +1065,7 @@ with tab1:
                                 'trip_nights': trip_nights,
                                 'ticket_price': ticket_price,
                                 'ticket_price': transport_cost
-                                'daily_allowance': daily_allowance
+                                # 'daily_allowance': daily_allowance
                             }
                             
                             st.session_state.domestic_trips.append(new_trip)
