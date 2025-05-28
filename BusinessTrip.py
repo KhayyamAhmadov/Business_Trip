@@ -22,6 +22,10 @@ st.set_page_config(
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
+# 2. GİRİŞ MƏNTİQİ
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+
 # Giriş üçün CSS
 st.markdown("""
 <style>
@@ -53,31 +57,40 @@ st.markdown("""
     .stTextInput input::placeholder {
         color: rgba(255,255,255,0.7)!important;
     }
-</style>
-""", unsafe_allow_html=True)
-
-if not st.session_state.logged_in:
-    with st.container():
-        st.markdown('<div class="login-box"><div class="login-header"><h2>🔐 Sistemə Giriş</h2></div>', unsafe_allow_html=True)
-        
-        access_code = st.text_input("Giriş kodu", type="password", 
-                                  label_visibility="collapsed", 
-                                  placeholder="Giriş kodunu daxil edin...")
-        
-        cols = st.columns([1,2,1])
-        with cols[1]:
-            if st.button("Daxil ol", use_container_width=True):
-                if access_code == "admin":
-                    st.session_state.logged_in = True
-                    st.rerun()
-                else:
-                    st.error("Yanlış giriş kodu!")
-        st.markdown('</div>', unsafe_allow_html=True)
-    st.stop()
-
-# 3. ƏSAS TƏRTİBAT VƏ PROQRAM MƏNTİQİ
-st.markdown("""
-<style>
+    
+    /* ================= INPUT STILLERI ================= */
+    .stTextInput input, .stNumberInput input, 
+    .stDateInput input, .stSelectbox select, 
+    .stTextArea textarea {
+        background-color: white !important;
+        color: black !important;
+        border: 1px solid #ccc !important;
+    }
+    
+    .stTextInput input::placeholder, 
+    .stNumberInput input::placeholder, 
+    .stTextArea textarea::placeholder {
+        color: #666 !important;
+    }
+    
+    .stTextInput input:focus, .stNumberInput input:focus, 
+    .stDateInput input:focus, .stSelectbox select:focus, 
+    .stTextArea textarea:focus {
+        border-color: #6366f1 !important;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+        outline: none !important;
+    }
+    
+    .stSelectbox div[data-baseweb="select"] > div {
+        background-color: white !important;
+        color: black !important;
+    }
+    
+    .stDateInput input {
+        color: black !important;
+    }
+    
+    /* ================= GENEL STILLER ================= */
     :root {
         --primary-color: #6366f1;
         --secondary-color: #8b5cf6;
@@ -125,6 +138,25 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+if not st.session_state.logged_in:
+    with st.container():
+        st.markdown('<div class="login-box"><div class="login-header"><h2>🔐 Sistemə Giriş</h2></div>', unsafe_allow_html=True)
+        
+        access_code = st.text_input("Giriş kodu", type="password", 
+                                  label_visibility="collapsed", 
+                                  placeholder="Giriş kodunu daxil edin...")
+        
+        cols = st.columns([1,2,1])
+        with cols[1]:
+            if st.button("Daxil ol", use_container_width=True):
+                if access_code == "admin":
+                    st.session_state.logged_in = True
+                    st.rerun()
+                else:
+                    st.error("Yanlış giriş kodu!")
+        st.markdown('</div>', unsafe_allow_html=True)
+    st.stop()
 
 # ============================== SABİTLƏR ==============================
 DEPARTMENTS = [
