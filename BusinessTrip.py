@@ -1019,18 +1019,28 @@ def get_currency_rates(date):
         return pd.DataFrame()
 
 
+
 MELUMATLAR_JSON = "melumatlar.json"
 def load_info_sections():
+    """JSON faylından məlumat sektiyalarını yükləyir"""
     try:
         with open(MELUMATLAR_JSON, 'r', encoding='utf-8') as f:
             return json.load(f)
+    except FileNotFoundError:
+        # Fayl mövcud deyilsə boş dict qaytarır
+        return {}
     except Exception as e:
         st.error(f"Məlumatlar yüklənərkən xəta: {str(e)}")
         return {}
 
 def save_info_sections(sections):
-    with open(MELUMATLAR_JSON, 'w', encoding='utf-8') as f:
-        json.dump(sections, f, ensure_ascii=False, indent=4)
+    """Məlumat sektiyalarını JSON faylına saxlayır"""
+    try:
+        with open(MELUMATLAR_JSON, 'w', encoding='utf-8') as f:
+            json.dump(sections, f, ensure_ascii=False, indent=4)
+    except Exception as e:
+        st.error(f"Məlumatlar saxlanılarkən xəta: {str(e)}")
+
 
 
 st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi</h1></div>', unsafe_allow_html=True)
@@ -2039,11 +2049,13 @@ with tab2:
                 st.warning("Seçilmiş tarix üçün məlumat tapılmadı!")   
 
 
-
+        #hdjsahdjsksa
         with tab_info:
             st.markdown("### Məlumat Sektiyalarının İdarə Edilməsi")
             sections = load_info_sections()
             
+            # Yeni bölmə əlavə etmə
+            st.markdown("#### Yeni Bölmə Əlavə Et")
             new_title = st.text_input("Yeni bölmə başlığı")
             new_content = st.text_area("Yeni bölmə məzmunu", height=200)
             
@@ -2051,36 +2063,67 @@ with tab2:
                 if new_title.strip() and new_content.strip():
                     section_id = f"section_{datetime.now().strftime('%Y%m%d%H%M%S')}"
                     sections[section_id] = {
-                        "title": new_title,
-                        "content": new_content,
+                        "title": new_title.strip(),
+                        "content": new_content.strip(),
                         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     }
                     save_info_sections(sections)
                     st.success("Yeni bölmə əlavə edildi!")
+                    st.rerun()  # Səhifəni yeniləyir
                 else:
                     st.error("Başlıq və məzmun tələb olunur")
             
-            st.markdown("### Mövcud Bölmələr")
-            for section_id, section_data in sections.items():
-                with st.expander(section_data['title'], expanded=False):
-                    edited_title = st.text_input("Başlıq", value=section_data['title'], key=f"title_{section_id}")
-                    edited_content = st.text_area("Məzmun", value=section_data['content'], height=300, key=f"content_{section_id}")
-                    
-                    cols = st.columns(3)
-                    with cols[0]:
-                        if st.button("💾 Saxla", key=f"save_{section_id}"):
-                            sections[section_id]['title'] = edited_title
-                            sections[section_id]['content'] = edited_content
-                            save_info_sections(sections)
-                            st.success("Dəyişikliklər yadda saxlanıldı!")
-                    with cols[1]:
-                        if st.button("🗑️ Sil", key=f"delete_{section_id}"):
-                            del sections[section_id]
-                            save_info_sections(sections)
-                            st.success("Bölmə silindi!")
-                            st.rerun()
-                    with cols[2]:
-                        st.caption(f"Yaradılma tarixi: {section_data['created_at']}")
+            # Mövcud bölmələrin redaktəsi
+            st.markdown("#### Mövcud Bölmələr")
+            if sections:
+                for section_id, section_data in sections.items():
+                    with st.expander(f"📝 {section_data.get('title', 'Başlıqsız')}", expanded=False):
+                        edited_title = st.text_input(
+                            "Başlıq", 
+                            value=section_data.get('title', ''), 
+                            key=f"title_{section_id}"
+                        )
+                        edited_content = st.text_area(
+                            "Məzmun", 
+                            value=section_data.get('content', ''), 
+                            height=300, 
+                            key=f"content_{section_id}"
+                        )
+                        
+                        cols = st.columns(3)
+                        with cols[0]:
+                            if st.button("💾 Saxla", key=f"save_{section_id}"):
+                                if edited_title.strip():
+                                    sections[section_id]['title'] = edited_title.strip()
+                                    sections[section_id]['content'] = edited_content.strip()
+                                    sections[section_id]['updated_at'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                    save_info_sections(sections)
+                                    st.success("Dəyişikliklər yadda saxlanıldı!")
+                                    st.rerun()
+                                else:
+                                    st.error("Başlıq boş ola bilməz")
+                        
+                        with cols[1]:
+                            if st.button("🗑️ Sil", key=f"delete_{section_id}"):
+                                # Təsdiq mexanizmi
+                                if f"confirm_delete_{section_id}" not in st.session_state:
+                                    st.session_state[f"confirm_delete_{section_id}"] = True
+                                    st.warning("⚠️ Silmək üçün yenidən basın!")
+                                else:
+                                    del sections[section_id]
+                                    save_info_sections(sections)
+                                    st.success("Bölmə silindi!")
+                                    # Təsdiq məlumatını təmizlə
+                                    if f"confirm_delete_{section_id}" in st.session_state:
+                                        del st.session_state[f"confirm_delete_{section_id}"]
+                                    st.rerun()
+                        
+                        with cols[2]:
+                            st.caption(f"📅 Yaradılma: {section_data.get('created_at', 'Bilinmir')}")
+                            if 'updated_at' in section_data:
+                                st.caption(f"🔄 Yenilənmə: {section_data['updated_at']}")
+            else:
+                st.info("Hələ heç bir bölmə əlavə edilməyib")
 
 
 # ========================================================================================
@@ -2092,9 +2135,29 @@ with tab3:
     if not sections:
         st.info("Hələ heç bir məlumat əlavə edilməyib")
     else:
-        for section_id, section_data in sections.items():
-            with st.expander(f"📌 {section_data.get('title', 'Başlıqsız')}", expanded=True):
-                st.markdown(section_data.get('content', ''))
+        # Axtarış funksiyası (opsional)
+        search_term = st.text_input("🔍 Məlumatda axtarış edin")
+        
+        # Məlumatları filter et
+        filtered_sections = sections
+        if search_term:
+            filtered_sections = {
+                k: v for k, v in sections.items() 
+                if search_term.lower() in v.get('title', '').lower() or 
+                   search_term.lower() in v.get('content', '').lower()
+            }
+        
+        # Məlumatları göstər
+        if filtered_sections:
+            for section_id, section_data in filtered_sections.items():
+                with st.expander(f"📌 {section_data.get('title', 'Başlıqsız')}", expanded=False):
+                    st.markdown(section_data.get('content', 'Məzmun yoxdur'))
+                    st.caption(f"📅 {section_data.get('created_at', 'Tarix bilinmir')}")
+        else:
+            if search_term:
+                st.warning("Axtarış kriteriyasına uyğun məlumat tapılmadı")
+            else:
+                st.info("Məlumat yoxdur")
 
 
 
