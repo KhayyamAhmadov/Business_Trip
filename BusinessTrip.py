@@ -8,7 +8,6 @@ import xml.etree.ElementTree as ET
 import os
 from bs4 import BeautifulSoup
 import json
-import time
 
 
 # 1. İLK STREAMLIT ƏMRİ OLMALIDIR!
@@ -19,359 +18,238 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. GİRİŞ MƏNTİQİ
-if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
-
-# Streamlit elementlərini gizlətmək
-hide_streamlit_style = """
+st.markdown("""
 <style>
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-.stDeployButton {display: none;}
-header {visibility: hidden;}
-.stApp > header {display: none;}
-</style>
-"""
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
-if not st.session_state.logged_in:
-    # Giriş səhifəsi üçün tam CSS
-    st.markdown("""
-    <style>
-    /* Ana container */
-    .stApp {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%) !important;
-        min-height: 100vh;
+    :root {
+        --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        --secondary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        --card-bg: rgba(255, 255, 255, 0.95);
+        --text-primary: #1e293b;
+        --text-secondary: #475569;
+        --border-radius: 12px;
+        --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     }
     
-    /* Giriş kartı */
-    .login-wrapper {
+    [data-testid="stAppViewContainer"] {
+        background: linear-gradient(135deg, #f0f4ff 0%, #fdf2ff 100%);
+        background-attachment: fixed;
+    }
+    
+    .st-emotion-cache-1v0mbdj {
+        border-radius: var(--border-radius) !important;
+    }
+    
+    .stButton>button {
+        border-radius: 8px !important;
+        padding: 0.5rem 1.5rem !important;
+        background: var(--primary-gradient) !important;
+        color: white !important;
+        border: none !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow) !important;
+        opacity: 0.9;
+    }
+    
+    .stTextInput input, .stTextArea textarea, .stSelectbox select, .stDateInput input {
+        background-color: #ffffff !important;
+        color: var(--text-primary) !important;
+        border: 1px solid #d1d5db !important;
+        border-radius: 8px !important;
+        padding: 10px 12px !important;
+        font-size: 14px !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    
+    .stTextInput input:focus, .stTextArea textarea:focus, 
+    .stSelectbox select:focus, .stDateInput input:focus {
+        border-color: #818cf8 !important;
+        box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2) !important;
+    }
+    
+    .stTextInput input::placeholder, .stTextArea textarea::placeholder {
+        color: #94a3b8 !important;
+    }
+    
+    .st-expander {
+        background: var(--card-bg) !important;
+        border-radius: var(--border-radius) !important;
+        box-shadow: var(--shadow) !important;
+        border: none !important;
+    }
+    
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background: #e2e8f0 !important;
+        border-radius: 8px 8px 0 0 !important;
+        padding: 10px 20px !important;
+        margin: 0 !important;
+        transition: all 0.3s ease;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: var(--card-bg) !important;
+        font-weight: 600;
+        box-shadow: 0 -3px 0 #6366f1 inset;
+    }
+    
+    .stDataFrame {
+        border-radius: var(--border-radius) !important;
+        box-shadow: var(--shadow) !important;
+    }
+    
+    .main-header {
+        text-align: center;
+        padding: 2.5rem 1rem;
+        background: var(--secondary-gradient);
+        color: white;
+        margin: -1rem -1rem 2.5rem -1rem;
+        border-radius: 0 0 25px 25px;
+        box-shadow: 0 6px 15px rgba(99, 102, 241, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .main-header::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #ec4899, #8b5cf6, #6366f1);
+    }
+    
+    .main-header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .section-header {
+        background: var(--primary-gradient);
+        color: white;
+        padding: 1.2rem 1.5rem;
+        border-radius: var(--border-radius);
+        margin: 1.8rem 0;
+        box-shadow: var(--shadow);
+        font-size: 1.2rem;
+        font-weight: 600;
         display: flex;
-        justify-content: center;
         align-items: center;
-        min-height: 100vh;
-        padding: 20px;
+        gap: 10px;
     }
     
     .login-box {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(20px);
-        border-radius: 25px;
-        padding: 3rem;
-        box-shadow: 
-            0 25px 50px rgba(0, 0, 0, 0.25),
-            0 0 0 1px rgba(255, 255, 255, 0.3);
-        max-width: 450px;
-        width: 100%;
+        background: var(--secondary-gradient);
+        color: white;
+        padding: 2.5rem;
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        max-width: 500px;
+        margin: 5rem auto;
         position: relative;
-        border: 2px solid rgba(255, 255, 255, 0.2);
-        animation: slideUp 0.8s ease-out;
+        overflow: hidden;
     }
     
-    @keyframes slideUp {
-        from {
-            opacity: 0;
-            transform: translateY(50px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    /* Rəngli üst xətt */
     .login-box::before {
-        content: '';
+        content: "";
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
         height: 5px;
-        background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
-        background-size: 300% 100%;
-        animation: rainbow 3s ease infinite;
-        border-radius: 25px 25px 0 0;
+        background: linear-gradient(90deg, #ec4899, #8b5cf6, #6366f1);
     }
     
-    @keyframes rainbow {
-        0%, 100% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-    }
-    
-    /* Başlıq */
     .login-header {
         text-align: center;
-        margin-bottom: 2.5rem;
+        margin-bottom: 2rem;
+        z-index: 2;
+        position: relative;
     }
     
-    .login-icon {
-        font-size: 4rem;
-        margin-bottom: 1rem;
-        display: block;
-        background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    .metric-card {
+        background: var(--card-bg);
+        border-radius: var(--border-radius);
+        padding: 1.2rem;
+        box-shadow: var(--shadow);
+        border-left: 4px solid #6366f1;
     }
     
-    .login-title {
-        font-size: 2.2rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin: 0.5rem 0;
-        font-family: 'Arial', sans-serif;
-    }
-    
-    .login-subtitle {
-        color: #6b7280;
-        font-size: 1rem;
-        margin: 0;
-        font-weight: 400;
-    }
-    
-    /* Input sahələri */
-    .stTextInput > div > div > input {
-        background: rgba(255, 255, 255, 0.9) !important;
-        border: 2px solid rgba(102, 126, 234, 0.2) !important;
-        border-radius: 15px !important;
-        padding: 18px 24px !important;
-        font-size: 16px !important;
-        font-weight: 500 !important;
-        color: #374151 !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08) !important;
-    }
-    
-    .stTextInput > div > div > input:focus {
-        border-color: #667eea !important;
-        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15), 0 8px 25px rgba(0, 0, 0, 0.1) !important;
-        transform: translateY(-2px) !important;
-        background: rgba(255, 255, 255, 1) !important;
-    }
-    
-    .stTextInput > div > div > input::placeholder {
-        color: #9ca3af !important;
-        font-weight: 400 !important;
-    }
-    
-    /* Düymələr */
-    .stButton > button {
-        width: 100% !important;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 15px !important;
-        padding: 18px 32px !important;
-        font-size: 16px !important;
-        font-weight: 700 !important;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4) !important;
-        text-transform: uppercase !important;
-        letter-spacing: 1px !important;
-        margin-top: 1.5rem !important;
-    }
-    
-    .stButton > button:hover {
-        transform: translateY(-4px) scale(1.02) !important;
-        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6) !important;
-        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
-    }
-    
-    .stButton > button:active {
-        transform: translateY(-2px) scale(0.98) !important;
-    }
-    
-    /* Xətalar */
-    .stAlert {
-        border-radius: 12px !important;
-        margin-top: 1rem !important;
-        border: none !important;
-        background: linear-gradient(135deg, #ff6b6b, #ee5a52) !important;
-        color: white !important;
-        box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3) !important;
-    }
-    
-    /* Uğur mesajı */
-    .stSuccess {
-        border-radius: 12px !important;
-        background: linear-gradient(135deg, #96ceb4, #4ecdc4) !important;
-        color: white !important;
-        border: none !important;
-        box-shadow: 0 8px 25px rgba(150, 206, 180, 0.3) !important;
-    }
-    
-    /* Xüsusiyyətlər */
-    .features {
-        margin-top: 2rem;
-        padding-top: 2rem;
-        border-top: 2px solid rgba(107, 114, 128, 0.1);
-    }
-    
-    .feature {
-        display: flex;
-        align-items: center;
-        margin-bottom: 1rem;
-        color: #4a5568;
-        font-size: 0.95rem;
-        font-weight: 500;
-    }
-    
-    .feature-icon {
-        margin-right: 1rem;
-        font-size: 1.3rem;
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    
-    /* Mobil uyğunlaşma */
-    @media (max-width: 768px) {
-        .login-box {
-            margin: 1rem;
-            padding: 2rem 1.5rem;
+    /* Dark mode adjustments */
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --card-bg: rgba(30, 41, 59, 0.95);
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
         }
         
-        .login-title {
-            font-size: 1.8rem;
+        [data-testid="stAppViewContainer"] {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         }
         
-        .login-icon {
-            font-size: 3rem;
+        .stTextInput input, .stTextArea textarea, 
+        .stSelectbox select, .stDateInput input {
+            background-color: #1e293b !important;
+            border-color: #334155 !important;
+            color: var(--text-primary) !important;
         }
     }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # HTML struktur
-    st.markdown("""
-    <div class="login-wrapper">
-        <div class="login-box">
-            <div class="login-header">
-                <div class="login-icon">🚀</div>
-                <h1 class="login-title">Ezamiyyət İdarəetmə</h1>
-                <p class="login-subtitle">Sistemə daxil olmaq üçün giriş kodunuzu daxil edin</p>
-            </div>
-    """, unsafe_allow_html=True)
-    
-    # Giriş inputu
-    access_code = st.text_input(
-        "Giriş kodu", 
-        type="password", 
-        label_visibility="collapsed", 
-        placeholder="🔐 Giriş kodunuzu daxil edin...",
-        key="access_code_input"
-    )
-    
-    # Giriş düyməsi
-    if st.button("🚀 Sistemə Daxil Ol", key="login_button", type="primary"):
-        if access_code == "admin":
-            st.session_state.logged_in = True
-            st.success("✅ Uğurla daxil oldunuz! Sistem yüklənir...")
-            time.sleep(1.5)
-            st.rerun()
-        else:
-            st.error("❌ Yanlış giriş kodu! Zəhmət olmasa yenidən cəhd edin.")
-    
-    # Xüsusiyyətlər
-    st.markdown("""
-            <div class="features">
-                <div class="feature">
-                    <span class="feature-icon">✈️</span>
-                    <span>Ezamiyyət planlaması və izləmə</span>
-                </div>
-                <div class="feature">
-                    <span class="feature-icon">📊</span>
-                    <span>Xərc hesabatları və detallı analitika</span>
-                </div>
-                <div class="feature">
-                    <span class="feature-icon">🔒</span>
-                    <span>Yüksək təhlükəsizlik və məlumat mühafizəsi</span>
-                </div>
-                <div class="feature">
-                    <span class="feature-icon">⚡</span>
-                    <span>Sürətli proseslər və asan istifadə</span>
-                </div>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.stop()
-
-# 3. ƏSAS SISTEM (Login olduqdan sonra)
-# Ana sistem üçün CSS
-st.markdown("""
-<style>
-.main-container {
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    min-height: 100vh;
-    padding: 2rem;
-}
-
-.header-section {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 3rem 2rem;
-    border-radius: 25px;
-    margin-bottom: 2rem;
-    box-shadow: 0 15px 35px rgba(102, 126, 234, 0.3);
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-}
-
-.header-section::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
-    background-size: 200% 100%;
-    animation: headerShift 4s ease infinite;
-}
-
-@keyframes headerShift {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-}
-
-.logout-section {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1000;
-}
-
-.stButton[data-testid="baseButton-secondary"] > button {
-    background: linear-gradient(135deg, #ff6b6b, #ee5a52) !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 25px !important;
-    padding: 12px 24px !important;
-    font-weight: 600 !important;
-    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4) !important;
-    transition: all 0.3s ease !important;
-}
-
-.stButton[data-testid="baseButton-secondary"] > button:hover {
-    transform: translateY(-3px) !important;
-    box-shadow: 0 12px 30px rgba(255, 107, 107, 0.5) !important;
-}
 </style>
 """, unsafe_allow_html=True)
 
-# Logout düyməsi
-with st.container():
-    st.markdown('<div class="logout-section">', unsafe_allow_html=True)
-    if st.button("🚪 Çıxış", key="logout_btn", type="secondary"):
-        st.session_state.logged_in = False
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+# ============================== LOGIN SECTION UPDATE ==============================
+if not st.session_state.logged_in:
+    with st.container():
+        st.markdown("""
+        <div class="login-box">
+            <div class="login-header">
+                <h2 style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                        <polyline points="10 17 15 12 10 7"></polyline>
+                        <line x1="15" y1="12" x2="3" y2="12"></line>
+                    </svg>
+                    Sistemə Giriş
+                </h2>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        access_code = st.text_input("Giriş kodu", type="password", 
+                                  label_visibility="collapsed", 
+                                  placeholder="Giriş kodunu daxil edin...")
+        
+        cols = st.columns([1,2,1])
+        with cols[1]:
+            if st.button("Daxil ol", use_container_width=True, key="login_btn"):
+                if access_code == "admin":
+                    st.session_state.logged_in = True
+                    st.rerun()
+                else:
+                    st.error("Yanlış giriş kodu!")
+        st.markdown('</div>', unsafe_allow_html=True)
+    st.stop()
+
+# ============================== MAIN HEADER UPDATE ==============================
+st.markdown("""
+<div class="main-header">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 10px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+        </svg>
+        <h1>Ezamiyyət İdarəetmə Sistemi</h1>
+    </div>
+    <p style="opacity: 0.9; max-width: 700px; margin: 0 auto;">Səfər xərclərinin səmərəli idarə edilməsi üçün tam avtomatlaşdırılmış həll</p>
+</div>
+""", unsafe_allow_html=True)
 
 # ============================== SABİTLƏR ==============================
 DEPARTMENTS = [
@@ -1251,22 +1129,26 @@ with tab1:
     with st.container():
         col1, col2 = st.columns([2, 1], gap="large")
         
-        # Sol Sütun
         with col1:
             with st.expander("👤 Şəxsi Məlumatlar", expanded=True):
+                st.markdown('<div class="section-header">👤 Şəxsi Məlumatlar</div>', unsafe_allow_html=True)
+                
                 cols = st.columns(2)
                 with cols[0]:
-                    first_name = st.text_input("Ad")
-                    father_name = st.text_input("Ata adı")
+                    first_name = st.text_input("Ad", key="first_name")
+                    father_name = st.text_input("Ata adı", key="father_name")
                 with cols[1]:
-                    last_name = st.text_input("Soyad")
-                    position = st.text_input("Vəzifə")
+                    last_name = st.text_input("Soyad", key="last_name")
+                    position = st.text_input("Vəzifə", key="position")
 
             with st.expander("🏢 Təşkilat Məlumatları"):
-                department = st.selectbox("Şöbə", DEPARTMENTS)
+                st.markdown('<div class="section-header">🏢 Təşkilat Məlumatları</div>', unsafe_allow_html=True)
+                department = st.selectbox("Şöbə", DEPARTMENTS, key="department")
 
             with st.expander("🧳 Ezamiyyət Detalları"):
-                trip_type = st.radio("Növ", ["Ölkə daxili", "Ölkə xarici"])
+                st.markdown('<div class="section-header">🧳 Ezamiyyət Detalları</div>', unsafe_allow_html=True)
+                trip_type = st.radio("Növ", ["Ölkə daxili", "Ölkə xarici"], horizontal=True, key="trip_type")
+
                 
                 if trip_type == "Ölkə daxili":
                     # Session state-də səfərləri saxlamaq
@@ -1678,6 +1560,29 @@ with tab1:
                         st.error("Zəhmət olmasa bütün məcburi sahələri doldurun!")
 
 
+                    #  vizual elementlər
+                    st.markdown("---")
+                    if trip_type == "Ölkə daxili" and st.session_state.domestic_trips:
+                        st.markdown("### 📊 Xərc Xülasəsi")
+                        cols = st.columns(2)
+                        cols[0].metric("Ümumi Günlər", f"{total_days}", "gün")
+                        cols[1].metric("Ümumi Xərc", f"{total_all_trips:.2f} ₼")
+                        
+                        # Pasta qrafiki
+                        cost_data = {
+                            "Nəqliyyat": total_ticket_cost,
+                            "Mehmanxana": total_hotel_cost,
+                            "Gündəlik Xərclər": total_daily_expenses
+                        }
+                        fig = px.pie(
+                            values=list(cost_data.values()), 
+                            names=list(cost_data.keys()),
+                            title="Xərclərin Dağılımı",
+                            color_discrete_sequence=px.colors.qualitative.Pastel
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+
+
 # ============================== ADMIN PANELİ ==============================
 with tab2:
     # Admin giriş statusunun yoxlanılması
@@ -1707,7 +1612,18 @@ with tab2:
 
     # Giriş edildikdə
     if st.session_state.admin_logged:
-        st.markdown('<div class="main-header"><h1>⚙️ Admin İdarəetmə Paneli</h1></div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="main-header" style="padding: 1.5rem 1rem; border-radius: 0 0 20px 20px;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 15px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+                <h1>Admin İdarəetmə Paneli</h1>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         
         # Çıxış düyməsi
         if st.button("🚪 Çıxış", key="logout_btn"):
