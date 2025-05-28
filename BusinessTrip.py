@@ -1026,6 +1026,7 @@ st.markdown('<div class="main-header"><h1>✈️ Ezamiyyət İdarəetmə Sistemi
 tab1, tab2 = st.tabs(["📋 Yeni Ezamiyyət", "🔐 Admin Paneli"])
 
 # YENİ EZAMİYYƏT HISSESI
+# YENİ EZAMİYYƏT HISSESI
 with tab1:
     with st.container():
         col1, col2 = st.columns([2, 1], gap="large")
@@ -1048,41 +1049,37 @@ with tab1:
                 trip_type = st.radio("Növ", ["Ölkə daxili", "Ölkə xarici"])
                 
                 if trip_type == "Ölkə daxili":
-                    # Çoxlu səfər seçimi
-                    st.subheader("🗂️ Səfər Məlumatları")
+                    # Session state-də səfərləri saxlamaq
+                    if 'domestic_trips' not in st.session_state:
+                        st.session_state.domestic_trips = []
                     
-                    # Səfər sayını seç
-                    num_trips = st.number_input("Səfər sayı", min_value=1, max_value=10, value=1)
+                    st.subheader("🗂️ Daxili Səfərlər")
                     
-                    # Hər səfər üçün məlumatlar
-                    trips_data = []
-                    for i in range(num_trips):
-                        st.markdown(f"### Səfər {i+1}")
+                    # Yeni səfər əlavə etmək
+                    with st.form("add_domestic_trip"):
+                        st.markdown("### ➕ Yeni Səfər Əlavə Et")
                         
-                        cols = st.columns(4)
+                        cols = st.columns(2)
                         with cols[0]:
-                            from_city = st.selectbox(f"Haradan ({i+1})", CITIES, 
-                                                   index=CITIES.index("Bakı"), key=f"from_{i}")
+                            from_city = st.selectbox("Haradan", CITIES, index=CITIES.index("Bakı"))
+                            start_date = st.date_input("Başlanğıc tarixi")
                         with cols[1]:
-                            to_city = st.selectbox(f"Haraya ({i+1})", 
-                                                 [c for c in CITIES if c != from_city], key=f"to_{i}")
-                        with cols[2]:
-                            start_date = st.date_input(f"Başlanğıc ({i+1})", key=f"start_{i}")
-                        with cols[3]:
-                            end_date = st.date_input(f"Bitmə ({i+1})", key=f"end_{i}")
+                            to_city = st.selectbox("Haraya", [c for c in CITIES if c != from_city])
+                            end_date = st.date_input("Bitmə tarixi")
                         
-                        # Səfər məqsədi
-                        purpose = st.text_area(f"Səfər {i+1} məqsədi", key=f"purpose_{i}")
+                        purpose = st.text_area("Səfər məqsədi")
                         
-                        # Səfər məlumatlarını saxla
-                        if start_date and end_date and end_date >= start_date:
+                        submitted = st.form_submit_button("➕ Səfər Əlavə Et")
+                        
+                        if submitted and start_date and end_date and end_date >= start_date:
                             trip_days = (end_date - start_date).days + 1
                             trip_nights = trip_days - 1 if trip_days > 1 else 0
                             ticket_price = calculate_domestic_amount(from_city, to_city)
                             domestic_allowances = load_domestic_allowances()
                             daily_allowance = domestic_allowances.get(to_city, domestic_allowances['Digər'])
                             
-                            trips_data.append({
+                            new_trip = {
+                                'id': len(st.session_state.domestic_trips) + 1,
                                 'from_city': from_city,
                                 'to_city': to_city,
                                 'start_date': start_date,
@@ -1092,9 +1089,40 @@ with tab1:
                                 'trip_nights': trip_nights,
                                 'ticket_price': ticket_price,
                                 'daily_allowance': daily_allowance
-                            })
+                            }
+                            
+                            st.session_state.domestic_trips.append(new_trip)
+                            st.success(f"Səfər əlavə edildi: {from_city} → {to_city}")
+                            st.rerun()
+                    
+                    # Mövcud səfərləri göstər
+                    if st.session_state.domestic_trips:
+                        st.markdown("### 📋 Əlavə Edilmiş Səfərlər")
                         
-                        st.divider()
+                        for i, trip in enumerate(st.session_state.domestic_trips):
+                            with st.expander(f"Səfər {trip['id']}: {trip['from_city']} → {trip['to_city']}", expanded=False):
+                                col_a, col_b, col_c = st.columns([2, 2, 1])
+                                
+                                with col_a:
+                                    st.write(f"**Tarix:** {trip['start_date']} - {trip['end_date']}")
+                                    st.write(f"**Müddət:** {trip['trip_days']} gün")
+                                
+                                with col_b:
+                                    st.write(f"**Günlük müavinət:** {trip['daily_allowance']:.2f} AZN")
+                                    st.write(f"**Nəqliyyat:** {trip['ticket_price']:.2f} AZN")
+                                
+                                with col_c:
+                                    if st.button("🗑️", key=f"delete_{i}", help="Səfəri sil"):
+                                        st.session_state.domestic_trips.pop(i)
+                                        st.rerun()
+                                
+                                if trip['purpose']:
+                                    st.write(f"**Məqsəd:** {trip['purpose']}")
+                        
+                        # Bütün səfərləri təmizlə
+                        if st.button("🗑️ Bütün Səfərləri Təmizlə", type="secondary"):
+                            st.session_state.domestic_trips = []
+                            st.rerun()
                 
                 else:  # Ölkə xarici ezamiyyət
                     #  Dinamik yükləmə
@@ -1161,70 +1189,68 @@ with tab1:
             with st.container():
                 st.markdown('<div class="section-header">💰 Hesablama</div>', unsafe_allow_html=True)
                 
-                if trip_type == "Ölkə daxili" and trips_data:
-                    # Ümumi hesablamalar
-                    total_all_trips = 0
-                    total_hotel_cost = 0
-                    total_daily_expenses = 0
-                    total_ticket_cost = 0
-                    total_days = 0
-                    
-                    # Hər səfər üçün detallı məlumatlar
-                    for idx, trip in enumerate(trips_data):
-                        st.markdown(f"### 🚀 Səfər {idx+1}")
+                if trip_type == "Ölkə daxili":
+                    if hasattr(st.session_state, 'domestic_trips') and st.session_state.domestic_trips:
+                        # Ümumi hesablamalar
+                        total_all_trips = 0
+                        total_hotel_cost = 0
+                        total_daily_expenses = 0
+                        total_ticket_cost = 0
+                        total_days = 0
                         
-                        # Hər səfər üçün hesablamalar
-                        hotel_cost = 0.7 * trip['daily_allowance'] * trip['trip_nights']
-                        daily_expenses = 0.3 * trip['daily_allowance'] * trip['trip_days']
-                        trip_total = hotel_cost + daily_expenses + trip['ticket_price']
+                        st.markdown("### 📊 Səfər Təfərrüatları")
                         
-                        # Ümumi məbləğlərə əlavə et
-                        total_all_trips += trip_total
-                        total_hotel_cost += hotel_cost
-                        total_daily_expenses += daily_expenses
-                        total_ticket_cost += trip['ticket_price']
-                        total_days += trip['trip_days']
+                        # Hər səfər üçün detallı məlumatlar
+                        for trip in st.session_state.domestic_trips:
+                            # Hər səfər üçün hesablamalar
+                            hotel_cost = 0.7 * trip['daily_allowance'] * trip['trip_nights']
+                            daily_expenses = 0.3 * trip['daily_allowance'] * trip['trip_days']
+                            trip_total = hotel_cost + daily_expenses + trip['ticket_price']
+                            
+                            # Ümumi məbləğlərə əlavə et
+                            total_all_trips += trip_total
+                            total_hotel_cost += hotel_cost
+                            total_daily_expenses += daily_expenses
+                            total_ticket_cost += trip['ticket_price']
+                            total_days += trip['trip_days']
+                            
+                            # Səfər kartı
+                            with st.container():
+                                st.markdown(f"**🚀 Səfər {trip['id']}:** {trip['from_city']} → {trip['to_city']}")
+                                
+                                cols_trip = st.columns(2)
+                                with cols_trip[0]:
+                                    st.metric("📅 Günlük", f"{trip['daily_allowance']:.0f} ₼")
+                                    st.metric("🚌 Nəqliyyat", f"{trip['ticket_price']:.0f} ₼")
+                                with cols_trip[1]:
+                                    st.metric("🏨 Otel", f"{hotel_cost:.0f} ₼")
+                                    st.metric("🍽️ Gündəlik", f"{daily_expenses:.0f} ₼")
+                                
+                                st.metric("💳 Cəmi", f"{trip_total:.2f} ₼", delta=f"{trip['trip_days']} gün")
+                                st.divider()
                         
-                        # Səfər məlumatları
-                        st.metric("📍 Marşrut", f"{trip['from_city']} → {trip['to_city']}")
+                        # Ümumi məlumatlar
+                        st.markdown("### 📈 Ümumi Nəticə")
                         
-                        cols_trip = st.columns(2)
-                        with cols_trip[0]:
-                            st.metric("📅 Günlük müavinət", f"{trip['daily_allowance']:.2f} AZN")
-                            st.metric("🚌 Nəqliyyat", f"{trip['ticket_price']:.2f} AZN")
-                        with cols_trip[1]:
-                            st.metric("🏨 Mehmanxana", f"{hotel_cost:.2f} AZN")
-                            st.metric("🍽️ Gündəlik", f"{daily_expenses:.2f} AZN")
-                        
-                        st.metric("⏳ Müddət", f"{trip['trip_days']} gün")
-                        st.metric("💳 Səfər məbləği", f"{trip_total:.2f} AZN")
-                        
-                        # Məqsəd
-                        if trip['purpose']:
-                            st.caption(f"📝 Məqsəd: {trip['purpose']}")
-                        
-                        st.divider()
-                    
-                    # Ümumi məlumatlar
-                    st.markdown("### 📊 Ümumi Məlumatlar")
-                    
-                    cols_summary = st.columns(2)
-                    with cols_summary[0]:
-                        st.metric("🔢 Ümumi səfər sayı", f"{len(trips_data)}")
+                        st.metric("🔢 Səfər sayı", f"{len(st.session_state.domestic_trips)}")
                         st.metric("📅 Ümumi günlər", f"{total_days}")
-                        st.metric("🚌 Ümumi nəqliyyat", f"{total_ticket_cost:.2f} AZN")
-                    with cols_summary[1]:
-                        st.metric("🏨 Ümumi mehmanxana", f"{total_hotel_cost:.2f} AZN")
-                        st.metric("🍽️ Ümumi gündəlik", f"{total_daily_expenses:.2f} AZN")
-                    
-                    # Ən böyük məbləğ
-                    st.metric("💰 ÜMUMI MƏBLƏĞ", f"{total_all_trips:.2f} AZN", 
-                             help="Bütün səfərlərin ümumi məbləği")
-                    
-                    # Statistika
-                    if len(trips_data) > 1:
-                        avg_per_trip = total_all_trips / len(trips_data)
-                        st.info(f"📈 Orta səfər məbləği: {avg_per_trip:.2f} AZN")
+                        
+                        cols_summary = st.columns(2)
+                        with cols_summary[0]:
+                            st.metric("🚌", f"{total_ticket_cost:.0f} ₼")
+                            st.metric("🏨", f"{total_hotel_cost:.0f} ₼")
+                        with cols_summary[1]:
+                            st.metric("🍽️", f"{total_daily_expenses:.0f} ₼")
+                        
+                        # Ən böyük məbləğ
+                        st.metric("💰 ÜMUMI MƏBLƏĞ", f"{total_all_trips:.2f} ₼")
+                        
+                        # Statistika
+                        if len(st.session_state.domestic_trips) > 1:
+                            avg_per_trip = total_all_trips / len(st.session_state.domestic_trips)
+                            st.info(f"📊 Orta səfər: {avg_per_trip:.0f} ₼")
+                    else:
+                        st.info("👆 Sol tərəfdən səfər əlavə edin")
                 
                 elif trip_type == "Ölkə xarici" and start_date and end_date and end_date >= start_date:
                     trip_days = (end_date - start_date).days + 1
@@ -1338,9 +1364,9 @@ with tab1:
                 # Yadda saxlama düyməsi
                 if st.button("✅ Yadda Saxla", use_container_width=True):
                     if all([first_name, last_name]):
-                        if trip_type == "Ölkə daxili" and trips_data:
+                        if trip_type == "Ölkə daxili" and hasattr(st.session_state, 'domestic_trips') and st.session_state.domestic_trips:
                             # Çoxlu səfər üçün yadda saxlama
-                            for idx, trip in enumerate(trips_data):
+                            for trip in st.session_state.domestic_trips:
                                 # Hər səfər üçün hesablamalar
                                 hotel_cost = 0.7 * trip['daily_allowance'] * trip['trip_nights']
                                 daily_expenses = 0.3 * trip['daily_allowance'] * trip['trip_days']
@@ -1354,7 +1380,7 @@ with tab1:
                                     "Vəzifə": position,
                                     "Şöbə": department,
                                     "Ezamiyyət növü": trip_type,
-                                    "Səfər nömrəsi": f"{idx+1}/{len(trips_data)}",
+                                    "Səfər nömrəsi": f"{trip['id']}/{len(st.session_state.domestic_trips)}",
                                     "Ödəniş rejimi": "Tətbiq edilmir",
                                     "Qonaqlama növü": "Tətbiq edilmir",
                                     "Marşrut": f"{trip['from_city']} → {trip['to_city']}",
@@ -1376,7 +1402,9 @@ with tab1:
                                 
                                 save_trip_data(trip_data)
                             
-                            st.success(f"{len(trips_data)} səfər məlumatları yadda saxlandı!")
+                            st.success(f"{len(st.session_state.domestic_trips)} səfər məlumatları yadda saxlandı!")
+                            # Səfərləri təmizlə
+                            st.session_state.domestic_trips = []
                             st.rerun()
                             
                         elif trip_type == "Ölkə xarici" and start_date and end_date:
@@ -1415,6 +1443,8 @@ with tab1:
                             if save_trip_data(trip_data):
                                 st.success("Məlumatlar yadda saxlandı!")
                                 st.rerun()
+                        else:
+                            st.error("Zəhmət olmasa səfər əlavə edin!")
                     else:
                         st.error("Zəhmət olmasa bütün məcburi sahələri doldurun!")
 
