@@ -10,128 +10,70 @@ from bs4 import BeautifulSoup
 import json
 
 
-# 2. GİRİŞ MƏNTİQİ - YENİ DİZAYN
+# 1. İLK STREAMLIT ƏMRİ OLMALIDIR!
+st.set_page_config(
+    page_title="Ezamiyyət İdarəetmə Sistemi",
+    page_icon="✈️",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# 2. GİRİŞ MƏNTİQİ
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
-# Giriş üçün YENİ CSS
+# Giriş üçün CSS
 st.markdown("""
 <style>
-    .login-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-    }
-    
-    .login-card {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    .login-box {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
         padding: 2.5rem;
-        width: 100%;
-        max-width: 420px;
-        border: 1px solid #e0e0e0;
+        border-radius: 15px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        max-width: 500px;
+        margin: 5rem auto;
     }
-    
     .login-header {
         text-align: center;
         margin-bottom: 2rem;
     }
-    
-    .login-header h2 {
-        color: #4f46e5;
-        font-weight: 700;
-        font-size: 1.8rem;
+    .login-box .stTextInput {
+        width: 30%;
+        margin: 0 auto;
     }
-    
-    .login-icon {
-        font-size: 2.5rem;
-        margin-bottom: 1rem;
-        color: #4f46e5;
-    }
-    
     .stTextInput input {
-        border: 2px solid #e2e8f0 !important;
-        border-radius: 10px !important;
-        padding: 12px 15px !important;
-        font-size: 16px !important;
-        transition: all 0.3s ease !important;
+        background-color: rgba(255,255,255,0.2)!important;
+        color: white!important;
+        border: 1px solid rgba(255,255,255,0.3)!important;
+        border-radius: 8px!important;
+        padding: 8px 12px!important;
+        font-size: 14px!important;
     }
-    
-    .stTextInput input:focus {
-        border-color: #4f46e5 !important;
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2) !important;
-        outline: none !important;
-    }
-    
-    .stTextInput label {
-        font-weight: 600 !important;
-        color: #4a5568 !important;
-        margin-bottom: 8px !important;
-        display: block !important;
-    }
-    
-    .login-btn {
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
-        border: none !important;
-        border-radius: 10px !important;
-        padding: 12px 20px !important;
-        font-size: 16px !important;
-        font-weight: 600 !important;
-        color: white !important;
-        width: 100% !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0 4px 6px rgba(79, 70, 229, 0.3) !important;
-    }
-    
-    .login-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 10px rgba(79, 70, 229, 0.4) !important;
-    }
-    
-    .login-footer {
-        text-align: center;
-        margin-top: 1.5rem;
-        color: #718096;
-        font-size: 0.9rem;
+    .stTextInput input::placeholder {
+        color: rgba(255,255,255,0.7)!important;
     }
 </style>
 """, unsafe_allow_html=True)
 
 if not st.session_state.logged_in:
-    # YENİ GİRİŞ KARTI
-    st.markdown('<div class="login-container">', unsafe_allow_html=True)
-    st.markdown('<div class="login-card">', unsafe_allow_html=True)
-    
     with st.container():
-        st.markdown('<div class="login-header">', unsafe_allow_html=True)
-        st.markdown('<div class="login-icon">🔒</div>', unsafe_allow_html=True)
-        st.markdown('<h2>Sistemə Giriş</h2>', unsafe_allow_html=True)
+        st.markdown('<div class="login-box"><div class="login-header"><h2>🔐 Sistemə Giriş</h2></div>', unsafe_allow_html=True)
+        
+        access_code = st.text_input("Giriş kodu", type="password", 
+                                  label_visibility="collapsed", 
+                                  placeholder="Giriş kodunu daxil edin...")
+        
+        cols = st.columns([1,2,1])
+        with cols[1]:
+            if st.button("Daxil ol", use_container_width=True):
+                if access_code == "admin":
+                    st.session_state.logged_in = True
+                    st.rerun()
+                else:
+                    st.error("Yanlış giriş kodu!")
         st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Aydın etiketlər
-        st.markdown('<label for="access_code">Giriş kodu</label>', unsafe_allow_html=True)
-        access_code = st.text_input(
-            "Giriş kodu", 
-            type="password", 
-            label_visibility="collapsed", 
-            placeholder="Giriş kodunu daxil edin..."
-        )
-        
-        if st.button("Daxil ol", key="login_btn", use_container_width=True):
-            if access_code == "admin":
-                st.session_state.logged_in = True
-                st.rerun()
-            else:
-                st.error("Yanlış giriş kodu!")
-        
-        st.markdown('<div class="login-footer">Ezamiyyət İdarəetmə Sistemi v1.0</div>', unsafe_allow_html=True)
-    
-    st.markdown('</div>', unsafe_allow_html=True)  # login-card
-    st.markdown('</div>', unsafe_allow_html=True)  # login-container
     st.stop()
-
 
 # 3. ƏSAS TƏRTİBAT VƏ PROQRAM MƏNTİQİ
 st.markdown("""
@@ -1491,41 +1433,30 @@ with tab1:
 
 # ============================== ADMIN PANELİ ==============================
 with tab2:
+    # Admin giriş statusunun yoxlanılması
     if 'admin_logged' not in st.session_state:
         st.session_state.admin_logged = False
 
+    # Giriş edilməyibsə
     if not st.session_state.admin_logged:
-        # YENİ ADMIN GİRİŞ KARTI
-        st.markdown('<div class="login-container">', unsafe_allow_html=True)
-        st.markdown('<div class="login-card">', unsafe_allow_html=True)
-        
         with st.container():
-            st.markdown('<div class="login-header">', unsafe_allow_html=True)
-            st.markdown('<div class="login-icon">🔑</div>', unsafe_allow_html=True)
-            st.markdown('<h2>Admin Girişi</h2>', unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown('<div class="login-box"><div class="login-header"><h2>🔐 Admin Girişi</h2></div>', unsafe_allow_html=True)
             
             cols = st.columns(2)
             with cols[0]:
-                st.markdown('<label for="admin_user">İstifadəçi adı</label>', unsafe_allow_html=True)
-                admin_user = st.text_input("İstifadəçi adı", key="admin_user", label_visibility="collapsed", placeholder="İstifadəçi adı")
+                admin_user = st.text_input("İstifadəçi adı", key="admin_user")
             with cols[1]:
-                st.markdown('<label for="admin_pass">Şifrə</label>', unsafe_allow_html=True)
-                admin_pass = st.text_input("Şifrə", type="password", key="admin_pass", label_visibility="collapsed", placeholder="Şifrə")
+                admin_pass = st.text_input("Şifrə", type="password", key="admin_pass")
             
-            if st.button("Giriş et", key="admin_login_btn", use_container_width=True):
+            if st.button("Giriş et", key="admin_login_btn"):
                 if admin_user == "admin" and admin_pass == "admin123":
                     st.session_state.admin_logged = True
                     st.rerun()
                 else:
                     st.error("Yanlış giriş məlumatları!")
             
-            st.markdown('<div class="login-footer">Admin Panelə Xoş Gəlmisiniz</div>', unsafe_allow_html=True)
-        
-        st.markdown('</div>', unsafe_allow_html=True)  # login-card
-        st.markdown('</div>', unsafe_allow_html=True)  # login-container
+            st.markdown('</div>', unsafe_allow_html=True)
         st.stop()
-
 
     # Giriş edildikdə
     if st.session_state.admin_logged:
