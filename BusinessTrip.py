@@ -1514,9 +1514,9 @@ with tab2:
             st.session_state.admin_logged = False
             st.rerun()
         
-        # Sekmələrin yaradılması
-        tab_manage, tab_import, tab_settings, tab_currency = st.tabs(
-            ["📊 Məlumatlar", "📥 İdxal", "⚙️ Parametrlər", "💱 Valyuta Məzənnələri"]
+        # Sekmələrin yenidən təşkili - ƏLAVƏ EDİLDİ
+        tab_manage, tab_import, tab_settings, tab_currency, tab_texts = st.tabs(
+            ["📊 Məlumatlar", "📥 İdxal", "⚙️ Parametrlər", "💱 Valyuta Məzənnələri", "📝 Mətn İdarəetmə"]
         )
         
         # Məlumatlar sekmesi
@@ -2090,11 +2090,6 @@ with tab2:
                         with cols[2]:
                             created_at = section_data.get('created_at', 'Tarix bilinmir')
                             st.caption(f"Yaradılma tarixi: {created_at[:10]}")
-    
-            new_other = st.number_input(
-                "Digər parametr", 
-                key="unique_key_for_texts_tab"  # Unikalliq
-            )
 
 
 # ====================================================================================================
