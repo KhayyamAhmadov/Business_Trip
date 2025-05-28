@@ -22,109 +22,393 @@ st.set_page_config(
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
-# Giriş üçün CSS
+# Modern və cazibədar giriş üçün CSS
 st.markdown("""
 <style>
-    .login-box {
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-        color: white;
-        padding: 2.5rem;
-        border-radius: 15px;
-        box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        max-width: 500px;
-        margin: 5rem auto;
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    /* Global Styles */
+    .stApp {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: 'Inter', sans-serif;
     }
+    
+    /* Login Container */
+    .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+    }
+    
+    .login-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 24px;
+        padding: 3rem 2.5rem;
+        box-shadow: 
+            0 25px 50px rgba(0, 0, 0, 0.15),
+            0 0 0 1px rgba(255, 255, 255, 0.2);
+        max-width: 450px;
+        width: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .login-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+        background-size: 200% 100%;
+        animation: gradientShift 3s ease infinite;
+    }
+    
+    @keyframes gradientShift {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+    }
+    
+    /* Header */
     .login-header {
         text-align: center;
-        margin-bottom: 2rem;
+        margin-bottom: 2.5rem;
     }
-    .login-box .stTextInput {
-        width: 30%;
-        margin: 0 auto;
+    
+    .login-title {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 0.5rem 0;
     }
-    .stTextInput input {
-        background-color: rgba(255,255,255,0.2)!important;
-        color: white!important;
-        border: 1px solid rgba(255,255,255,0.3)!important;
-        border-radius: 8px!important;
-        padding: 8px 12px!important;
-        font-size: 14px!important;
+    
+    .login-subtitle {
+        color: #6b7280;
+        font-size: 0.95rem;
+        font-weight: 400;
+        margin: 0;
     }
-    .stTextInput input::placeholder {
-        color: rgba(255,255,255,0.7)!important;
+    
+    .login-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        display: block;
+        background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
+    
+    /* Input Styling */
+    .stTextInput > div > div > input {
+        background: rgba(255, 255, 255, 0.8) !important;
+        border: 2px solid rgba(102, 126, 234, 0.1) !important;
+        border-radius: 12px !important;
+        padding: 16px 20px !important;
+        font-size: 16px !important;
+        font-weight: 500 !important;
+        color: #374151 !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05) !important;
+    }
+    
+    .stTextInput > div > div > input:focus {
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05) !important;
+        transform: translateY(-1px) !important;
+    }
+    
+    .stTextInput > div > div > input::placeholder {
+        color: #9ca3af !important;
+        font-weight: 400 !important;
+    }
+    
+    /* Button Styling */
+    .login-button {
+        width: 100%;
+        margin-top: 1.5rem;
+    }
+    
+    .stButton > button {
+        width: 100% !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 16px 24px !important;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6) !important;
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
+    }
+    
+    .stButton > button:active {
+        transform: translateY(0px) !important;
+    }
+    
+    /* Error Message */
+    .stAlert {
+        border-radius: 12px !important;
+        margin-top: 1rem !important;
+        border: none !important;
+        background: linear-gradient(135deg, #ff6b6b, #ee5a52) !important;
+        color: white !important;
+    }
+    
+    /* Features Section */
+    .features-section {
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(107, 114, 128, 0.1);
+    }
+    
+    .feature-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+    
+    .feature-icon {
+        margin-right: 0.75rem;
+        font-size: 1.2rem;
+        color: #667eea;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .login-card {
+            margin: 1rem;
+            padding: 2rem 1.5rem;
+        }
+        
+        .login-title {
+            font-size: 1.75rem;
+        }
+    }
+    
+    /* Animation */
+    .login-card {
+        animation: slideInUp 0.6s ease-out;
+    }
+    
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Hide Streamlit Elements */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    .stDeployButton {display:none;}
 </style>
 """, unsafe_allow_html=True)
 
 if not st.session_state.logged_in:
-    with st.container():
-        st.markdown('<div class="login-box"><div class="login-header"><h2>🔐 Sistemə Giriş</h2></div>', unsafe_allow_html=True)
-        
-        access_code = st.text_input("Giriş kodu", type="password", 
-                                  label_visibility="collapsed", 
-                                  placeholder="Giriş kodunu daxil edin...")
-        
-        cols = st.columns([1,2,1])
-        with cols[1]:
-            if st.button("Daxil ol", use_container_width=True):
-                if access_code == "admin":
-                    st.session_state.logged_in = True
-                    st.rerun()
-                else:
-                    st.error("Yanlış giriş kodu!")
-        st.markdown('</div>', unsafe_allow_html=True)
+    # Login səhifəsi
+    st.markdown("""
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <span class="login-icon">🚀</span>
+                <h1 class="login-title">Ezamiyyət İdarəetmə</h1>
+                <p class="login-subtitle">Sistemə daxil olmaq üçün giriş kodunuzu daxil edin</p>
+            </div>
+    """, unsafe_allow_html=True)
+    
+    # Giriş formu
+    access_code = st.text_input(
+        "Giriş kodu", 
+        type="password", 
+        label_visibility="collapsed", 
+        placeholder="🔐 Giriş kodunuzu daxil edin...",
+        key="login_input"
+    )
+    
+    # Giriş düyməsi
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("🚀 Sistemə Daxil Ol", key="login_btn", help="Sisteme giriş üçün klikləyin"):
+            if access_code == "admin":
+                st.session_state.logged_in = True
+                st.success("✅ Uğurla daxil oldunuz!")
+                time.sleep(1)
+                st.rerun()
+            else:
+                st.error("❌ Yanlış giriş kodu! Yenidən cəhd edin.")
+    
+    # Xüsusiyyətlər bölməsi
+    st.markdown("""
+            <div class="features-section">
+                <div class="feature-item">
+                    <span class="feature-icon">✈️</span>
+                    <span>Ezamiyyət planlaması və izləmə</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">📊</span>
+                    <span>Xərc hesabatları və analitika</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🔒</span>
+                    <span>Təhlükəsiz və etibarlı sistem</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">⚡</span>
+                    <span>Sürətli və asan istifadə</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
     st.stop()
 
-# 3. ƏSAS TƏRTİBAT VƏ PROQRAM MƏNTİQİ
+# 3. ƏSAS TƏRTİBAT VƏ PROQRAM MƏNTİQİ (Giriş edildiyi halda)
 st.markdown("""
 <style>
     :root {
-        --primary-color: #6366f1;
-        --secondary-color: #8b5cf6;
+        --primary-color: #667eea;
+        --secondary-color: #764ba2;
+        --accent-color: #4ecdc4;
+        --success-color: #96ceb4;
+        --warning-color: #feca57;
+        --danger-color: #ff6b6b;
         --background-color: #ffffff;
+        --text-primary: #2d3748;
+        --text-secondary: #4a5568;
+        --border-color: #e2e8f0;
     }
     
     .main-header {
         text-align: center;
-        padding: 2rem 1rem;
+        padding: 3rem 2rem;
         background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
         color: white;
-        margin: -1rem -1rem 2rem -1rem;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        border-radius: 0 0 20px 20px;
+        margin: -1rem -1rem 3rem -1rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border-radius: 0 0 30px 30px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .main-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><defs><pattern id="grain" width="100" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="20" fill="url(%23grain)"/></svg>');
+        opacity: 0.1;
     }
     
     .section-header {
         background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-        color: white!important;
-        padding: 1.5rem;
-        border-radius: 12px;
-        margin: 1.5rem 0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border-left: none;
+        color: white !important;
+        padding: 2rem;
+        border-radius: 16px;
+        margin: 2rem 0;
+        box-shadow: 0 8px 32px rgba(102, 126, 234, 0.15);
+        border: none;
+        position: relative;
+        overflow: hidden;
     }
     
-    .stButton>button {
-        border-radius: 8px!important;
-        padding: 0.5rem 1.5rem!important;
-        transition: all 0.3s ease!important;
-        border: 1px solid var(--primary-color)!important;
-        background: var(--secondary-color)!important;
-        color: white!important;
+    .section-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent-color), var(--success-color), var(--warning-color));
     }
     
-    .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 6px rgba(99,102,241,0.3)!important;
-        background: var(--primary-color)!important;
+    .stButton > button {
+        border-radius: 12px !important;
+        padding: 0.75rem 2rem !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        border: 2px solid var(--primary-color) !important;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%) !important;
+        color: white !important;
+        font-weight: 600 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-3px) scale(1.02) !important;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4) !important;
+        background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%) !important;
+    }
+    
+    .stButton > button:active {
+        transform: translateY(-1px) scale(0.98) !important;
     }
     
     .dataframe {
-        border-radius: 12px!important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05)!important;
+        border-radius: 16px !important;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.08) !important;
+        border: 1px solid var(--border-color) !important;
+        overflow: hidden !important;
+    }
+    
+    /* Logout button */
+    .logout-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+    }
+    
+    .logout-btn {
+        background: linear-gradient(135deg, var(--danger-color), #ee5a52) !important;
+        border: none !important;
+        border-radius: 50px !important;
+        padding: 12px 24px !important;
+        color: white !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3) !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .logout-btn:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4) !important;
     }
 </style>
 """, unsafe_allow_html=True)
+
+# Logout düyməsi
+st.markdown('<div class="logout-container">', unsafe_allow_html=True)
+if st.button("🚪 Çıxış", key="logout", help="Sistemdən çıxış"):
+    st.session_state.logged_in = False
+    st.rerun()
+st.markdown('</div>', unsafe_allow_html=True)
 
 # ============================== SABİTLƏR ==============================
 DEPARTMENTS = [
