@@ -838,14 +838,6 @@ DOMESTIC_ALLOWANCES = {
     "Digər": 90
 }
 
-# # currency_rates.xlsx faylı üçün nümunə məlumatlar
-# CURRENCY_RATES = {
-#     "USD": 1.7,
-#     "EUR": 1.9,
-#     "TRY": 0.2,
-#     "RUB": 0.02,
-#     "GEL": 0.7
-# }
 
 # Fayl yoxlamaları ən başda
 if not os.path.exists("countries_data.json"):
@@ -1829,55 +1821,6 @@ with tab2:
                     st.rerun()
 
 
-            # Daxili marşrutların redaktə edilməsi
-            with st.expander("🚌 Daxili Marşrut Parametrləri"):
-                st.markdown("#### Daxili Marşrut Qiymətləri")
-                
-                # Yeni marşrut əlavə etmə
-                cols = st.columns([1, 1, 1, 1])
-                with cols[0]:
-                    route_from = st.selectbox("Haradan", CITIES, key="route_from")
-                with cols[1]:
-                    route_to = st.selectbox("Haraya", [c for c in CITIES if c != route_from], key="route_to")
-                with cols[2]:
-                    route_price = st.number_input("Qiymət (AZN)", min_value=0.0, value=10.0, step=0.5)
-                with cols[3]:
-                    if st.button("➕ Marşrut əlavə et"):
-                        DOMESTIC_ROUTES[(route_from, route_to)] = route_price
-                        st.success(f"{route_from} → {route_to} marşrutu əlavə edildi!")
-                        st.rerun()
-                
-                # Mövcud marşrutları göstər
-                route_df = pd.DataFrame([
-                    {"Haradan": k[0], "Haraya": k[1], "Qiymət": v} 
-                    for k, v in DOMESTIC_ROUTES.items()
-                ])
-                
-                if not route_df.empty:
-                    edited_routes = st.data_editor(
-                        route_df,
-                        use_container_width=True,
-                        num_rows="dynamic",
-                        column_config={
-                            "Qiymət": st.column_config.NumberColumn(
-                                "Qiymət (AZN)",
-                                min_value=0,
-                                max_value=100,
-                                step=0.5,
-                                format="%.2f AZN"
-                            )
-                        }
-                    )
-                    
-                    if st.button("💾 Marşrut dəyişikliklərini saxla"):
-                        # Yenilənmiş marşrutları saxla
-                        new_routes = {}
-                        for _, row in edited_routes.iterrows():
-                            new_routes[(row['Haradan'], row['Haraya'])] = row['Qiymət']
-                        DOMESTIC_ROUTES.clear()
-                        DOMESTIC_ROUTES.update(new_routes)
-                        st.success("Marşrut məlumatları yeniləndi!")
-
             # Sistem məlumatları
             # In the "Sistem Məlumatları" section under tab_settings:
             with st.expander("📊 Sistem Məlumatları"):
@@ -2137,6 +2080,6 @@ if __name__ == "__main__":
             'Ümumi məbləğ', 'Məqsəd'
         ]).to_excel("ezamiyyet_melumatlari.xlsx", index=False)
     
-    # # Köhnə valyuta faylını sil
-    # if os.path.exists("currency_rates.xlsx"):
-    #     os.remove("currency_rates.xlsx")
+    # Köhnə valyuta faylını sil
+    if os.path.exists("currency_rates.xlsx"):
+        os.remove("currency_rates.xlsx")
