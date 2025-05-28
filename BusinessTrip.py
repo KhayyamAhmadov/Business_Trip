@@ -1019,6 +1019,7 @@ def get_currency_rates(date):
         return pd.DataFrame()
 
 
+MELUMATLAR_JSON = "melumatlar.json"
 def load_info_sections():
     try:
         with open(MELUMATLAR_JSON, 'r', encoding='utf-8') as f:
