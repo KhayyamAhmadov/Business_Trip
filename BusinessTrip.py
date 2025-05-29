@@ -1196,6 +1196,15 @@ with tab1:
                         end_date = st.date_input("Bitmə tarixi")
                     
                     purpose = st.text_area("Ezamiyyət məqsədi")
+                    
+                    # YENİ: Ölkə xarici nəqliyyat xərci
+                    foreign_transport_cost = st.number_input(
+                        "✈️ Nəqliyyat xərci (AZN)", 
+                        min_value=0.0, 
+                        value=0.0,
+                        step=50.0,
+                        help="Uçak, qatar və ya digər nəqliyyat xərclərini AZN-lə daxil edin"
+                    )
 
 
         # Sağ Sütun (Hesablama)
@@ -1234,11 +1243,11 @@ with tab1:
                                 
                                 cols_trip = st.columns(2)
                                 with cols_trip[0]:
-                                    st.metric("📅 Günlük", f"{trip['daily_allowance']:.0f} ₼")
-                                    st.metric("🚌 Nəqliyyat", f"{trip['ticket_price']:.0f} ₼")
+                                    st.metric("📅 Günlük", f"{trip['daily_allowance']:.2f} ₼")
+                                    st.metric("🚌 Nəqliyyat", f"{trip['ticket_price']:.2f} ₼")
                                 with cols_trip[1]:
-                                    st.metric("🏨 Otel", f"{hotel_cost:.0f} ₼")
-                                    st.metric("🍽️ Gündəlik", f"{daily_expenses:.0f} ₼")
+                                    st.metric("🏨 Otel", f"{hotel_cost:.2f} ₼")
+                                    st.metric("🍽️ Gündəlik", f"{daily_expenses:.2f} ₼")
                                 
                                 st.metric("💳 Cəmi", f"{trip_total:.2f} ₼", delta=f"{trip['trip_days']} gün")
                                 st.divider()
@@ -1251,10 +1260,10 @@ with tab1:
                         
                         cols_summary = st.columns(2)
                         with cols_summary[0]:
-                            st.metric("🚌", f"{total_ticket_cost:.0f} ₼")
-                            st.metric("🏨", f"{total_hotel_cost:.0f} ₼")
+                            st.metric("🚌", f"{total_ticket_cost:.2f} ₼")
+                            st.metric("🏨", f"{total_hotel_cost:.2f} ₼")
                         with cols_summary[1]:
-                            st.metric("🍽️", f"{total_daily_expenses:.0f} ₼")
+                            st.metric("🍽️", f"{total_daily_expenses:.2f} ₼")
                         
                         # Ən böyük məbləğ
                         st.metric("💰 ÜMUMI MƏBLƏĞ", f"{total_all_trips:.2f} ₼")
@@ -1262,7 +1271,7 @@ with tab1:
                         # Statistika
                         if len(st.session_state.domestic_trips) > 1:
                             avg_per_trip = total_all_trips / len(st.session_state.domestic_trips)
-                            st.info(f"📊 Orta səfər: {avg_per_trip:.0f} ₼")
+                            st.info(f"📊 Orta səfər: {avg_per_trip:.2f} ₼")
                     else:
                         st.info("👆 Sol tərəfdən səfər əlavə edin")
                 
@@ -1325,7 +1334,10 @@ with tab1:
                     # Valyuta məzənnəsi ilə günlük müavinətin AZN-ə çevrilməsi
                     daily_allowance_azn = daily_allowance_foreign * exchange_rate 
 
-                    # Göstəricilər ⚙️ YENİLƏNİB
+                    # YENİ: Nəqliyyat xərci də əlavə edilir ümumi məbləğə
+                    total_with_transport_azn = total_amount_azn + foreign_transport_cost
+
+                    # Göstəricilər ⚙️ YENİLƏNİB - TAM MƏBLƏĞ GÖSTƏR
                     st.metric("📅 Günlük müavinət", 
                              f"{daily_allowance_azn:.2f} AZN", 
                              delta=f"{daily_allowance_foreign:.2f} {currency}")
@@ -1353,12 +1365,23 @@ with tab1:
                             st.metric("🏨 Mehmanxana xərcləri", 
                                      f"{hotel_cost_azn:.2f} AZN",
                                      delta=f"{hotel_cost_foreign:.2f} {currency}")
-                    #Butun kodlari ozum bir bir el ile yazmisam.
+                    
+                    # YENİ: Nəqliyyat xərci göstər
+                    if foreign_transport_cost > 0:
+                        st.metric("✈️ Nəqliyyat xərci", f"{foreign_transport_cost:.2f} AZN")
+                    
                     st.metric("⏳ Müddət", f"{trip_days} gün")
-                    st.metric("💳 Ümumi məbləğ", 
+                    
+                    # YENİ: İki fərqli ümumi məbləğ
+                    st.metric("💳 Ezamiyyət məbləği", 
                              f"{total_amount_azn:.2f} AZN", 
                              delta=f"{total_amount_foreign:.2f} {currency}",
-                             help="Delta orijinal valyutada məbləği göstərir")
+                             help="Yalnız ezamiyyət xərcləri (mehmanxana + gündəlik)")
+                    
+                    st.metric("💰 ÜMUMI MƏBLƏĞ", 
+                             f"{total_with_transport_azn:.2f} AZN",
+                             help="Ezamiyyət məbləği + nəqliyyat xərci")
+                    
                     st.info(
                     f"💱 İstifadə edilən məzənnə ({exchange_date}): "
                     f"1 {currency} = {exchange_rate:.4f} AZN"
@@ -1424,6 +1447,8 @@ with tab1:
                         elif trip_type == "Ölkə xarici" and start_date and end_date:
                             # Valyuta məlumatlarını təyin et
                             total_amount_azn = total_amount_foreign * exchange_rate
+                            # YENİ: Nəqliyyat xərci də əlavə edilir
+                            total_with_transport = total_amount_azn + foreign_transport_cost
         
                             trip_data = {
                                 "Tarix": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -1437,14 +1462,14 @@ with tab1:
                                 "Ödəniş rejimi": payment_mode,
                                 "Qonaqlama növü": accommodation,
                                 "Marşrut": f"{country} - {selected_city}",
-                                "Bilet qiyməti": 0,
+                                "Bilet qiyməti": foreign_transport_cost,  # YENİ: Nəqliyyat xərci
                                 # Valyuta məlumatları
                                 "Günlük müavinət (Valyuta)": f"{daily_allowance_foreign:.2f} {currency}",
                                 "Günlük müavinət (AZN)": daily_allowance_azn,
                                 "Mehmanxana xərcləri": hotel_cost_azn,
                                 "Gündəlik xərclər": daily_expenses_azn,
                                 "Ümumi məbləğ (Valyuta)": f"{total_amount_foreign:.2f} {currency}",
-                                "Ümumi məbləğ (AZN)": total_amount_azn,
+                                "Ümumi məbləğ (AZN)": total_with_transport,  # YENİ: Nəqliyyat xərci daxil
                                 "Valyuta": currency,
                                 "Məzənnə": exchange_rate,
                                 "Başlanğıc tarixi": start_date.strftime("%Y-%m-%d"),
@@ -1461,7 +1486,6 @@ with tab1:
                             st.error("Zəhmət olmasa səfər əlavə edin!")
                     else:
                         st.error("Zəhmət olmasa bütün məcburi sahələri doldurun!")
-
 
 # ============================== ADMIN PANELİ ==============================
 with tab2:
