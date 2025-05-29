@@ -1203,7 +1203,7 @@ with tab1:
                         min_value=0.0, 
                         value=0.0,
                         step=50.0,
-                        help="Uçak, qatar və ya digər nəqliyyat xərclərini AZN-lə daxil edin"
+                        help="Təyyarə, qatar və ya digər nəqliyyat xərclərini AZN-lə daxil edin"
                     )
 
 
