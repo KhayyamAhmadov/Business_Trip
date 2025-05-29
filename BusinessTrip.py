@@ -1197,14 +1197,55 @@ with tab1:
                     
                     purpose = st.text_area("Ezamiyyət məqsədi")
                     
-                    # YENİ: Ölkə xarici nəqliyyat xərci
-                    foreign_transport_cost = st.number_input(
-                        "✈️ Nəqliyyat xərci (AZN)", 
-                        min_value=0.0, 
-                        value=0.0,
-                        step=50.0,
-                        help="Təyyarə, qatar və ya digər nəqliyyat xərclərini AZN-lə daxil edin"
+                    # # sadece azn: Ölkə xarici nəqliyyat xərci
+                    # foreign_transport_cost = st.number_input(
+                    #     "✈️ Nəqliyyat xərci (AZN)", 
+                    #     min_value=0.0, 
+                    #     value=0.0,
+                    #     step=50.0,
+                    #     help="Təyyarə, qatar və ya digər nəqliyyat xərclərini AZN-lə daxil edin"
+                    # )
+
+                    # YENİ: Nəqliyyat xərci valyuta seçimi
+                    st.markdown("### 🚀 Nəqliyyat Xərcləri")
+                    
+                    transport_currency = st.selectbox(
+                        "Nəqliyyat xərci valyutası",
+                        options=["AZN", currency] if currency != "AZN" else ["AZN"],
+                        help="Nəqliyyat xərcini hansı valyutada daxil etmək istəyirsiniz?"
                     )
+                    
+                    if transport_currency == "AZN":
+                        foreign_transport_cost_input = st.number_input(
+                            f"✈️ Nəqliyyat xərci (AZN)", 
+                            min_value=0.0, 
+                            value=0.0,
+                            step=50.0,
+                            help="Uçaq, qatar və ya digər nəqliyyat xərclərini AZN-lə daxil edin"
+                        )
+                        # AZN-dən xarici valyutaya çevir
+                        foreign_transport_cost_azn = foreign_transport_cost_input
+                        foreign_transport_cost_foreign = foreign_transport_cost_input / exchange_rate if exchange_rate > 0 else 0
+                    else:
+                        foreign_transport_cost_input = st.number_input(
+                            f"✈️ Nəqliyyat xərci ({currency})", 
+                            min_value=0.0, 
+                            value=0.0,
+                            step=10.0,
+                            help=f"Uçaq, qatar və ya digər nəqliyyat xərclərini {currency}-də daxil edin"
+                        )
+                        # Xarici valyutadan AZN-ə çevir
+                        foreign_transport_cost_foreign = foreign_transport_cost_input
+                        foreign_transport_cost_azn = foreign_transport_cost_input * exchange_rate
+                    
+                    # Nəqliyyat xərci göstəricisi
+                    if foreign_transport_cost_input > 0:
+                        cols_transport = st.columns(2)
+                        with cols_transport[0]:
+                            st.metric(f"Nəqliyyat ({currency})", f"{foreign_transport_cost_foreign:.2f} {currency}")
+                        with cols_transport[1]:
+                            st.metric("Nəqliyyat (AZN)", f"{foreign_transport_cost_azn:.2f} AZN")
+
 
 
         # Sağ Sütun (Hesablama)
@@ -1335,12 +1376,14 @@ with tab1:
                     daily_allowance_azn = daily_allowance_foreign * exchange_rate 
 
                     # YENİ: Nəqliyyat xərci də əlavə edilir ümumi məbləğə
-                    total_with_transport_azn = total_amount_azn + foreign_transport_cost
+                    total_with_transport_foreign = total_amount_foreign + foreign_transport_cost_foreign
+                    total_with_transport_azn = total_amount_azn + foreign_transport_cost_azn
 
                     # Göstəricilər ⚙️ YENİLƏNİB - TAM MƏBLƏĞ GÖSTƏR
                     st.metric("📅 Günlük müavinət", 
                              f"{daily_allowance_azn:.2f} AZN", 
                              delta=f"{daily_allowance_foreign:.2f} {currency}")
+
                     
                     # Adi Rejim üçün hər iki xərc növü ⚙️
                     if accommodation == "Adi Rejim":
@@ -1367,20 +1410,37 @@ with tab1:
                                      delta=f"{hotel_cost_foreign:.2f} {currency}")
                     
                     # YENİ: Nəqliyyat xərci göstər
-                    if foreign_transport_cost > 0:
-                        st.metric("✈️ Nəqliyyat xərci", f"{foreign_transport_cost:.2f} AZN")
+                    # YENİ: Nəqliyyat xərci həm valyutada, həm AZN-də göstər
+                    if foreign_transport_cost_input > 0:
+                        cols_transport_display = st.columns(2)
+                        with cols_transport_display[0]:
+                            st.metric("✈️ Nəqliyyat (AZN)", f"{foreign_transport_cost_azn:.2f} AZN")
+                        with cols_transport_display[1]:
+                            st.metric(f"✈️ Nəqliyyat ({currency})", f"{foreign_transport_cost_foreign:.2f} {currency}")
                     
                     st.metric("⏳ Müddət", f"{trip_days} gün")
                     
-                    # YENİ: İki fərqli ümumi məbləğ
-                    st.metric("💳 Ezamiyyət məbləği", 
-                             f"{total_amount_azn:.2f} AZN", 
-                             delta=f"{total_amount_foreign:.2f} {currency}",
-                             help="Yalnız ezamiyyət xərcləri (mehmanxana + gündəlik)")
+                    # YENİ: Həm valyutada, həm AZN-də ümumi məbləğlər
+                    cols_total = st.columns(2)
+                    with cols_total[0]:
+                        st.metric("💳 Ezamiyyət (AZN)", 
+                                 f"{total_amount_azn:.2f} AZN",
+                                 help="Yalnız ezamiyyət xərcləri")
+                    with cols_total[1]:
+                        st.metric(f"💳 Ezamiyyət ({currency})", 
+                                 f"{total_amount_foreign:.2f} {currency}",
+                                 help="Yalnız ezamiyyət xərcləri")
                     
-                    st.metric("💰 ÜMUMI MƏBLƏĞ", 
-                             f"{total_with_transport_azn:.2f} AZN",
-                             help="Ezamiyyət məbləği + nəqliyyat xərci")
+                    # Ümumi məbləğ (ezamiyyət + nəqliyyat)
+                    cols_grand_total = st.columns(2)
+                    with cols_grand_total[0]:
+                        st.metric("💰 ÜMUMI (AZN)", 
+                                 f"{total_with_transport_azn:.2f} AZN",
+                                 help="Ezamiyyət + nəqliyyat xərci")
+                    with cols_grand_total[1]:
+                        st.metric(f"💰 ÜMUMI ({currency})", 
+                                 f"{total_with_transport_foreign:.2f} {currency}",
+                                 help="Ezamiyyət + nəqliyyat xərci")
                     
                     st.info(
                     f"💱 İstifadə edilən məzənnə ({exchange_date}): "
@@ -1448,7 +1508,7 @@ with tab1:
                             # Valyuta məlumatlarını təyin et
                             total_amount_azn = total_amount_foreign * exchange_rate
                             # YENİ: Nəqliyyat xərci də əlavə edilir
-                            total_with_transport = total_amount_azn + foreign_transport_cost
+                            total_with_transport = total_amount_azn + foreign_transport_cost_azn
         
                             trip_data = {
                                 "Tarix": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -1462,13 +1522,15 @@ with tab1:
                                 "Ödəniş rejimi": payment_mode,
                                 "Qonaqlama növü": accommodation,
                                 "Marşrut": f"{country} - {selected_city}",
-                                "Bilet qiyməti": foreign_transport_cost,  # YENİ: Nəqliyyat xərci
+                                "Bilet qiyməti": foreign_transport_cost_azn,  # AZN-də nəqliyyat xərci
+                                "Bilet qiyməti (Valyuta)": f"{foreign_transport_cost_foreign:.2f} {currency}",  # YENİ
+                                "Nəqliyyat valyutası": transport_currency,  # YENİ
                                 # Valyuta məlumatları
                                 "Günlük müavinət (Valyuta)": f"{daily_allowance_foreign:.2f} {currency}",
                                 "Günlük müavinət (AZN)": daily_allowance_azn,
                                 "Mehmanxana xərcləri": hotel_cost_azn,
                                 "Gündəlik xərclər": daily_expenses_azn,
-                                "Ümumi məbləğ (Valyuta)": f"{total_amount_foreign:.2f} {currency}",
+                                "Ümumi məbləğ (Valyuta)": f"{total_with_transport_foreign:.2f} {currency}",  # YENİ: Nəqliyyat daxil
                                 "Ümumi məbləğ (AZN)": total_with_transport,  # YENİ: Nəqliyyat xərci daxil
                                 "Valyuta": currency,
                                 "Məzənnə": exchange_rate,
