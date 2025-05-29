@@ -1571,7 +1571,7 @@ with tab1:
                         else:
                             st.error("Zəhmət olmasa səfər əlavə edin!")
                     else:
-                        st.error("Zəhmət olmasa bütün məcburi sahələri doldurun!")
+                        st.error("Zəhmət olmasa bütün sahələri doldurun!")
                         
 # ============================== ADMIN PANELİ ==============================
 with tab2:
