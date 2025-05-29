@@ -1139,7 +1139,7 @@ with tab1:
                             st.rerun()
                 
                 else:  # Ölkə xarici ezamiyyət
-                #  Dinamik yükləmə
+                    #  Dinamik yükləmə
                     countries_data = load_countries_data()
                     try:
                         currency_rates = pd.read_excel("currency_rates.xlsx").set_index('Valyuta')['Məzənnə'].to_dict()
@@ -1200,14 +1200,25 @@ with tab1:
                     # YENİ: Nəqliyyat xərci valyuta seçimi
                     st.markdown("### 🚀 Nəqliyyat Xərcləri")
                     
-                    # Valyuta seçənəklərini düzəlt
-                    currency_options = ["AZN"]
-                    if currency and currency != "AZN":
-                        currency_options.append(currency)
+                    # Bütün mövcud valyutaları əldə et
+                    try:
+                        currency_df = get_currency_rates(start_date if start_date else datetime.now().date())
+                        if not currency_df.empty:
+                            available_currencies = ["AZN"] + currency_df['Valyuta'].tolist()
+                            # Təkrarlananları sil və sırala
+                            available_currencies = sorted(list(set(available_currencies)))
+                        else:
+                            available_currencies = ["AZN", currency] if currency and currency != "AZN" else ["AZN"]
+                    except:
+                        # Əgər scraping xətası varsa, əsas valyutaları göstər
+                        available_currencies = ["AZN", "USD", "EUR", "GBP", "RUB", "TRY"]
+                        if currency and currency not in available_currencies:
+                            available_currencies.append(currency)
+                        available_currencies = sorted(available_currencies)
                     
                     transport_currency = st.selectbox(
                         "Nəqliyyat xərci valyutası",
-                        options=currency_options,
+                        options=available_currencies,
                         help="Nəqliyyat xərcini hansı valyutada daxil etmək istəyirsiniz?"
                     )
                     
@@ -1219,28 +1230,47 @@ with tab1:
                             step=50.0,
                             help="Uçaq, qatar və ya digər nəqliyyat xərclərini AZN-lə daxil edin"
                         )
-                        # AZN-dən xarici valyutaya çevir
+                        # AZN-dən seçilən valyutaya çevir (əsas ezamiyyət valyutası)
                         foreign_transport_cost_azn = foreign_transport_cost_input
                         foreign_transport_cost_foreign = foreign_transport_cost_input / exchange_rate if exchange_rate > 0 else 0
                     else:
+                        # Seçilən valyuta üçün məzənnəni əldə et
+                        try:
+                            if transport_currency == currency:
+                                # Əsas ezamiyyət valyutasıdırsa mövcud məzənnəni istifadə et
+                                transport_exchange_rate = exchange_rate
+                            else:
+                                # Digər valyuta üçün məzənnəni tap
+                                currency_df = get_currency_rates(start_date if start_date else datetime.now().date())
+                                transport_exchange_rate = currency_df.loc[currency_df['Valyuta'] == transport_currency, '1 vahid üçün AZN'].values[0]
+                        except:
+                            st.error(f"{transport_currency} valyutası üçün məzənnə tapılmadı!")
+                            transport_exchange_rate = 1.0
+                        
                         foreign_transport_cost_input = st.number_input(
-                            f"✈️ Nəqliyyat xərci ({currency})", 
+                            f"✈️ Nəqliyyat xərci ({transport_currency})", 
                             min_value=0.0, 
                             value=0.0,
                             step=10.0,
-                            help=f"Uçaq, qatar və ya digər nəqliyyat xərclərini {currency}-də daxil edin"
+                            help=f"Uçaq, qatar və ya digər nəqliyyat xərclərini {transport_currency}-də daxil edin"
                         )
-                        # Xarici valyutadan AZN-ə çevir
-                        foreign_transport_cost_foreign = foreign_transport_cost_input
-                        foreign_transport_cost_azn = foreign_transport_cost_input * exchange_rate
+                        # Seçilən valyutadan AZN-ə çevir
+                        foreign_transport_cost_azn = foreign_transport_cost_input * transport_exchange_rate
+                        # Əsas ezamiyyət valyutasına çevir
+                        foreign_transport_cost_foreign = foreign_transport_cost_azn / exchange_rate if exchange_rate > 0 else 0
                     
                     # Nəqliyyat xərci göstəricisi
                     if foreign_transport_cost_input > 0:
-                        cols_transport = st.columns(2)
+                        cols_transport = st.columns(3)
                         with cols_transport[0]:
-                            st.metric(f"Nəqliyyat ({currency})", f"{foreign_transport_cost_foreign:.2f} {currency}")
-                        with cols_transport[1]:
                             st.metric("Nəqliyyat (AZN)", f"{foreign_transport_cost_azn:.2f} AZN")
+                        with cols_transport[1]:
+                            st.metric(f"Nəqliyyat ({currency})", f"{foreign_transport_cost_foreign:.2f} {currency}")
+                        with cols_transport[2]:
+                            if transport_currency not in ["AZN", currency]:
+                                st.metric(f"Daxil edilən ({transport_currency})", f"{foreign_transport_cost_input:.2f} {transport_currency}")
+                            else:
+                                st.metric("Məzənnə", f"1 {transport_currency} = {transport_exchange_rate:.4f} AZN" if transport_currency != "AZN" else "1 AZN = 1 AZN")
 
 
 
@@ -1517,8 +1547,8 @@ with tab1:
                                 "Qonaqlama növü": accommodation,
                                 "Marşrut": f"{country} - {selected_city}",
                                 "Bilet qiyməti": foreign_transport_cost_azn,  # AZN-də nəqliyyat xərci
-                                "Bilet qiyməti (Valyuta)": f"{foreign_transport_cost_foreign:.2f} {currency}",  # YENİ
-                                "Nəqliyyat valyutası": transport_currency,  # YENİ
+                                "Bilet qiyməti (Valyuta)": f"{foreign_transport_cost_input:.2f} {transport_currency}",  # Daxil edilən valyutada
+                                "Nəqliyyat valyutası": transport_currency,  # Daxil edilən valyuta
                                 # Valyuta məlumatları
                                 "Günlük müavinət (Valyuta)": f"{daily_allowance_foreign:.2f} {currency}",
                                 "Günlük müavinət (AZN)": daily_allowance_azn,
