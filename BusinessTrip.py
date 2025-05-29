@@ -1139,7 +1139,7 @@ with tab1:
                             st.rerun()
                 
                 else:  # Ölkə xarici ezamiyyət
-                    #  Dinamik yükləmə
+                #  Dinamik yükləmə
                     countries_data = load_countries_data()
                     try:
                         currency_rates = pd.read_excel("currency_rates.xlsx").set_index('Valyuta')['Məzənnə'].to_dict()
@@ -1197,21 +1197,17 @@ with tab1:
                     
                     purpose = st.text_area("Ezamiyyət məqsədi")
                     
-                    # # sadece azn: Ölkə xarici nəqliyyat xərci
-                    # foreign_transport_cost = st.number_input(
-                    #     "✈️ Nəqliyyat xərci (AZN)", 
-                    #     min_value=0.0, 
-                    #     value=0.0,
-                    #     step=50.0,
-                    #     help="Təyyarə, qatar və ya digər nəqliyyat xərclərini AZN-lə daxil edin"
-                    # )
-
                     # YENİ: Nəqliyyat xərci valyuta seçimi
                     st.markdown("### 🚀 Nəqliyyat Xərcləri")
                     
+                    # Valyuta seçənəklərini düzəlt
+                    currency_options = ["AZN"]
+                    if currency and currency != "AZN":
+                        currency_options.append(currency)
+                    
                     transport_currency = st.selectbox(
                         "Nəqliyyat xərci valyutası",
-                        options=["AZN", currency] if currency != "AZN" else ["AZN"],
+                        options=currency_options,
                         help="Nəqliyyat xərcini hansı valyutada daxil etmək istəyirsiniz?"
                     )
                     
@@ -1375,7 +1371,7 @@ with tab1:
                     # Valyuta məzənnəsi ilə günlük müavinətin AZN-ə çevrilməsi
                     daily_allowance_azn = daily_allowance_foreign * exchange_rate 
 
-                    # YENİ: Nəqliyyat xərci də əlavə edilir ümumi məbləğə
+                    # YENİ: Nəqliyyat xərcləri (həm valyutada, həm AZN-də)
                     total_with_transport_foreign = total_amount_foreign + foreign_transport_cost_foreign
                     total_with_transport_azn = total_amount_azn + foreign_transport_cost_azn
 
@@ -1383,7 +1379,6 @@ with tab1:
                     st.metric("📅 Günlük müavinət", 
                              f"{daily_allowance_azn:.2f} AZN", 
                              delta=f"{daily_allowance_foreign:.2f} {currency}")
-
                     
                     # Adi Rejim üçün hər iki xərc növü ⚙️
                     if accommodation == "Adi Rejim":
@@ -1409,7 +1404,6 @@ with tab1:
                                      f"{hotel_cost_azn:.2f} AZN",
                                      delta=f"{hotel_cost_foreign:.2f} {currency}")
                     
-                    # YENİ: Nəqliyyat xərci göstər
                     # YENİ: Nəqliyyat xərci həm valyutada, həm AZN-də göstər
                     if foreign_transport_cost_input > 0:
                         cols_transport_display = st.columns(2)
@@ -1507,7 +1501,7 @@ with tab1:
                         elif trip_type == "Ölkə xarici" and start_date and end_date:
                             # Valyuta məlumatlarını təyin et
                             total_amount_azn = total_amount_foreign * exchange_rate
-                            # YENİ: Nəqliyyat xərci də əlavə edilir
+                            # YENİ: Nəqliyyat xərci də əlavə edilir (həm AZN, həm xarici valyuta)
                             total_with_transport = total_amount_azn + foreign_transport_cost_azn
         
                             trip_data = {
@@ -1548,7 +1542,7 @@ with tab1:
                             st.error("Zəhmət olmasa səfər əlavə edin!")
                     else:
                         st.error("Zəhmət olmasa bütün məcburi sahələri doldurun!")
-
+                        
 # ============================== ADMIN PANELİ ==============================
 with tab2:
     # Admin giriş statusunun yoxlanılması
