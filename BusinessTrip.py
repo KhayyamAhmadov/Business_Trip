@@ -1617,126 +1617,289 @@ with tab2:
         
         # Məlumatlar sekmesi
         with tab_manage:
-            try:
-                df = load_trip_data()
-                if not df.empty:
-                    # Sütun tip konvertasiyaları
-                    datetime_cols = ['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']
-                    numeric_cols = ['Ümumi məbləğ', 'Günlük müavinət', 'Bilet qiyməti', 'Günlər']
-                    
-                    for col in datetime_cols:
-                        if col in df.columns:
-                            df[col] = pd.to_datetime(df[col], errors='coerce')
-                    
-                    for col in numeric_cols:
-                        if col in df.columns:
-                            df[col] = pd.to_numeric(df[col], errors='coerce')
-                            if col == 'Günlər':
-                                df[col] = df[col].astype('Int64')
-                    
-                    df = df.sort_values("Tarix", ascending=False)
-                    
-            except Exception as e:
-                st.error(f"Məlumatlar yüklənərkən xəta: {str(e)}")
-                df = pd.DataFrame()
+            # Məlumatları yüklə və hazırla
+            def load_and_prepare_data():
+                try:
+                    df = load_trip_data()
+                    if not df.empty:
+                        # Sütun tip konvertasiyaları
+                        datetime_cols = ['Tarix', 'Başlanğıc tarixi', 'Bitmə tarixi']
+                        numeric_cols = ['Ümumi məbləğ', 'Günlük müavinət', 'Bilet qiyməti', 'Günlər']
+                        
+                        for col in datetime_cols:
+                            if col in df.columns:
+                                df[col] = pd.to_datetime(df[col], errors='coerce')
+                        
+                        for col in numeric_cols:
+                            if col in df.columns:
+                                df[col] = pd.to_numeric(df[col], errors='coerce')
+                                if col == 'Günlər':
+                                    df[col] = df[col].astype('Int64')
+                        
+                        df = df.sort_values("Tarix", ascending=False)
+                        return df
+                    else:
+                        return pd.DataFrame()
+                except Exception as e:
+                    st.error(f"Məlumatlar yüklənərkən xəta: {str(e)}")
+                    return pd.DataFrame()
+            
+            # İlk məlumat yükləmə
+            df = load_and_prepare_data()
 
             if not df.empty:
                 # Statistik kartlar
-                cols = st.columns(4)
-                with cols[0]:
-                    st.metric("Ümumi Ezamiyyət", len(df))
-                with cols[1]:
-                    st.metric("Ümumi Xərclər", f"{df['Ümumi məbləğ'].sum():.2f} AZN")
-                with cols[2]:
-                    st.metric("Orta Müddət", f"{df['Günlər'].mean():.1f} gün")
-                with cols[3]:
-                    st.metric("Aktiv İstifadəçilər", df['Ad'].nunique())
-
-                # Qrafiklər
-                cols = st.columns(2)
-                with cols[0]:
-                    fig = px.pie(df, names='Ezamiyyət növü', title='Ezamiyyət Növlərinin Payı',
-                                color_discrete_sequence=px.colors.sequential.RdBu)
-                    st.plotly_chart(fig, use_container_width=True)
+                def display_statistics(data_df):
+                    cols = st.columns(4)
+                    with cols[0]:
+                        st.metric("Ümumi Ezamiyyət", len(data_df))
+                    with cols[1]:
+                        total_amount = data_df['Ümumi məbləğ'].sum() if 'Ümumi məbləğ' in data_df.columns else 0
+                        st.metric("Ümumi Xərclər", f"{total_amount:.2f} AZN")
+                    with cols[2]:
+                        avg_days = data_df['Günlər'].mean() if 'Günlər' in data_df.columns and not data_df['Günlər'].isna().all() else 0
+                        st.metric("Orta Müddət", f"{avg_days:.1f} gün")
+                    with cols[3]:
+                        unique_users = data_df['Ad'].nunique() if 'Ad' in data_df.columns else 0
+                        st.metric("Aktiv İstifadəçilər", unique_users)
                 
-                with cols[1]:
-                    department_stats = df.groupby('Şöbə')['Ümumi məbləğ'].sum().nlargest(10)
-                    fig = px.bar(department_stats, 
-                                title='Top 10 Xərc Edən Şöbə',
-                                labels={'value': 'Məbləğ (AZN)', 'index': 'Şöbə'},
-                                color=department_stats.values,
-                                color_continuous_scale='Bluered')
-                    st.plotly_chart(fig, use_container_width=True)
+                # Statistika kartlarını göstər
+                display_statistics(df)
 
-                # Məlumat cədvəli
-                with st.expander("🔍 Bütün Qeydlər", expanded=True):
-                    column_config = {
-                        'Tarix': st.column_config.DatetimeColumn(format="DD.MM.YYYY HH:mm"),
-                        'Başlanğıc tarixi': st.column_config.DateColumn(format="YYYY-MM-DD"),
-                        'Bitmə tarixi': st.column_config.DateColumn(format="YYYY-MM-DD"),
-                        'Ümumi məbləğ': st.column_config.NumberColumn(format="%.2f AZN"),
-                        'Günlük müavinət': st.column_config.NumberColumn(format="%.2f AZN"),
-                        'Bilet qiyməti': st.column_config.NumberColumn(format="%.2f AZN"),
-                        'Günlər': st.column_config.NumberColumn(format="%.0f")
-                    }
+                # Dublikat Axtarış və İdarəetmə
+                st.markdown("---")
+                with st.expander("🔍 Dublikat Axtarış və İdarəetmə", expanded=False):
+                    st.markdown("### Dublikat Qeydlərin Tapılması")
                     
-                    edited_df = st.data_editor(
-                        df,
-                        column_config=column_config,
-                        use_container_width=True,
-                        height=600,
-                        num_rows="fixed",
-                        hide_index=True,
-                        key="main_data_editor"
-                    )
-
-                    # Silinmə əməliyyatı
-                    display_options = [f"{row['Ad']} {row['Soyad']} - {row['Marşrut']} ({row['Tarix'].date() if pd.notnull(row['Tarix']) else 'N/A'})" 
-                                      for _, row in df.iterrows()]
-                    
-                    selected_indices = st.multiselect(
-                        "Silinəcək qeydləri seçin",
-                        options=df.index.tolist(),
-                        format_func=lambda x: display_options[x]
+                    # Dublikat axtarış parametrləri
+                    duplicate_cols = st.multiselect(
+                        "Dublikat yoxlamaq üçün sütunları seçin:",
+                        options=['Ad', 'Soyad', 'Marşrut', 'Başlanğıc tarixi', 'Bitmə tarixi', 'Ümumi məbləğ'],
+                        default=['Ad', 'Soyad', 'Marşrut', 'Başlanğıc tarixi'],
+                        key="duplicate_cols"
                     )
                     
-                    if st.button("🗑️ Seçilmiş qeydləri sil", type="secondary"):
-                        try:
-                            df = df.drop(selected_indices)
-                            df.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
-                            st.success(f"{len(selected_indices)} qeyd silindi!")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Silinmə xətası: {str(e)}")
-
-                # İxrac funksiyaları
-                try:
-                    csv_df = df.fillna('').astype(str)
-                    csv = csv_df.to_csv(index=False).encode('utf-8')
+                    if st.button("🔍 Dublikatları tap", key="find_duplicates"):
+                        if duplicate_cols:
+                            try:
+                                # Dublikatları tap
+                                duplicates_mask = df.duplicated(subset=duplicate_cols, keep=False)
+                                duplicates_df = df[duplicates_mask].copy()
+                                
+                                if not duplicates_df.empty:
+                                    # Dublikat qruplarını göstər
+                                    duplicates_df = duplicates_df.sort_values(duplicate_cols)
+                                    st.session_state.found_duplicates = duplicates_df
+                                    st.session_state.duplicate_groups = []
+                                    
+                                    # Qrupları yarad
+                                    for name, group in duplicates_df.groupby(duplicate_cols):
+                                        if len(group) > 1:
+                                            st.session_state.duplicate_groups.append(group)
+                                    
+                                    st.success(f"🔍 {len(duplicates_df)} dublikat qeyd tapıldı ({len(st.session_state.duplicate_groups)} qrup)")
+                                else:
+                                    st.info("✅ Heç bir dublikat tapılmadı!")
+                                    if 'found_duplicates' in st.session_state:
+                                        del st.session_state.found_duplicates
+                                    if 'duplicate_groups' in st.session_state:
+                                        del st.session_state.duplicate_groups
+                            except Exception as e:
+                                st.error(f"Dublikat axtarış xətası: {str(e)}")
+                        else:
+                            st.warning("Ən azı bir sütun seçin!")
                     
-                    st.download_button(
-                        "📊 CSV ixrac et",
-                        data=csv,
-                        file_name=f"ezamiyyet_{datetime.now().strftime('%Y%m%d')}.csv",
-                        mime="text/csv"
-                    )
+                    # Tapılan dublikatları göstər
+                    if 'found_duplicates' in st.session_state and not st.session_state.found_duplicates.empty:
+                        st.markdown("### Tapılan Dublikatlar")
+                        
+                        # Qrup-qrup göstər
+                        for i, group in enumerate(st.session_state.duplicate_groups):
+                            with st.container():
+                                st.markdown(f"**Qrup {i+1}** ({len(group)} qeyd)")
+                                
+                                # Hər qrup üçün minimal məlumat
+                                group_display = group[['Ad', 'Soyad', 'Marşrut', 'Başlanğıc tarixi', 'Tarix', 'Ümumi məbləğ']].copy()
+                                if 'Tarix' in group_display.columns:
+                                    group_display['Tarix'] = group_display['Tarix'].dt.strftime('%d.%m.%Y %H:%M')
+                                if 'Başlanğıc tarixi' in group_display.columns:
+                                    group_display['Başlanğıc tarixi'] = group_display['Başlanğıc tarixi'].dt.strftime('%Y-%m-%d')
+                                
+                                st.dataframe(group_display, use_container_width=True, hide_index=True)
+                                
+                                # Qrupdan silmək üçün seçim
+                                selected_in_group = st.multiselect(
+                                    f"Qrup {i+1}-dən silinəcək qeydləri seçin:",
+                                    options=group.index.tolist(),
+                                    format_func=lambda x: f"{group.loc[x, 'Ad']} {group.loc[x, 'Soyad']} - {group.loc[x, 'Marşrut']} ({group.loc[x, 'Tarix'].strftime('%d.%m.%Y') if pd.notnull(group.loc[x, 'Tarix']) else 'N/A'})",
+                                    key=f"group_{i}_select"
+                                )
+                                
+                                if selected_in_group:
+                                    if st.button(f"🗑️ Qrup {i+1}-dən seçilənləri sil", key=f"delete_group_{i}", type="secondary"):
+                                        try:
+                                            # DataFrame-i yenilə
+                                            df = df.drop(selected_in_group)
+                                            df.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+                                            st.success(f"Qrup {i+1}-dən {len(selected_in_group)} qeyd silindi!")
+                                            
+                                            # Session state-i təmizlə və yenilə
+                                            if 'found_duplicates' in st.session_state:
+                                                del st.session_state.found_duplicates
+                                            if 'duplicate_groups' in st.session_state:
+                                                del st.session_state.duplicate_groups
+                                            
+                                            st.rerun()
+                                        except Exception as e:
+                                            st.error(f"Silinmə xətası: {str(e)}")
+                                
+                                st.markdown("---")
+                        
+                        # Bütün dublikatları birlikdə sil
+                        cols = st.columns(2)
+                        with cols[0]:
+                            if st.button("🗑️ Bütün dublikatları sil (birincini saxla)", key="delete_all_duplicates", type="secondary"):
+                                try:
+                                    # Hər qrupdan yalnız birincini saxla
+                                    to_drop = []
+                                    for group in st.session_state.duplicate_groups:
+                                        to_drop.extend(group.index[1:].tolist())  # İlk qeydi saxla
+                                    
+                                    # DataFrame-i yenilə
+                                    df = df.drop(to_drop)
+                                    df.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+                                    st.success(f"Bütün dublikatlar silindi! {len(to_drop)} qeyd silindi.")
+                                    
+                                    # Session state-i təmizlə
+                                    if 'found_duplicates' in st.session_state:
+                                        del st.session_state.found_duplicates
+                                    if 'duplicate_groups' in st.session_state:
+                                        del st.session_state.duplicate_groups
+                                    
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"Silinmə xətası: {str(e)}")
+                        
+                        with cols[1]:
+                            if st.button("❌ Dublikat axtarışını təmizlə", key="clear_duplicates"):
+                                if 'found_duplicates' in st.session_state:
+                                    del st.session_state.found_duplicates
+                                if 'duplicate_groups' in st.session_state:
+                                    del st.session_state.duplicate_groups
+                                st.rerun()
 
-                    buffer = BytesIO()
-                    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                        df.to_excel(writer, index=False)
-                    excel_data = buffer.getvalue()
+                # Qrafiklər (yenilənmiş məlumatlarla)
+                def display_charts(data_df):
+                    cols = st.columns(2)
+                    with cols[0]:
+                        if 'Ezamiyyət növü' in data_df.columns:
+                            fig = px.pie(data_df, names='Ezamiyyət növü', title='Ezamiyyət Növlərinin Payı',
+                                        color_discrete_sequence=px.colors.sequential.RdBu)
+                            st.plotly_chart(fig, use_container_width=True)
+                        else:
+                            st.info("Ezamiyyət növü məlumatı mövcud deyil")
                     
-                    st.download_button(
-                        "📊 Excel ixrac et",
-                        data=excel_data,
-                        file_name=f"ezamiyyet_{datetime.now().strftime('%Y%m%d')}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    )
-                except Exception as e:
-                    st.error(f"İxrac xətası: {str(e)}")
+                    with cols[1]:
+                        if 'Şöbə' in data_df.columns and 'Ümumi məbləğ' in data_df.columns:
+                            department_stats = data_df.groupby('Şöbə')['Ümumi məbləğ'].sum().nlargest(10)
+                            if not department_stats.empty:
+                                fig = px.bar(department_stats, 
+                                            title='Top 10 Xərc Edən Şöbə',
+                                            labels={'value': 'Məbləğ (AZN)', 'index': 'Şöbə'},
+                                            color=department_stats.values,
+                                            color_continuous_scale='Bluered')
+                                st.plotly_chart(fig, use_container_width=True)
+                            else:
+                                st.info("Şöbə statistikalar mövcud deyil")
+                        else:
+                            st.info("Şöbə və ya məbləğ məlumatı mövcud deyil")
+                
+                # Qrafikləri göstər
+                display_charts(df)
+
+                # Məlumat cədvəli (yenilənmiş məlumatlarla)
+                def display_data_table(data_df):
+                    with st.expander("🔍 Bütün Qeydlər", expanded=True):
+                        column_config = {
+                            'Tarix': st.column_config.DatetimeColumn(format="DD.MM.YYYY HH:mm"),
+                            'Başlanğıc tarixi': st.column_config.DateColumn(format="YYYY-MM-DD"),
+                            'Bitmə tarixi': st.column_config.DateColumn(format="YYYY-MM-DD"),
+                            'Ümumi məbləğ': st.column_config.NumberColumn(format="%.2f AZN"),
+                            'Günlük müavinət': st.column_config.NumberColumn(format="%.2f AZN"),
+                            'Bilet qiyməti': st.column_config.NumberColumn(format="%.2f AZN"),
+                            'Günlər': st.column_config.NumberColumn(format="%.0f")
+                        }
+                        
+                        edited_df = st.data_editor(
+                            data_df,
+                            column_config=column_config,
+                            use_container_width=True,
+                            height=600,
+                            num_rows="fixed",
+                            hide_index=True,
+                            key="main_data_editor"
+                        )
+
+                        # Silinmə əməliyyatı
+                        if len(data_df) > 0:
+                            display_options = []
+                            for _, row in data_df.iterrows():
+                                name = f"{row.get('Ad', 'N/A')} {row.get('Soyad', 'N/A')}"
+                                route = row.get('Marşrut', 'N/A')
+                                date_str = row['Tarix'].date() if pd.notnull(row.get('Tarix')) else 'N/A'
+                                display_options.append(f"{name} - {route} ({date_str})")
+                            
+                            selected_indices = st.multiselect(
+                                "Silinəcək qeydləri seçin",
+                                options=data_df.index.tolist(),
+                                format_func=lambda x: display_options[x] if x < len(display_options) else f"Qeyd {x}"
+                            )
+                            
+                            if selected_indices and st.button("🗑️ Seçilmiş qeydləri sil", type="secondary", key="delete_selected_records"):
+                                try:
+                                    updated_df = data_df.drop(selected_indices)
+                                    updated_df.to_excel("ezamiyyet_melumatlari.xlsx", index=False)
+                                    st.success(f"{len(selected_indices)} qeyd silindi!")
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"Silinmə xətası: {str(e)}")
+                
+                # Məlumat cədvəlini göstər
+                display_data_table(df)
+
+                # İxrac funksiyaları (yenilənmiş məlumatlarla)
+                def display_export_options(data_df):
+                    try:
+                        csv_df = data_df.fillna('').astype(str)
+                        csv = csv_df.to_csv(index=False).encode('utf-8')
+                        
+                        st.download_button(
+                            "📊 CSV ixrac et",
+                            data=csv,
+                            file_name=f"ezamiyyet_{datetime.now().strftime('%Y%m%d')}.csv",
+                            mime="text/csv"
+                        )
+
+                        buffer = BytesIO()
+                        with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                            data_df.to_excel(writer, index=False)
+                        excel_data = buffer.getvalue()
+                        
+                        st.download_button(
+                            "📊 Excel ixrac et",
+                            data=excel_data,
+                            file_name=f"ezamiyyet_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        )
+                    except Exception as e:
+                        st.error(f"İxrac xətası: {str(e)}")
+                
+                # İxrac seçimlərini göstər
+                display_export_options(df)
             else:
                 st.warning("Hələ heç bir məlumat yoxdur")
 
+        
         # İdxal sekmesi
         with tab_import:
             st.markdown("### Excel Fayl İdxalı")
