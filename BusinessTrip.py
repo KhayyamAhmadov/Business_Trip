@@ -1646,11 +1646,12 @@ with tab2:
                 with cols[0]:
                     st.metric("Ümumi Ezamiyyət", len(df))
                 with cols[1]:
-                    st.metric("Ümumi Xərclər", f"{df['Ümumi məbləğ'].sum():.2f} AZN")
-                with cols[2]:
-                    st.metric("Orta Müddət", f"{df['Günlər'].mean():.1f} gün")
-                with cols[3]:
                     st.metric("Aktiv İstifadəçilər", df['Ad'].nunique())
+                # with cols[2]:
+                #     st.metric("Ümumi Xərclər", f"{df['Ümumi məbləğ'].sum():.2f} AZN")
+                # with cols[3]:
+                #     st.metric("Orta Müddət", f"{df['Günlər'].mean():.1f} gün")
+
 
                 # Dublikat Axtarış və İdarəetmə
                 st.markdown("---")
