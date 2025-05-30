@@ -1654,10 +1654,22 @@ with tab2:
                     with cols[0]:
                         st.metric("Ümumi Ezamiyyət", len(data_df))
                     with cols[1]:
-                        total_amount = data_df['Ümumi məbləğ'].sum() if 'Ümumi məbləğ' in data_df.columns else 0
+                        # Ümumi məbləğ hesablaması
+                        if 'Ümumi məbləğ' in data_df.columns:
+                            # NaN dəyərləri filtrlə və numeric-ə çevir
+                            amount_series = pd.to_numeric(data_df['Ümumi məbləğ'], errors='coerce')
+                            total_amount = amount_series.dropna().sum()
+                        else:
+                            total_amount = 0
                         st.metric("Ümumi Xərclər", f"{total_amount:.2f} AZN")
                     with cols[2]:
-                        avg_days = data_df['Günlər'].mean() if 'Günlər' in data_df.columns and not data_df['Günlər'].isna().all() else 0
+                        # Orta müddət hesablaması
+                        if 'Günlər' in data_df.columns:
+                            # NaN dəyərləri filtrlə və numeric-ə çevir
+                            days_series = pd.to_numeric(data_df['Günlər'], errors='coerce')
+                            avg_days = days_series.dropna().mean() if not days_series.dropna().empty else 0
+                        else:
+                            avg_days = 0
                         st.metric("Orta Müddət", f"{avg_days:.1f} gün")
                     with cols[3]:
                         unique_users = data_df['Ad'].nunique() if 'Ad' in data_df.columns else 0
@@ -1793,26 +1805,42 @@ with tab2:
                     cols = st.columns(2)
                     with cols[0]:
                         if 'Ezamiyyət növü' in data_df.columns:
-                            fig = px.pie(data_df, names='Ezamiyyət növü', title='Ezamiyyət Növlərinin Payı',
-                                        color_discrete_sequence=px.colors.sequential.RdBu)
-                            st.plotly_chart(fig, use_container_width=True)
+                            # Boş dəyərləri filtrələ
+                            chart_data = data_df['Ezamiyyət növü'].dropna()
+                            if not chart_data.empty:
+                                fig = px.pie(values=chart_data.value_counts().values, 
+                                           names=chart_data.value_counts().index,
+                                           title='Ezamiyyət Növlərinin Payı',
+                                           color_discrete_sequence=px.colors.sequential.RdBu)
+                                st.plotly_chart(fig, use_container_width=True)
+                            else:
+                                st.info("Ezamiyyət növü məlumatı mövcud deyil")
                         else:
-                            st.info("Ezamiyyət növü məlumatı mövcud deyil")
+                            st.info("Ezamiyyət növü sütunu mövcud deyil")
                     
                     with cols[1]:
                         if 'Şöbə' in data_df.columns and 'Ümumi məbləğ' in data_df.columns:
-                            department_stats = data_df.groupby('Şöbə')['Ümumi məbləğ'].sum().nlargest(10)
-                            if not department_stats.empty:
-                                fig = px.bar(department_stats, 
-                                            title='Top 10 Xərc Edən Şöbə',
-                                            labels={'value': 'Məbləğ (AZN)', 'index': 'Şöbə'},
-                                            color=department_stats.values,
-                                            color_continuous_scale='Bluered')
-                                st.plotly_chart(fig, use_container_width=True)
+                            # NaN dəyərləri filtrələ və numeric-ə çevir
+                            clean_data = data_df[['Şöbə', 'Ümumi məbləğ']].copy()
+                            clean_data['Ümumi məbləğ'] = pd.to_numeric(clean_data['Ümumi məbləğ'], errors='coerce')
+                            clean_data = clean_data.dropna()
+                            
+                            if not clean_data.empty:
+                                department_stats = clean_data.groupby('Şöbə')['Ümumi məbləğ'].sum().nlargest(10)
+                                if not department_stats.empty:
+                                    fig = px.bar(x=department_stats.index,
+                                               y=department_stats.values,
+                                               title='Top 10 Xərc Edən Şöbə',
+                                               labels={'x': 'Şöbə', 'y': 'Məbləğ (AZN)'},
+                                               color=department_stats.values,
+                                               color_continuous_scale='Bluered')
+                                    st.plotly_chart(fig, use_container_width=True)
+                                else:
+                                    st.info("Şöbə statistikaları mövcud deyil")
                             else:
-                                st.info("Şöbə statistikalar mövcud deyil")
+                                st.info("Düzgün şöbə və məbləğ məlumatı yoxdur")
                         else:
-                            st.info("Şöbə və ya məbləğ məlumatı mövcud deyil")
+                            st.info("Şöbə və ya məbləğ sütunu mövcud deyil")
                 
                 # Qrafikləri göstər
                 display_charts(df)
@@ -1898,7 +1926,8 @@ with tab2:
                 display_export_options(df)
             else:
                 st.warning("Hələ heç bir məlumat yoxdur")
-
+        
+        
         
         # İdxal sekmesi
         with tab_import:
