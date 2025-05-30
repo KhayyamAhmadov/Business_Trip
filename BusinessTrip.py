@@ -1444,16 +1444,16 @@ with tab1:
                     
                     st.metric("⏳ Müddət", f"{trip_days} gün")
                     
-                    # YENİ: Həm valyutada, həm AZN-də ümumi məbləğlər
-                    cols_total = st.columns(2)
-                    with cols_total[0]:
-                        st.metric("💳 Ezamiyyət (AZN)", 
-                                 f"{total_amount_azn:.2f} AZN",
-                                 help="Yalnız ezamiyyət xərcləri")
-                    with cols_total[1]:
-                        st.metric(f"💳 Ezamiyyət ({currency})", 
-                                 f"{total_amount_foreign:.2f} {currency}",
-                                 help="Yalnız ezamiyyət xərcləri")
+                    # # YENİ: Həm valyutada, həm AZN-də ümumi məbləğlər
+                    # cols_total = st.columns(2)
+                    # with cols_total[0]:
+                    #     st.metric("💳 Ezamiyyət (AZN)", 
+                    #              f"{total_amount_azn:.2f} AZN",
+                    #              help="Yalnız ezamiyyət xərcləri")
+                    # with cols_total[1]:
+                    #     st.metric(f"💳 Ezamiyyət ({currency})", 
+                    #              f"{total_amount_foreign:.2f} {currency}",
+                    #              help="Yalnız ezamiyyət xərcləri")
                     
                     # Ümumi məbləğ (ezamiyyət + nəqliyyat)
                     cols_grand_total = st.columns(2)
